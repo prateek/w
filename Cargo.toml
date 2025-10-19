@@ -1,14 +1,14 @@
 [package]
-name = "arbor"
+name = "worktrunk"
 version = "0.1.0"
 edition = "2024"
 
 [lib]
-name = "arbor"
+name = "worktrunk"
 path = "src/lib.rs"
 
 [[bin]]
-name = "arbor"
+name = "wt"
 path = "src/main.rs"
 
 [dependencies]

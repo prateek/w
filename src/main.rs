@@ -1,11 +1,10 @@
 use clap::{Parser, Subcommand};
-use arbor::config::ArborConfig;
-use arbor::git::{GitError, list_worktrees};
-use arbor::shell;
+use worktrunk::git::{GitError, list_worktrees};
+use worktrunk::shell;
 use std::process;
 
 #[derive(Parser)]
-#[command(name = "arbor")]
+#[command(name = "wt")]
 #[command(about = "Git worktree management", long_about = None)]
 struct Cli {
     #[command(subcommand)]
@@ -19,8 +18,8 @@ enum Commands {
         /// Shell to generate code for (bash, fish, zsh)
         shell: String,
 
-        /// Command prefix (default: arbor)
-        #[arg(long, default_value = "arbor")]
+        /// Command prefix (default: wt)
+        #[arg(long, default_value = "wt")]
         cmd: String,
 
         /// Hook mode (none, prompt)
@@ -97,8 +96,8 @@ fn main() {
 }
 
 fn handle_init(shell_name: &str, cmd: &str, hook_str: &str) -> Result<(), String> {
-    let shell = shell::Shell::from_str(shell_name)?;
-    let hook = shell::Hook::from_str(hook_str)?;
+    let shell = shell_name.parse::<shell::Shell>()?;
+    let hook = hook_str.parse::<shell::Hook>()?;
 
     let init = shell::ShellInit::new(shell, cmd.to_string(), hook);
 
@@ -155,11 +154,11 @@ fn handle_switch(branch: &str, internal: bool) -> Result<(), String> {
     if internal {
         // Internal mode: output directives
         // TODO: Implement actual worktree switching logic
-        println!("__ARBOR_CD__/tmp/example-worktree");
+        println!("__WORKTRUNK_CD__/tmp/example-worktree");
         println!("Switched to worktree: {}", branch);
     } else {
         println!("Switching to worktree: {}", branch);
-        println!("Note: Use 'arbor-switch' (with shell integration) for automatic cd");
+        println!("Note: Use 'wt-switch' (with shell integration) for automatic cd");
     }
     Ok(())
 }
@@ -168,11 +167,11 @@ fn handle_finish(internal: bool) -> Result<(), String> {
     if internal {
         // Internal mode: output directives
         // TODO: Implement actual finish logic
-        println!("__ARBOR_CD__/tmp/main-worktree");
+        println!("__WORKTRUNK_CD__/tmp/main-worktree");
         println!("Finished worktree and returned to primary");
     } else {
         println!("Finishing worktree");
-        println!("Note: Use 'arbor-finish' (with shell integration) for automatic cd");
+        println!("Note: Use 'wt-finish' (with shell integration) for automatic cd");
     }
     Ok(())
 }

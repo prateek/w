@@ -192,8 +192,8 @@ fn query_remote_default_branch(path: &std::path::Path) -> Result<String, GitErro
 /// Parse the output of `git ls-remote --symref origin HEAD`
 /// Expected format:
 /// ```text
-/// ref: refs/heads/main	HEAD
-/// 85a1ce7c7182540f9c02453441cb3e8bf0ced214	HEAD
+/// ref: refs/heads/main    HEAD
+/// 85a1ce7c7182540f9c02453441cb3e8bf0ced214    HEAD
 /// ```
 fn parse_remote_default_branch(output: &str) -> Result<String, GitError> {
     for line in output.lines() {

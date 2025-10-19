@@ -121,12 +121,14 @@ impl TestRepo {
     }
 
     /// Read a file from the repo root
+    #[allow(dead_code)]
     pub fn read_file(&self, path: &str) -> String {
         std::fs::read_to_string(self.root.join(path))
             .unwrap_or_else(|_| panic!("Failed to read {}", path))
     }
 
     /// List all files in the repository (excluding .git)
+    #[allow(dead_code)]
     pub fn file_tree(&self) -> Vec<String> {
         let mut files = Vec::new();
         self.collect_files(&self.root, "", &mut files);
@@ -134,6 +136,7 @@ impl TestRepo {
         files
     }
 
+    #[allow(clippy::only_used_in_recursion)]
     fn collect_files(&self, dir: &Path, prefix: &str, files: &mut Vec<String>) {
         if let Ok(entries) = std::fs::read_dir(dir) {
             for entry in entries.flatten() {
@@ -320,6 +323,7 @@ impl TestRepo {
     }
 
     /// Get the path to the remote repository if one was set up
+    #[allow(dead_code)]
     pub fn remote_path(&self) -> Option<&Path> {
         self.remote.as_deref()
     }

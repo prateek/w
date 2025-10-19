@@ -1,4 +1,4 @@
-# Arbor: Git Worktree Management
+# Worktrunk: Git Worktree Management
 
 A Rust-based CLI tool for managing git worktrees with seamless shell integration.
 
@@ -14,32 +14,32 @@ A Rust-based CLI tool for managing git worktrees with seamless shell integration
 
 ```bash
 cargo build --release
-# Copy target/release/arbor to a directory in your PATH
+# Copy target/release/wt to a directory in your PATH
 ```
 
 ## Shell Integration Setup
 
-Arbor uses shell integration to automatically change directories when switching worktrees. Add one of the following to your shell config:
+Worktrunk uses shell integration to automatically change directories when switching worktrees. Add one of the following to your shell config:
 
 ### Bash
 
 Add to `~/.bashrc`:
 ```bash
-eval "$(arbor init bash)"
+eval "$(wt init bash)"
 ```
 
 ### Fish
 
 Add to `~/.config/fish/config.fish`:
 ```fish
-arbor init fish | source
+wt init fish | source
 ```
 
 ### Zsh
 
 Add to `~/.zshrc`:
 ```bash
-eval "$(arbor init zsh)"
+eval "$(wt init zsh)"
 ```
 
 ## Usage
@@ -48,51 +48,51 @@ eval "$(arbor init zsh)"
 
 ```bash
 # List all worktrees
-arbor list
+wt list
 
 # Switch to a worktree (creates if doesn't exist)
-arbor-switch feature-branch
+wt-switch feature-branch
 
 # Finish current worktree and return to primary
-arbor-finish
+wt-finish
 
 # Push changes between worktrees
-arbor push target-worktree
+wt push target-worktree
 
 # Merge and cleanup
-arbor merge main --squash
+wt merge main --squash
 ```
 
 ### Customization
 
 **Custom command prefix:**
 ```bash
-# Use 'wt' instead of 'arbor'
-eval "$(arbor init bash --cmd wt)"
+# Use a custom prefix instead of 'wt'
+eval "$(wt init bash --cmd myprefix)"
 
-# Now use: wt-switch, wt-finish, etc.
+# Now use: myprefix-switch, myprefix-finish, etc.
 ```
 
 **Enable prompt hook:**
 ```bash
 # Track worktree changes in your prompt
-eval "$(arbor init bash --hook prompt)"
+eval "$(wt init bash --hook prompt)"
 ```
 
 **Disable aliases:**
 ```bash
-# Don't create short aliases like arbor-sw, arbor-fin
-eval "$(arbor init bash --no-alias)"
+# Don't create short aliases like wt-sw, wt-fin
+eval "$(wt init bash --no-alias)"
 ```
 
 ## How It Works
 
-Arbor uses a **directive protocol** to communicate with shell wrappers:
+Worktrunk uses a **directive protocol** to communicate with shell wrappers:
 
-1. Shell wrapper calls `arbor switch --internal my-branch`
-2. Arbor outputs special directives mixed with regular output:
+1. Shell wrapper calls `wt switch --internal my-branch`
+2. Worktrunk outputs special directives mixed with regular output:
    ```
-   __ARBOR_CD__/path/to/worktree
+   __WORKTRUNK_CD__/path/to/worktree
    Switched to worktree: my-branch
    ```
 3. Shell wrapper parses output, executes `cd` for directives, displays other lines
@@ -105,7 +105,7 @@ Current implementation:
 
 - ✅ Shell integration infrastructure (eval init pattern)
 - ✅ Template-based shell code generation (Askama)
-- ✅ Directive protocol (__ARBOR_CD__)
+- ✅ Directive protocol (__WORKTRUNK_CD__)
 - ✅ Basic CLI structure
 - ⏳ Git primitives (coming next)
 - ⏳ Worktree operations (coming next)
@@ -116,17 +116,17 @@ See [TODO.md](TODO.md) for detailed roadmap.
 ## Architecture
 
 ```
-arbor (Rust binary)
+wt (Rust binary)
 ├── Core commands (work standalone)
-│   ├── arbor list
-│   ├── arbor remove
-│   └── arbor status
+│   ├── wt list
+│   ├── wt remove
+│   └── wt status
 ├── Internal commands (for shell wrapper)
-│   ├── arbor switch --internal → outputs __ARBOR_CD__ directives
-│   ├── arbor finish --internal → outputs __ARBOR_CD__ directives
-│   └── arbor hook prompt → for prompt integration
+│   ├── wt switch --internal → outputs __WORKTRUNK_CD__ directives
+│   ├── wt finish --internal → outputs __WORKTRUNK_CD__ directives
+│   └── wt hook prompt → for prompt integration
 └── Shell integration
-    └── arbor init <shell> → outputs shell wrapper functions
+    └── wt init <shell> → outputs shell wrapper functions
 ```
 
 ## Design Principles
@@ -138,7 +138,7 @@ arbor (Rust binary)
 
 ## Inspiration
 
-Arbor's shell integration pattern is inspired by successful tools:
+Worktrunk's shell integration pattern is inspired by successful tools:
 
 - **zoxide**: Smarter cd with frequency tracking
 - **starship**: Cross-shell prompt customization

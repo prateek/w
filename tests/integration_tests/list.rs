@@ -13,7 +13,7 @@ fn snapshot_list(test_name: &str, repo: &TestRepo) {
     for (name, path) in &repo.worktrees {
         settings.add_filter(
             path.to_str().unwrap(),
-            &format!("[WORKTREE_{}]", name.to_uppercase().replace('-', "_")),
+            format!("[WORKTREE_{}]", name.to_uppercase().replace('-', "_")),
         );
     }
 
@@ -24,7 +24,7 @@ fn snapshot_list(test_name: &str, repo: &TestRepo) {
     settings.add_filter(r"\\", "/");
 
     settings.bind(|| {
-        let mut cmd = Command::new(get_cargo_bin("arbor"));
+        let mut cmd = Command::new(get_cargo_bin("wt"));
         // Clean environment to avoid interference from global git config
         repo.clean_cli_env(&mut cmd);
         cmd.arg("list").current_dir(repo.root_path());

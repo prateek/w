@@ -10,7 +10,7 @@ fn snapshot_init(test_name: &str, shell: &str, extra_args: &[&str]) {
     settings.set_snapshot_path("../snapshots");
 
     settings.bind(|| {
-        let mut cmd = Command::new(get_cargo_bin("arbor"));
+        let mut cmd = Command::new(get_cargo_bin("wt"));
         repo.clean_cli_env(&mut cmd);
         cmd.arg("init").arg(shell);
 
@@ -70,7 +70,7 @@ fn test_init_invalid_shell() {
     settings.set_snapshot_path("../snapshots");
 
     settings.bind(|| {
-        let mut cmd = Command::new(get_cargo_bin("arbor"));
+        let mut cmd = Command::new(get_cargo_bin("wt"));
         repo.clean_cli_env(&mut cmd);
         cmd.arg("init")
             .arg("invalid-shell")
@@ -87,7 +87,7 @@ fn test_init_invalid_hook() {
     settings.set_snapshot_path("../snapshots");
 
     settings.bind(|| {
-        let mut cmd = Command::new(get_cargo_bin("arbor"));
+        let mut cmd = Command::new(get_cargo_bin("wt"));
         repo.clean_cli_env(&mut cmd);
         cmd.arg("init")
             .arg("bash")

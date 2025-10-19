@@ -1,7 +1,7 @@
 ---
 source: tests/integration_tests/directives.rs
 info:
-  program: arbor
+  program: wt
   args:
     - switch
     - my-feature
@@ -19,7 +19,7 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-__ARBOR_CD__[PATH]
+__WORKTRUNK_CD__[PATH]
 Switched to worktree: my-feature
 
 ----- stderr -----

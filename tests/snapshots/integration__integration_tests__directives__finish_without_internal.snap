@@ -1,7 +1,7 @@
 ---
 source: tests/integration_tests/directives.rs
 info:
-  program: arbor
+  program: wt
   args:
     - finish
   env:
@@ -18,6 +18,6 @@ success: true
 exit_code: 0
 ----- stdout -----
 Finishing worktree
-Note: Use 'arbor-finish' (with shell integration) for automatic cd
+Note: Use 'wt-finish' (with shell integration) for automatic cd
 
 ----- stderr -----

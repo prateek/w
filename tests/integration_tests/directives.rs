@@ -13,10 +13,10 @@ fn test_switch_internal_directive() {
     settings.set_snapshot_path("../snapshots");
 
     // Normalize the directive path output
-    settings.add_filter(r"__ARBOR_CD__[^\n]+", "__ARBOR_CD__[PATH]");
+    settings.add_filter(r"__WORKTRUNK_CD__[^\n]+", "__WORKTRUNK_CD__[PATH]");
 
     settings.bind(|| {
-        let mut cmd = Command::new(get_cargo_bin("arbor"));
+        let mut cmd = Command::new(get_cargo_bin("wt"));
         repo.clean_cli_env(&mut cmd);
         cmd.arg("switch")
             .arg("my-feature")
@@ -37,7 +37,7 @@ fn test_switch_without_internal() {
     settings.set_snapshot_path("../snapshots");
 
     settings.bind(|| {
-        let mut cmd = Command::new(get_cargo_bin("arbor"));
+        let mut cmd = Command::new(get_cargo_bin("wt"));
         repo.clean_cli_env(&mut cmd);
         cmd.arg("switch")
             .arg("my-feature")
@@ -57,10 +57,10 @@ fn test_finish_internal_directive() {
     settings.set_snapshot_path("../snapshots");
 
     // Normalize the directive path output
-    settings.add_filter(r"__ARBOR_CD__[^\n]+", "__ARBOR_CD__[PATH]");
+    settings.add_filter(r"__WORKTRUNK_CD__[^\n]+", "__WORKTRUNK_CD__[PATH]");
 
     settings.bind(|| {
-        let mut cmd = Command::new(get_cargo_bin("arbor"));
+        let mut cmd = Command::new(get_cargo_bin("wt"));
         repo.clean_cli_env(&mut cmd);
         cmd.arg("finish")
             .arg("--internal")
@@ -80,7 +80,7 @@ fn test_finish_without_internal() {
     settings.set_snapshot_path("../snapshots");
 
     settings.bind(|| {
-        let mut cmd = Command::new(get_cargo_bin("arbor"));
+        let mut cmd = Command::new(get_cargo_bin("wt"));
         repo.clean_cli_env(&mut cmd);
         cmd.arg("finish").current_dir(repo.root_path());
 

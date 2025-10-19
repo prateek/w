@@ -1,5 +1,6 @@
 use askama::Template;
 use std::fmt;
+use std::str::FromStr;
 
 /// Supported shells
 #[derive(Debug, Clone, Copy)]
@@ -9,9 +10,10 @@ pub enum Shell {
     Zsh,
 }
 
-impl Shell {
-    /// Parse shell name from string
-    pub fn from_str(s: &str) -> Result<Self, String> {
+impl FromStr for Shell {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
             "bash" => Ok(Shell::Bash),
             "fish" => Ok(Shell::Fish),
@@ -40,8 +42,10 @@ pub enum Hook {
     Prompt,
 }
 
-impl Hook {
-    pub fn from_str(s: &str) -> Result<Self, String> {
+impl FromStr for Hook {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
             "none" => Ok(Hook::None),
             "prompt" => Ok(Hook::Prompt),
@@ -120,17 +124,17 @@ mod tests {
 
     #[test]
     fn test_shell_from_str() {
-        assert!(matches!(Shell::from_str("bash"), Ok(Shell::Bash)));
-        assert!(matches!(Shell::from_str("BASH"), Ok(Shell::Bash)));
-        assert!(matches!(Shell::from_str("fish"), Ok(Shell::Fish)));
-        assert!(matches!(Shell::from_str("zsh"), Ok(Shell::Zsh)));
-        assert!(Shell::from_str("invalid").is_err());
+        assert!(matches!("bash".parse::<Shell>(), Ok(Shell::Bash)));
+        assert!(matches!("BASH".parse::<Shell>(), Ok(Shell::Bash)));
+        assert!(matches!("fish".parse::<Shell>(), Ok(Shell::Fish)));
+        assert!(matches!("zsh".parse::<Shell>(), Ok(Shell::Zsh)));
+        assert!("invalid".parse::<Shell>().is_err());
     }
 
     #[test]
     fn test_hook_from_str() {
-        assert!(matches!(Hook::from_str("none"), Ok(Hook::None)));
-        assert!(matches!(Hook::from_str("prompt"), Ok(Hook::Prompt)));
-        assert!(Hook::from_str("invalid").is_err());
+        assert!(matches!("none".parse::<Hook>(), Ok(Hook::None)));
+        assert!(matches!("prompt".parse::<Hook>(), Ok(Hook::Prompt)));
+        assert!("invalid".parse::<Hook>().is_err());
     }
 }

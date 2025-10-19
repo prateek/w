@@ -1,0 +1,24 @@
+---
+source: tests/test_list.rs
+info:
+  program: arbor
+  args:
+    - list
+---
+success: true
+exit_code: 0
+----- stdout -----
+[REPO]
+  HEAD: [SHA]
+  branch: main
+
+[WORKTREE_FEATURE_A]
+  HEAD: [SHA]
+  branch: feature-a
+
+[WORKTREE_FEATURE_B]
+  HEAD: [SHA]
+  branch: feature-b
+
+
+----- stderr -----

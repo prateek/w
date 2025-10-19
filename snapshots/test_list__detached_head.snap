@@ -1,0 +1,16 @@
+---
+source: tests/test_list.rs
+info:
+  program: arbor
+  args:
+    - list
+---
+success: true
+exit_code: 0
+----- stdout -----
+[REPO]
+  HEAD: [SHA]
+  (detached)
+
+
+----- stderr -----

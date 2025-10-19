@@ -1,0 +1,21 @@
+---
+source: tests/test_list.rs
+info:
+  program: arbor
+  args:
+    - list
+---
+success: true
+exit_code: 0
+----- stdout -----
+[REPO]
+  HEAD: [SHA]
+  branch: main
+
+[WORKTREE_LOCKED_FEATURE]
+  HEAD: [SHA]
+  branch: locked-feature
+  (locked: Testing lock functionality)
+
+
+----- stderr -----

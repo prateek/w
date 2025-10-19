@@ -116,12 +116,126 @@ Ensure correctness with real git repositories.
    - Workstream 5: External Integrations
    - Workstream 6: Comprehensive testing
 
+## Shell Integration Design
+
+**Decision: Use the "eval init" pattern** (proven by zoxide, starship, direnv, pyenv)
+
+### Architecture
+
+```
+arbor (Rust binary)
+├── Core commands (work standalone)
+│   ├── arbor list
+│   ├── arbor remove
+│   └── arbor status
+├── Internal commands (for shell wrapper)
+│   ├── arbor switch --internal → outputs __ARBOR_CD__ directives
+│   ├── arbor finish --internal → outputs __ARBOR_CD__ directives
+│   └── arbor hook prompt → for prompt integration
+└── Shell integration
+    └── arbor init <shell> → outputs shell wrapper functions
+```
+
+### Implementation Pattern
+
+**User setup (one-time):**
+```bash
+# Add to ~/.bashrc or ~/.config/fish/config.fish
+eval "$(arbor init bash)"  # or: arbor init fish | source
+```
+
+**Generated shell wrapper:**
+```bash
+arbor-switch() {
+  local output
+  output=$(arbor switch --internal "$@")
+
+  # Parse output for special directives
+  while IFS= read -r line; do
+    case "$line" in
+      __ARBOR_CD__*)
+        cd "${line#__ARBOR_CD__}"
+        ;;
+      *)
+        echo "$line"
+        ;;
+    esac
+  done <<< "$output"
+}
+```
+
+### Communication Protocol
+
+- Rust binary outputs special directives mixed with regular output
+- Shell wrapper parses and acts on directives
+- Separation: Rust handles git logic, shell handles `cd`
+
+**Directive format:**
+```
+__ARBOR_CD__/path/to/worktree
+Regular output line
+Another output line
+```
+
+### Key Components
+
+1. **Template Engine**: Use Askama for type-safe shell code generation
+2. **Shell Support**: Start with Bash and Fish, extend to Zsh later
+3. **Customization Flags**:
+   - `--cmd <prefix>`: Customize command prefix (default: "arbor")
+   - `--hook <mode>`: Control tracking updates (none, prompt)
+   - `--no-alias`: Skip creating convenience aliases
+
+4. **Progressive Enhancement Levels**:
+   - Level 0: Just the binary - works but requires manual `cd`
+   - Level 1: Shell wrapper - auto-`cd` on switch
+   - Level 2: Prompt hooks - track current worktree in prompt
+   - Level 3: Auto-switching - detect worktree markers
+
+### Implementation Phases
+
+**Phase 1: Foundation** (MVP)
+- [ ] Add Askama dependency
+- [ ] Create `Shell` enum (Bash, Fish, Zsh)
+- [ ] Create `ShellInit` struct with template rendering
+- [ ] Implement `arbor init <shell>` command
+- [ ] Create Bash template with basic wrapper functions
+- [ ] Create Fish template with basic wrapper functions
+- [ ] Implement `__ARBOR_CD__` directive protocol
+
+**Phase 2: Integration**
+- [ ] Add `--internal` flag to `switch` and `finish` commands
+- [ ] Output directives from internal commands
+- [ ] Test integration across shells
+
+**Phase 3: Enhancement**
+- [ ] Add `--cmd` flag for command prefix customization
+- [ ] Add `--hook prompt` for prompt integration
+- [ ] Implement shell completion generation
+- [ ] Add Zsh support
+
+### Design Principles (from research)
+
+- **Keep execution fast** (<500ms) - don't block the shell (direnv)
+- **Use Askama** for type-safe templates (zoxide)
+- **Support customizable command prefixes** (zoxide `--cmd`)
+- **Provide hook modes** for different tracking strategies (zoxide `--hook`)
+- **Keep binary stateless** (starship)
+- **Make shell integration minimal** (starship)
+
+### Examples from Other Tools
+
+- **zoxide**: `eval "$(zoxide init bash)"` → generates `z` and `zi` functions
+- **starship**: `eval "$(starship init bash)"` → generates prompt customization
+- **direnv**: `eval "$(direnv hook bash)"` → generates `_direnv_hook` function
+- **pyenv**: `eval "$(pyenv init -)"` → sets up shims + shell functions
+
 ## Open Questions
 
-1. **Shell integration approach**: How to handle `cd` in a compiled binary?
-   - Generate eval-able shell output?
-   - Provide shell wrapper functions?
-   - Use shell integration hooks?
+1. ~~**Shell integration approach**: How to handle `cd` in a compiled binary?~~
+   - ✅ **RESOLVED**: Use "eval init" pattern with directive protocol
+   - Generate shell-specific wrapper functions via Askama templates
+   - Binary outputs `__ARBOR_CD__<path>` directives, shell wrapper executes `cd`
 
 2. **External command dependencies**: How to handle git-commit-llm, claude, task?
    - Configurable hooks?

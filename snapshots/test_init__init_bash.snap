@@ -1,0 +1,58 @@
+---
+source: tests/test_init.rs
+info:
+  program: arbor
+  args:
+    - init
+    - bash
+  env:
+    GIT_AUTHOR_DATE: "2025-01-01T00:00:00Z"
+    GIT_COMMITTER_DATE: "2025-01-01T00:00:00Z"
+    GIT_CONFIG_GLOBAL: /dev/null
+    GIT_CONFIG_SYSTEM: /dev/null
+    GIT_EDITOR: ""
+    LANG: C
+    LC_ALL: C
+    SOURCE_DATE_EPOCH: "1704067200"
+---
+success: true
+exit_code: 0
+----- stdout -----
+# arbor shell integration for bash
+
+# Helper function to parse arbor output and handle directives
+_arbor_exec() {
+    local output line exit_code
+    output="$("arbor" "$@" 2>&1)"
+    exit_code=$?
+
+    # Parse output line by line
+    while IFS= read -r line; do
+        if [[ "$line" == __ARBOR_CD__* ]]; then
+            # Extract path and change directory
+            \cd "${line#__ARBOR_CD__}"
+        else
+            # Regular output - print it
+            echo "$line"
+        fi
+    done <<< "$output"
+
+    return $exit_code
+}
+
+# Main commands that support directory changes
+arbor-switch() {
+    _arbor_exec switch --internal "$@"
+}
+
+arbor-finish() {
+    _arbor_exec finish --internal "$@"
+}
+
+# Convenience aliases
+alias arbor-sw='arbor-switch'
+alias arbor-fin='arbor-finish'
+
+
+
+----- stderr -----

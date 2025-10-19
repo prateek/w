@@ -21,18 +21,6 @@
 //!
 //! Paths are canonicalized to handle platform differences (especially macOS symlinks
 //! like /var -> /private/var). This ensures snapshot filters work correctly.
-//!
-//! ## Builder Pattern
-//!
-//! Use `TestRepoBuilder` for declarative test setup:
-//!
-//! ```rust,ignore
-//! let repo = TestRepoBuilder::new()
-//!     .with_initial_commit("Initial commit")
-//!     .with_worktree("feature-a", "feature-a")
-//!     .with_locked_worktree("feature-b", Some("Work in progress"))
-//!     .build();
-//! ```
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -40,7 +28,7 @@ use std::process::Command;
 use tempfile::TempDir;
 
 pub struct TestRepo {
-    temp_dir: TempDir,
+    temp_dir: TempDir, // Must keep to ensure cleanup on drop
     root: PathBuf,
     pub worktrees: HashMap<String, PathBuf>,
 }
@@ -131,14 +119,12 @@ impl TestRepo {
     }
 
     /// Read a file from the repo root
-    #[allow(dead_code)]
     pub fn read_file(&self, path: &str) -> String {
         std::fs::read_to_string(self.root.join(path))
             .unwrap_or_else(|_| panic!("Failed to read {}", path))
     }
 
     /// List all files in the repository (excluding .git)
-    #[allow(dead_code)]
     pub fn file_tree(&self) -> Vec<String> {
         let mut files = Vec::new();
         self.collect_files(&self.root, "", &mut files);
@@ -267,91 +253,5 @@ impl TestRepo {
             .current_dir(&self.root)
             .output()
             .expect("Failed to lock worktree");
-    }
-}
-
-/// Builder for creating TestRepo instances with declarative setup
-///
-/// # Example
-///
-/// ```rust,ignore
-/// let repo = TestRepoBuilder::new()
-///     .with_initial_commit("Initial commit")
-///     .with_worktree("feature-a", "feature-a")
-///     .with_locked_worktree("feature-b", Some("Work in progress"))
-///     .build();
-/// ```
-#[allow(dead_code)]
-pub struct TestRepoBuilder {
-    initial_commit: Option<String>,
-    worktrees: Vec<(String, String)>,
-    locked_worktrees: Vec<(String, Option<String>)>,
-    detached: bool,
-}
-
-#[allow(dead_code)]
-impl TestRepoBuilder {
-    /// Create a new builder
-    pub fn new() -> Self {
-        Self {
-            initial_commit: None,
-            worktrees: Vec::new(),
-            locked_worktrees: Vec::new(),
-            detached: false,
-        }
-    }
-
-    /// Add an initial commit with the given message
-    pub fn with_initial_commit(mut self, message: &str) -> Self {
-        self.initial_commit = Some(message.to_string());
-        self
-    }
-
-    /// Add a worktree with the given name and branch
-    pub fn with_worktree(mut self, name: &str, branch: &str) -> Self {
-        self.worktrees.push((name.to_string(), branch.to_string()));
-        self
-    }
-
-    /// Add a locked worktree
-    pub fn with_locked_worktree(mut self, name: &str, reason: Option<&str>) -> Self {
-        self.locked_worktrees
-            .push((name.to_string(), reason.map(String::from)));
-        self
-    }
-
-    /// Detach HEAD after setup
-    pub fn with_detached_head(mut self) -> Self {
-        self.detached = true;
-        self
-    }
-
-    /// Build the TestRepo with the configured state
-    pub fn build(self) -> TestRepo {
-        let mut repo = TestRepo::new();
-
-        if let Some(msg) = self.initial_commit {
-            repo.commit(&msg);
-        }
-
-        for (name, branch) in self.worktrees {
-            repo.add_worktree(&name, &branch);
-        }
-
-        if self.detached {
-            repo.detach_head();
-        }
-
-        for (name, reason) in self.locked_worktrees {
-            repo.lock_worktree(&name, reason.as_deref());
-        }
-
-        repo
-    }
-}
-
-impl Default for TestRepoBuilder {
-    fn default() -> Self {
-        Self::new()
     }
 }

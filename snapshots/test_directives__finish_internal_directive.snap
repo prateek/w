@@ -1,0 +1,24 @@
+---
+source: tests/test_directives.rs
+info:
+  program: arbor
+  args:
+    - finish
+    - "--internal"
+  env:
+    GIT_AUTHOR_DATE: "2025-01-01T00:00:00Z"
+    GIT_COMMITTER_DATE: "2025-01-01T00:00:00Z"
+    GIT_CONFIG_GLOBAL: /dev/null
+    GIT_CONFIG_SYSTEM: /dev/null
+    GIT_EDITOR: ""
+    LANG: C
+    LC_ALL: C
+    SOURCE_DATE_EPOCH: "1704067200"
+---
+success: true
+exit_code: 0
+----- stdout -----
+__ARBOR_CD__[PATH]
+Finished worktree and returned to primary
+
+----- stderr -----

@@ -1,0 +1,62 @@
+---
+source: tests/integration_tests/init.rs
+info:
+  program: wt
+  args:
+    - init
+    - oil
+  env:
+    GIT_AUTHOR_DATE: "2025-01-01T00:00:00Z"
+    GIT_COMMITTER_DATE: "2025-01-01T00:00:00Z"
+    GIT_CONFIG_GLOBAL: /dev/null
+    GIT_CONFIG_SYSTEM: /dev/null
+    GIT_EDITOR: ""
+    LANG: C
+    LC_ALL: C
+    SOURCE_DATE_EPOCH: "1704067200"
+---
+success: true
+exit_code: 0
+----- stdout -----
+# worktrunk shell integration for oil
+
+# Helper function to parse wt output and handle directives
+_wt_exec() {
+    local output line exit_code
+    output="$(command wt "$@" 2>&1)"
+    exit_code=$?
+
+    # Parse output line by line
+    while IFS= read -r line; do
+        if [[ "$line" == __WORKTRUNK_CD__* ]]; then
+            # Extract path and change directory
+            \cd "${line#__WORKTRUNK_CD__}"
+        else
+            # Regular output - print it
+            echo "$line"
+        fi
+    done <<< "$output"
+
+    return $exit_code
+}
+
+# Override wt command to add --internal flag for switch and finish
+wt() {
+    local subcommand="$1"
+
+    case "$subcommand" in
+        switch|finish)
+            # Commands that need --internal for directory change support
+            shift
+            _wt_exec "$subcommand" --internal "$@"
+            ;;
+        *)
+            # All other commands pass through directly
+            command wt "$@"
+            ;;
+    esac
+}
+
+
+
+----- stderr -----

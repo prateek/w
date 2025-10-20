@@ -5,7 +5,12 @@ use std::fmt;
 #[derive(Debug, Clone, Copy)]
 pub enum Shell {
     Bash,
+    Elvish,
     Fish,
+    Nushell,
+    Oil,
+    Powershell,
+    Xonsh,
     Zsh,
 }
 
@@ -15,7 +20,12 @@ impl std::str::FromStr for Shell {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
             "bash" => Ok(Shell::Bash),
+            "elvish" => Ok(Shell::Elvish),
             "fish" => Ok(Shell::Fish),
+            "nushell" => Ok(Shell::Nushell),
+            "oil" => Ok(Shell::Oil),
+            "powershell" => Ok(Shell::Powershell),
+            "xonsh" => Ok(Shell::Xonsh),
             "zsh" => Ok(Shell::Zsh),
             _ => Err(format!("Unsupported shell: {}", s)),
         }
@@ -26,7 +36,12 @@ impl fmt::Display for Shell {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Shell::Bash => write!(f, "bash"),
+            Shell::Elvish => write!(f, "elvish"),
             Shell::Fish => write!(f, "fish"),
+            Shell::Nushell => write!(f, "nushell"),
+            Shell::Oil => write!(f, "oil"),
+            Shell::Powershell => write!(f, "powershell"),
+            Shell::Xonsh => write!(f, "xonsh"),
             Shell::Zsh => write!(f, "zsh"),
         }
     }
@@ -81,7 +96,7 @@ impl ShellInit {
     /// Generate shell integration code
     pub fn generate(&self) -> Result<String, askama::Error> {
         match self.shell {
-            Shell::Bash | Shell::Zsh => {
+            Shell::Bash | Shell::Zsh | Shell::Oil => {
                 let template = BashTemplate {
                     shell_name: self.shell.to_string(),
                     cmd_prefix: &self.cmd_prefix,
@@ -91,6 +106,34 @@ impl ShellInit {
             }
             Shell::Fish => {
                 let template = FishTemplate {
+                    cmd_prefix: &self.cmd_prefix,
+                    hook: self.hook,
+                };
+                template.render()
+            }
+            Shell::Nushell => {
+                let template = NushellTemplate {
+                    cmd_prefix: &self.cmd_prefix,
+                    hook: self.hook,
+                };
+                template.render()
+            }
+            Shell::Powershell => {
+                let template = PowershellTemplate {
+                    cmd_prefix: &self.cmd_prefix,
+                    hook: self.hook,
+                };
+                template.render()
+            }
+            Shell::Elvish => {
+                let template = ElvishTemplate {
+                    cmd_prefix: &self.cmd_prefix,
+                    hook: self.hook,
+                };
+                template.render()
+            }
+            Shell::Xonsh => {
+                let template = XonshTemplate {
                     cmd_prefix: &self.cmd_prefix,
                     hook: self.hook,
                 };
@@ -113,6 +156,38 @@ struct BashTemplate<'a> {
 #[derive(Template)]
 #[template(path = "fish.fish", escape = "none")]
 struct FishTemplate<'a> {
+    cmd_prefix: &'a str,
+    hook: Hook,
+}
+
+/// Nushell shell template
+#[derive(Template)]
+#[template(path = "nushell.nu", escape = "none")]
+struct NushellTemplate<'a> {
+    cmd_prefix: &'a str,
+    hook: Hook,
+}
+
+/// PowerShell template
+#[derive(Template)]
+#[template(path = "powershell.ps1", escape = "none")]
+struct PowershellTemplate<'a> {
+    cmd_prefix: &'a str,
+    hook: Hook,
+}
+
+/// Elvish shell template
+#[derive(Template)]
+#[template(path = "elvish.elv", escape = "none")]
+struct ElvishTemplate<'a> {
+    cmd_prefix: &'a str,
+    hook: Hook,
+}
+
+/// Xonsh shell template
+#[derive(Template)]
+#[template(path = "xonsh.xsh", escape = "none")]
+struct XonshTemplate<'a> {
     cmd_prefix: &'a str,
     hook: Hook,
 }

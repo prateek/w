@@ -1,0 +1,80 @@
+---
+source: tests/integration_tests/init.rs
+info:
+  program: wt
+  args:
+    - init
+    - powershell
+  env:
+    GIT_AUTHOR_DATE: "2025-01-01T00:00:00Z"
+    GIT_COMMITTER_DATE: "2025-01-01T00:00:00Z"
+    GIT_CONFIG_GLOBAL: /dev/null
+    GIT_CONFIG_SYSTEM: /dev/null
+    GIT_EDITOR: ""
+    LANG: C
+    LC_ALL: C
+    SOURCE_DATE_EPOCH: "1704067200"
+---
+success: true
+exit_code: 0
+----- stdout -----
+# worktrunk shell integration for PowerShell
+
+# Helper function to parse wt output and handle directives
+function _wt_exec {
+    param(
+        [Parameter(ValueFromRemainingArguments=$true)]
+        [string[]]$Arguments
+    )
+
+    # Capture output and exit code
+    $output = & wt @Arguments 2>&1
+    $exitCode = $LASTEXITCODE
+
+    # Parse output line by line
+    foreach ($line in $output) {
+        if ($line -match '^__WORKTRUNK_CD__(.+)$') {
+            # Extract path and change directory
+            Set-Location $matches[1]
+        } else {
+            # Regular output - write it
+            Write-Output $line
+        }
+    }
+
+    # Return the exit code
+    return $exitCode
+}
+
+# Override wt command to add --internal flag for switch and finish
+function wt {
+    param(
+        [Parameter(ValueFromRemainingArguments=$true)]
+        [string[]]$Arguments
+    )
+
+    if ($Arguments.Count -eq 0) {
+        & wt
+        return $LASTEXITCODE
+    }
+
+    $subcommand = $Arguments[0]
+
+    switch ($subcommand) {
+        { $_ -in @("switch", "finish") } {
+            # Commands that need --internal for directory change support
+            $restArgs = $Arguments[1..($Arguments.Count-1)]
+            $exitCode = _wt_exec $subcommand --internal @restArgs
+            return $exitCode
+        }
+        default {
+            # All other commands pass through directly
+            & wt @Arguments
+            return $LASTEXITCODE
+        }
+    }
+}
+
+
+
+----- stderr -----

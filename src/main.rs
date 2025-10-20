@@ -174,6 +174,16 @@ fn handle_init(shell_name: &str, cmd: &str, hook_str: &str) -> Result<(), String
         shell::Shell::Bash => CompletionShell::Bash,
         shell::Shell::Fish => CompletionShell::Fish,
         shell::Shell::Zsh => CompletionShell::Zsh,
+        // Oil Shell is POSIX-compatible, use Bash completions
+        shell::Shell::Oil => CompletionShell::Bash,
+        // Other shells don't have completion support yet
+        shell::Shell::Elvish
+        | shell::Shell::Nushell
+        | shell::Shell::Powershell
+        | shell::Shell::Xonsh => {
+            eprintln!("Completion not yet supported for {}", shell);
+            std::process::exit(1);
+        }
     };
     generate(completion_shell, &mut cmd, "wt", &mut completion_output);
 

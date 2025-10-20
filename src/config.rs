@@ -27,10 +27,10 @@ pub fn load_config() -> Result<WorktrunkConfig, ConfigError> {
     let mut builder = Config::builder().set_default("worktree-path", defaults.worktree_path)?;
 
     // Add config file if it exists
-    if let Some(config_path) = get_config_path() {
-        if config_path.exists() {
-            builder = builder.add_source(File::from(config_path));
-        }
+    if let Some(config_path) = get_config_path()
+        && config_path.exists()
+    {
+        builder = builder.add_source(File::from(config_path));
     }
 
     // Add environment variables with WORKTRUNK prefix

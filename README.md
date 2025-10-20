@@ -5,7 +5,7 @@ A Rust-based CLI tool for managing git worktrees with seamless shell integration
 ## Features
 
 - **Shell Integration**: Automatically `cd` to worktrees when switching
-- **Multiple Shells**: Supports Bash, Fish, and Zsh
+- **Multiple Shells**: Supports Bash, Fish, Zsh, Nushell, PowerShell, Elvish, Xonsh, and Oil Shell
 - **Customizable**: Configure command prefix and hook behavior
 - **Fast**: Built in Rust for performance
 - **Clean Design**: Uses the proven "eval init" pattern from tools like zoxide and starship
@@ -36,9 +36,39 @@ wt init fish | source
 eval "$(wt init zsh)"
 ```
 
+**Nushell** - Add to `~/.config/nushell/env.nu`:
+```nu
+wt init nushell | save -f ~/.cache/wt-init.nu
+```
+
+Then add to `~/.config/nushell/config.nu`:
+```nu
+source ~/.cache/wt-init.nu
+```
+
+**PowerShell** - Add to your PowerShell profile:
+```powershell
+wt init powershell | Out-String | Invoke-Expression
+```
+
+**Elvish** - Add to `~/.config/elvish/rc.elv`:
+```elvish
+eval (wt init elvish | slurp)
+```
+
+**Xonsh** - Add to `~/.xonshrc`:
+```python
+execx($(wt init xonsh))
+```
+
+**Oil Shell** - Add to `~/.config/oil/oshrc`:
+```bash
+eval "$(wt init oil)"
+```
+
 This single command provides:
 - Shell integration for automatic `cd` on `wt switch` and `wt finish`
-- TAB completion for commands, flags, and branch names
+- TAB completion for commands, flags, and branch names (Bash, Fish, Zsh, Oil only)
 
 ### What Gets Completed
 
@@ -48,6 +78,7 @@ This single command provides:
 - **Target branches**: `wt push <TAB>` → shows all branches
 
 **Notes:**
+- Completion is currently supported for Bash, Fish, Zsh, and Oil Shell only. Other shells (Nushell, PowerShell, Elvish, Xonsh) have shell integration but not yet completion.
 - Zsh currently uses Bash-compatible completion syntax. Dynamic branch completion may require `bashcompinit`. For best results, use Fish or Bash.
 - After updating `wt`, restart your shell or re-run the init command to get new completions
 - Debug completion: Set `WT_DEBUG_COMPLETION=1` to see errors
@@ -103,6 +134,38 @@ Worktrunk uses a **directive protocol** to communicate with shell wrappers:
 3. Shell wrapper parses output, executes `cd` for directives, displays other lines
 
 This separation keeps the Rust binary focused on git logic while letting the shell handle directory changes.
+
+## Development & Testing
+
+### Running Tests
+
+By default, tests only run for **Tier 1 shells** (bash, fish, zsh) which are easily available:
+
+```bash
+cargo test
+```
+
+To run tests for **all shells** including Tier 2 shells (nushell, powershell, elvish, xonsh, oil):
+
+```bash
+cargo test --features tier-2-integration-tests
+```
+
+**Important**: When the `tier-2-integration-tests` feature is enabled, **all tier-2 shells must be installed** or tests will fail. Tests will fail naturally when attempting to execute a missing shell.
+
+**Tier 2 shells** require additional installation:
+- **nushell**: Install via [official instructions](https://www.nushell.sh/book/installation.html)
+- **powershell**: `apt install powershell` (requires Microsoft repo on Linux)
+- **elvish**: `apt install elvish` (Ubuntu 20.04+)
+- **xonsh**: `apt install xonsh`
+- **oil**: Must be compiled from source (see [Oil Shell docs](https://www.oilshell.org/release/0.24.0/doc/INSTALL.html))
+
+### CI/CD
+
+Two GitHub Actions workflows are provided:
+
+- **`ci.yml`**: Fast feedback with Tier 1 shells only (bash, fish, zsh)
+- **`tier-2-integration-tests.yml`**: Comprehensive testing with all shells installed
 
 ## Development Status
 

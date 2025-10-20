@@ -4,6 +4,10 @@ version = "0.1.0"
 edition = "2024"
 build = "build.rs"
 
+[features]
+# Enable testing for shells that require extra installation steps (nushell, powershell, elvish, xonsh, oil)
+tier-2-integration-tests = []
+
 [lib]
 name = "worktrunk"
 path = "src/lib.rs"

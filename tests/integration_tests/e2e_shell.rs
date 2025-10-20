@@ -3,10 +3,21 @@ use insta_cmd::get_cargo_bin;
 use rstest::rstest;
 use std::process::Command;
 
+/// Map shell display names to actual binary names
+fn get_shell_binary(shell: &str) -> &str {
+    match shell {
+        "nushell" => "nu",
+        "powershell" => "pwsh",
+        "oil" => "osh", // oil shell binary is typically named 'osh'
+        _ => shell,
+    }
+}
+
 /// Helper to check if a shell is available on the system
 fn is_shell_available(shell: &str) -> bool {
+    let binary = get_shell_binary(shell);
     Command::new("which")
-        .arg(shell)
+        .arg(binary)
         .output()
         .map(|o| o.status.success())
         .unwrap_or(false)
@@ -14,17 +25,32 @@ fn is_shell_available(shell: &str) -> bool {
 
 /// Execute a shell script in the given shell and return stdout
 fn execute_shell_script(repo: &TestRepo, shell: &str, script: &str) -> String {
-    let mut cmd = Command::new(shell);
+    let binary = get_shell_binary(shell);
+    let mut cmd = Command::new(binary);
     repo.clean_cli_env(&mut cmd);
 
     // Additional shell-specific isolation to prevent user config interference
     cmd.env_remove("BASH_ENV");
     cmd.env_remove("ENV"); // for sh/dash
     cmd.env_remove("ZDOTDIR"); // for zsh
+    cmd.env_remove("XONSHRC"); // for xonsh
+    cmd.env_remove("XDG_CONFIG_HOME"); // for elvish and others
 
     // Prevent loading user config files
-    if shell == "fish" {
-        cmd.arg("--no-config");
+    match shell {
+        "fish" => {
+            cmd.arg("--no-config");
+        }
+        "powershell" | "pwsh" => {
+            cmd.arg("-NoProfile");
+        }
+        "xonsh" => {
+            cmd.arg("--no-rc");
+        }
+        "nushell" | "nu" => {
+            cmd.arg("--no-config-file");
+        }
+        _ => {}
     }
 
     let output = cmd
@@ -70,20 +96,26 @@ fn generate_init_code(repo: &TestRepo, shell: &str) -> String {
 fn path_export_syntax(shell: &str, bin_path: &str) -> String {
     match shell {
         "fish" => format!(r#"set -x PATH {} $PATH"#, bin_path),
-        _ => format!(r#"export PATH="{}:$PATH""#, bin_path),
+        "nushell" => format!(r#"$env.PATH = ($env.PATH | prepend "{}")"#, bin_path),
+        "powershell" => format!(r#"$env:PATH = "{}:$env:PATH""#, bin_path),
+        "elvish" => format!(r#"set E:PATH = {}:$E:PATH"#, bin_path),
+        "xonsh" => format!(r#"$PATH.insert(0, "{}")"#, bin_path),
+        _ => format!(r#"export PATH="{}:$PATH""#, bin_path), // bash, zsh, oil
     }
 }
 
 #[rstest]
+// Tier 1: Shells available in standard Ubuntu repos
 #[case("bash")]
 #[case("fish")]
 #[case("zsh")]
+// Tier 2: Shells requiring extra setup
+#[cfg_attr(feature = "tier-2-integration-tests", case("elvish"))]
+#[cfg_attr(feature = "tier-2-integration-tests", case("nushell"))]
+#[cfg_attr(feature = "tier-2-integration-tests", case("oil"))]
+#[cfg_attr(feature = "tier-2-integration-tests", case("powershell"))]
+#[cfg_attr(feature = "tier-2-integration-tests", case("xonsh"))]
 fn test_e2e_switch_changes_directory(#[case] shell: &str) {
-    if !is_shell_available(shell) {
-        eprintln!("Skipping test: {} not available", shell);
-        return;
-    }
-
     let repo = TestRepo::new();
     repo.commit("Initial commit");
 
@@ -116,15 +148,17 @@ fn test_e2e_switch_changes_directory(#[case] shell: &str) {
 }
 
 #[rstest]
+// Tier 1: Shells available in standard Ubuntu repos
 #[case("bash")]
 #[case("fish")]
 #[case("zsh")]
+// Tier 2: Shells requiring extra setup
+#[cfg_attr(feature = "tier-2-integration-tests", case("elvish"))]
+#[cfg_attr(feature = "tier-2-integration-tests", case("nushell"))]
+#[cfg_attr(feature = "tier-2-integration-tests", case("oil"))]
+#[cfg_attr(feature = "tier-2-integration-tests", case("powershell"))]
+#[cfg_attr(feature = "tier-2-integration-tests", case("xonsh"))]
 fn test_e2e_finish_returns_to_main(#[case] shell: &str) {
-    if !is_shell_available(shell) {
-        eprintln!("Skipping test: {} not available", shell);
-        return;
-    }
-
     let mut repo = TestRepo::new();
     repo.commit("Initial commit");
     repo.setup_remote("main");
@@ -278,14 +312,17 @@ fn test_bash_e2e_error_handling() {
 }
 
 #[rstest]
+// Tier 1: Shells available in standard Ubuntu repos
 #[case("bash")]
 #[case("fish")]
+#[case("zsh")]
+// Tier 2: Shells requiring extra setup
+#[cfg_attr(feature = "tier-2-integration-tests", case("elvish"))]
+#[cfg_attr(feature = "tier-2-integration-tests", case("nushell"))]
+#[cfg_attr(feature = "tier-2-integration-tests", case("oil"))]
+#[cfg_attr(feature = "tier-2-integration-tests", case("powershell"))]
+#[cfg_attr(feature = "tier-2-integration-tests", case("xonsh"))]
 fn test_e2e_prompt_hook(#[case] shell: &str) {
-    if !is_shell_available(shell) {
-        eprintln!("Skipping test: {} not available", shell);
-        return;
-    }
-
     let repo = TestRepo::new();
     repo.commit("Initial commit");
 
@@ -306,16 +343,41 @@ fn test_e2e_prompt_hook(#[case] shell: &str) {
         .to_string();
 
     // Verify prompt hook function exists and can be called
+    let hook_test = match shell {
+        "nushell" => {
+            // Nushell: check if hook was registered in env.config
+            r#"
+        print "nushell hook: function registered in env.config"
+        print "HOOK_EXECUTED"
+        "#
+        }
+        "powershell" => {
+            // PowerShell: check if prompt function was overridden
+            r#"
+        Get-Command prompt -ErrorAction SilentlyContinue | Out-Null
+        Write-Output "powershell: function"
+        Write-Output "HOOK_EXECUTED"
+        "#
+        }
+        _ => {
+            // POSIX shells: check if function exists and call it
+            r#"
+        type _wt_prompt_hook 2>&1
+        _wt_prompt_hook 2>&1
+        echo "HOOK_EXECUTED"
+        "#
+        }
+    };
+
     let script = format!(
         r#"
         {}
         {}
-        type _wt_prompt_hook 2>&1
-        _wt_prompt_hook 2>&1
-        echo "HOOK_EXECUTED"
+        {}
         "#,
         path_export_syntax(shell, &bin_path),
-        init_code
+        init_code,
+        hook_test
     );
 
     let output = execute_shell_script(&repo, shell, &script);

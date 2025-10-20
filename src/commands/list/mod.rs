@@ -79,9 +79,12 @@ pub fn handle_list() -> Result<(), GitError> {
         };
 
         // Get upstream tracking info
-        let (upstream_remote, upstream_ahead, upstream_behind) = if let Some(ref branch) = wt.branch
+        let (upstream_remote, upstream_ahead, upstream_behind) = match wt
+            .branch
+            .as_ref()
+            .and_then(|b| wt_repo.upstream_branch(b).ok().flatten())
         {
-            if let Ok(Some(upstream_branch)) = wt_repo.upstream_branch(branch) {
+            Some(upstream_branch) => {
                 // Extract remote name from "origin/main" -> "origin"
                 let remote = upstream_branch
                     .split_once('/')
@@ -92,11 +95,8 @@ pub fn handle_list() -> Result<(), GitError> {
                     .ahead_behind(&upstream_branch, &wt.head)
                     .unwrap_or((0, 0));
                 (Some(remote), ahead, behind)
-            } else {
-                (None, 0, 0)
             }
-        } else {
-            (None, 0, 0)
+            None => (None, 0, 0),
         };
 
         // Get worktree state (merge/rebase/etc)

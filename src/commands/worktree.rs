@@ -30,19 +30,21 @@ pub fn handle_switch(
     }
 
     // Check if worktree already exists for this branch
-    if let Some(existing_path) = repo.worktree_for_branch(branch)? {
-        if existing_path.exists() {
+    match repo.worktree_for_branch(branch)? {
+        Some(existing_path) if existing_path.exists() => {
             if internal {
                 println!("__WORKTRUNK_CD__{}", existing_path.display());
             }
             return Ok(());
-        } else {
+        }
+        Some(_) => {
             return Err(GitError::CommandFailed(format_error_with_bold(
                 "Worktree directory missing for '",
                 branch,
                 "'. Run 'git worktree prune' to clean up.",
             )));
         }
+        None => {}
     }
 
     // No existing worktree, create one

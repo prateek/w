@@ -523,21 +523,18 @@ fn parse_local_default_branch(output: &str) -> Result<String, GitError> {
 }
 
 fn parse_remote_default_branch(output: &str) -> Result<String, GitError> {
-    for line in output.lines() {
-        if let Some(symref) = line.strip_prefix("ref: ") {
-            // Parse "refs/heads/main\tHEAD"
-            if let Some((ref_path, _)) = symref.split_once('\t') {
-                // Strip "refs/heads/" prefix
-                if let Some(branch) = ref_path.strip_prefix("refs/heads/") {
-                    return Ok(branch.to_string());
-                }
-            }
-        }
-    }
-
-    Err(GitError::ParseError(
-        "Could not find symbolic ref in ls-remote output".to_string(),
-    ))
+    output
+        .lines()
+        .find_map(|line| {
+            line.strip_prefix("ref: ")
+                .and_then(|symref| symref.split_once('\t'))
+                .map(|(ref_path, _)| ref_path)
+                .and_then(|ref_path| ref_path.strip_prefix("refs/heads/"))
+                .map(|branch| branch.to_string())
+        })
+        .ok_or_else(|| {
+            GitError::ParseError("Could not find symbolic ref in ls-remote output".to_string())
+        })
 }
 
 fn parse_numstat(output: &str) -> Result<(usize, usize), GitError> {

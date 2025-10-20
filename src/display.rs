@@ -149,14 +149,10 @@ pub fn find_common_prefix(paths: &[PathBuf]) -> PathBuf {
 
 /// Shorten a path relative to a common prefix
 pub fn shorten_path(path: &Path, prefix: &Path) -> String {
-    if let Ok(relative) = path.strip_prefix(prefix) {
-        if relative.as_os_str().is_empty() {
-            ".".to_string()
-        } else {
-            format!("./{}", relative.display())
-        }
-    } else {
-        path.display().to_string()
+    match path.strip_prefix(prefix) {
+        Ok(rel) if rel.as_os_str().is_empty() => ".".to_string(),
+        Ok(rel) => format!("./{}", rel.display()),
+        Err(_) => path.display().to_string(),
     }
 }
 

@@ -22,7 +22,7 @@ success: true
 exit_code: 0
 ----- stdout -----
 Created new branch and worktree for 'feature-with-base'
-Path: [REPO].feature-with-base
+Path: [REPO]/../main.feature-with-base
 Note: Use 'wt switch' (with shell integration) for automatic cd
 
 ----- stderr -----

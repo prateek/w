@@ -20,7 +20,7 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-__WORKTRUNK_CD__[REPO].internal-test
-Created new branch and worktree for 'internal-test' at [REPO].internal-test
+__WORKTRUNK_CD__[REPO]/../main.internal-test
+Created new branch and worktree for 'internal-test' at [REPO]/../main.internal-test
 
 ----- stderr -----

@@ -4,6 +4,7 @@ use clap_complete::{Shell as CompletionShell, generate};
 use rayon::prelude::*;
 use std::io;
 use std::process;
+use worktrunk::config::{format_worktree_path, load_config};
 use worktrunk::error_format::{format_error_with_bold, format_hint, format_warning};
 use worktrunk::git::{
     GitError, Worktree, branch_exists, count_commits, get_ahead_behind_in, get_all_branches,
@@ -132,7 +133,17 @@ fn main() {
             create,
             base,
             internal,
-        } => handle_switch(&branch, create, base.as_deref(), internal),
+        } => load_config()
+            .map_err(|e| GitError::CommandFailed(format!("Failed to load config: {}", e)))
+            .and_then(|config| {
+                handle_switch(
+                    &branch,
+                    create,
+                    base.as_deref(),
+                    internal,
+                    &config.worktree_path,
+                )
+            }),
         Commands::Remove { internal } => handle_remove(internal),
         Commands::Push {
             target,
@@ -499,6 +510,7 @@ fn handle_switch(
     create: bool,
     base: Option<&str>,
     internal: bool,
+    worktree_path_template: &str,
 ) -> Result<(), GitError> {
     // Check for conflicting conditions
     if create && branch_exists(branch)? {
@@ -548,11 +560,8 @@ fn handle_switch(
         .to_str()
         .ok_or_else(|| GitError::CommandFailed("Invalid UTF-8 in path".to_string()))?;
 
-    let parent_dir = repo_root
-        .parent()
-        .ok_or_else(|| GitError::CommandFailed("Invalid repository location".to_string()))?;
-
-    let worktree_path = parent_dir.join(format!("{}.{}", repo_name, branch));
+    let worktree_name = format_worktree_path(worktree_path_template, repo_name, branch);
+    let worktree_path = repo_root.join(worktree_name);
 
     // Create the worktree
     // Build git worktree add command

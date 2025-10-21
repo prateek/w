@@ -242,7 +242,7 @@ pub fn calculate_responsive_layout(infos: &[WorktreeInfo]) -> LayoutConfig {
     };
 
     if max_message_len > 0 {
-        widths.message = max_message_len;
+        widths.message = max_message_len.min(ideal_widths.message);
     }
 
     // Ahead/behind column (only if dense and fits)

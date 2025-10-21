@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use std::process::Command;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
 pub struct Worktree {
     pub path: PathBuf,
     pub head: String,

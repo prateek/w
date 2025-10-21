@@ -12,6 +12,14 @@ use commands::{
     handle_remove, handle_switch,
 };
 
+#[derive(Debug, Clone, Copy, clap::ValueEnum)]
+pub enum OutputFormat {
+    /// Human-readable table format
+    Table,
+    /// JSON format
+    Json,
+}
+
 #[derive(Parser)]
 #[command(name = "wt")]
 #[command(about = "Git worktree management", long_about = None)]
@@ -35,7 +43,11 @@ enum Commands {
     },
 
     /// List all worktrees
-    List,
+    List {
+        /// Output format
+        #[arg(long, value_enum, default_value = "table")]
+        format: OutputFormat,
+    },
 
     /// Switch to a worktree
     Switch {
@@ -111,7 +123,7 @@ fn main() {
             let mut cli_cmd = Cli::command();
             handle_init(&shell, &cmd, &mut cli_cmd).map_err(GitError::CommandFailed)
         }
-        Commands::List => handle_list(),
+        Commands::List { format } => handle_list(format),
         Commands::Switch {
             branch,
             create,

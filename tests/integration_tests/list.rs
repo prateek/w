@@ -33,6 +33,41 @@ fn snapshot_list(test_name: &str, repo: &TestRepo) {
     });
 }
 
+/// Helper to create snapshot for JSON output with normalized paths, SHAs, and timestamps
+fn snapshot_list_json(test_name: &str, repo: &TestRepo) {
+    let mut settings = Settings::clone_current();
+    settings.set_snapshot_path("../snapshots");
+
+    // Normalize paths - replace absolute paths with semantic names
+    settings.add_filter(repo.root_path().to_str().unwrap(), "[REPO]");
+    for (name, path) in &repo.worktrees {
+        settings.add_filter(
+            path.to_str().unwrap(),
+            &format!("[WORKTREE_{}]", name.to_uppercase().replace('-', "_")),
+        );
+    }
+
+    // Normalize git SHAs (40 hex chars in JSON)
+    settings.add_filter(r#""head": "[0-9a-f]{40}""#, r#""head": "[SHA]""#);
+
+    // Normalize timestamps to fixed value
+    settings.add_filter(r#""timestamp": \d+"#, r#""timestamp": 0"#);
+
+    // Normalize Windows paths to Unix style
+    settings.add_filter(r"\\\\", "/");
+
+    settings.bind(|| {
+        let mut cmd = Command::new(get_cargo_bin("wt"));
+        // Clean environment to avoid interference from global git config
+        repo.clean_cli_env(&mut cmd);
+        cmd.arg("list")
+            .arg("--format=json")
+            .current_dir(repo.root_path());
+
+        assert_cmd_snapshot!(test_name, cmd);
+    });
+}
+
 #[test]
 fn test_list_single_worktree() {
     let repo = TestRepo::new();
@@ -152,4 +187,38 @@ fn test_list_many_worktrees_with_varied_stats() {
     repo.add_worktree("with-changes", "with-changes");
 
     snapshot_list("many_worktrees_varied", &repo);
+}
+
+#[test]
+fn test_list_json_single_worktree() {
+    let repo = TestRepo::new();
+    repo.commit("Initial commit");
+
+    snapshot_list_json("json_single_worktree", &repo);
+}
+
+#[test]
+fn test_list_json_multiple_worktrees() {
+    let mut repo = TestRepo::new();
+    repo.commit("Initial commit");
+
+    repo.add_worktree("feature-a", "feature-a");
+    repo.add_worktree("feature-b", "feature-b");
+
+    snapshot_list_json("json_multiple_worktrees", &repo);
+}
+
+#[test]
+fn test_list_json_with_metadata() {
+    let mut repo = TestRepo::new();
+    repo.commit("Initial commit");
+
+    // Create worktree with detached head
+    repo.add_worktree("feature-detached", "feature-detached");
+
+    // Create locked worktree
+    repo.add_worktree("locked-feature", "locked-feature");
+    repo.lock_worktree("locked-feature", Some("Testing"));
+
+    snapshot_list_json("json_with_metadata", &repo);
 }

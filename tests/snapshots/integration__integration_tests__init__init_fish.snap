@@ -104,7 +104,9 @@ complete -c wt -n "__fish_wt_needs_command" -f -a "push" -d 'Push changes betwee
 complete -c wt -n "__fish_wt_needs_command" -f -a "merge" -d 'Merge worktree into target branch'
 complete -c wt -n "__fish_wt_using_subcommand init" -l cmd -d 'Command prefix (default: wt)' -r
 complete -c wt -n "__fish_wt_using_subcommand init" -s h -l help -d 'Print help'
-complete -c wt -n "__fish_wt_using_subcommand list" -s h -l help -d 'Print help'
+complete -c wt -n "__fish_wt_using_subcommand list" -l format -d 'Output format' -r -f -a "table\t'Human-readable table format'
+json\t'JSON format'"
+complete -c wt -n "__fish_wt_using_subcommand list" -s h -l help -d 'Print help (see more with \'--help\')'
 complete -c wt -n "__fish_wt_using_subcommand switch" -s b -l base -d 'Base branch to create from (only with --create)' -r
 complete -c wt -n "__fish_wt_using_subcommand switch" -s c -l create -d 'Create a new branch'
 complete -c wt -n "__fish_wt_using_subcommand switch" -l internal -d 'Use internal mode (outputs directives for shell wrapper)'

@@ -2023,6 +2023,7 @@ dependencies = [
  "rayon",
  "rstest",
  "serde",
+ "serde_json",
  "tempfile",
  "terminal_size",
  "toml 0.8.23",

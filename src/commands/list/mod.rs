@@ -10,6 +10,7 @@ use worktrunk::git::{GitError, Repository};
 use layout::calculate_responsive_layout;
 use render::{format_header_line, format_worktree_line};
 
+#[derive(serde::Serialize)]
 pub struct WorktreeInfo {
     pub worktree: worktrunk::git::Worktree,
     pub timestamp: i64,
@@ -98,7 +99,7 @@ impl WorktreeInfo {
     }
 }
 
-pub fn handle_list() -> Result<(), GitError> {
+pub fn handle_list(format: crate::OutputFormat) -> Result<(), GitError> {
     let repo = Repository::current();
     let worktrees = repo.list_worktrees()?;
 
@@ -141,15 +142,26 @@ pub fn handle_list() -> Result<(), GitError> {
     // Sort by most recent commit (descending)
     infos.sort_by(|a, b| b.timestamp.cmp(&a.timestamp));
 
-    // Calculate responsive layout based on terminal width
-    let layout = calculate_responsive_layout(&infos);
+    match format {
+        crate::OutputFormat::Json => {
+            // Output JSON format
+            let json = serde_json::to_string_pretty(&infos).map_err(|e| {
+                GitError::CommandFailed(format!("Failed to serialize to JSON: {}", e))
+            })?;
+            println!("{}", json);
+        }
+        crate::OutputFormat::Table => {
+            // Calculate responsive layout based on terminal width
+            let layout = calculate_responsive_layout(&infos);
 
-    // Display header
-    format_header_line(&layout);
+            // Display header
+            format_header_line(&layout);
 
-    // Display formatted output
-    for info in &infos {
-        format_worktree_line(info, &layout, current_worktree_path.as_ref());
+            // Display formatted output
+            for info in &infos {
+                format_worktree_line(info, &layout, current_worktree_path.as_ref());
+            }
+        }
     }
 
     Ok(())

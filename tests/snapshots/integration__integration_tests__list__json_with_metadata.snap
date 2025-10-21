@@ -1,0 +1,109 @@
+---
+source: tests/integration_tests/list.rs
+info:
+  program: wt
+  args:
+    - list
+    - "--format=json"
+  env:
+    CLICOLOR_FORCE: "1"
+    GIT_AUTHOR_DATE: "2025-01-01T00:00:00Z"
+    GIT_COMMITTER_DATE: "2025-01-01T00:00:00Z"
+    GIT_CONFIG_GLOBAL: /dev/null
+    GIT_CONFIG_SYSTEM: /dev/null
+    GIT_EDITOR: ""
+    LANG: C
+    LC_ALL: C
+    SOURCE_DATE_EPOCH: "1704067200"
+---
+success: true
+exit_code: 0
+----- stdout -----
+[
+  {
+    "worktree": {
+      "path": "[REPO]",
+      "head": "[SHA]",
+      "branch": "main",
+      "bare": false,
+      "detached": false,
+      "locked": null,
+      "prunable": null
+    },
+    "timestamp": 0,
+    "commit_message": "Initial commit",
+    "ahead": 0,
+    "behind": 0,
+    "working_tree_diff": [
+      0,
+      0
+    ],
+    "branch_diff": [
+      0,
+      0
+    ],
+    "is_primary": true,
+    "upstream_remote": null,
+    "upstream_ahead": 0,
+    "upstream_behind": 0,
+    "worktree_state": null
+  },
+  {
+    "worktree": {
+      "path": "[WORKTREE_FEATURE_DETACHED]",
+      "head": "[SHA]",
+      "branch": "feature-detached",
+      "bare": false,
+      "detached": false,
+      "locked": null,
+      "prunable": null
+    },
+    "timestamp": 0,
+    "commit_message": "Initial commit",
+    "ahead": 0,
+    "behind": 0,
+    "working_tree_diff": [
+      0,
+      0
+    ],
+    "branch_diff": [
+      0,
+      0
+    ],
+    "is_primary": false,
+    "upstream_remote": null,
+    "upstream_ahead": 0,
+    "upstream_behind": 0,
+    "worktree_state": null
+  },
+  {
+    "worktree": {
+      "path": "[WORKTREE_LOCKED_FEATURE]",
+      "head": "[SHA]",
+      "branch": "locked-feature",
+      "bare": false,
+      "detached": false,
+      "locked": "Testing",
+      "prunable": null
+    },
+    "timestamp": 0,
+    "commit_message": "Initial commit",
+    "ahead": 0,
+    "behind": 0,
+    "working_tree_diff": [
+      0,
+      0
+    ],
+    "branch_diff": [
+      0,
+      0
+    ],
+    "is_primary": false,
+    "upstream_remote": null,
+    "upstream_ahead": 0,
+    "upstream_behind": 0,
+    "worktree_state": null
+  }
+]
+
+----- stderr -----

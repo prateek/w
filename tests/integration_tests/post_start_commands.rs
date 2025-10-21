@@ -1,12 +1,18 @@
 use crate::common::{TestRepo, make_snapshot_cmd, setup_snapshot_settings};
 use insta_cmd::assert_cmd_snapshot;
 use std::fs;
+use std::path::Path;
+use tempfile::TempDir;
 
 /// Helper to create snapshot with normalized paths and SHAs
-fn snapshot_switch(test_name: &str, repo: &TestRepo, args: &[&str]) {
+/// If temp_home is provided, sets HOME environment variable to that path
+fn snapshot_switch(test_name: &str, repo: &TestRepo, args: &[&str], temp_home: Option<&Path>) {
     let settings = setup_snapshot_settings(repo);
     settings.bind(|| {
         let mut cmd = make_snapshot_cmd(repo, "switch", args, None);
+        if let Some(home) = temp_home {
+            cmd.env("HOME", home);
+        }
         assert_cmd_snapshot!(test_name, cmd);
     });
 }
@@ -17,7 +23,12 @@ fn test_post_start_commands_no_config() {
     repo.commit("Initial commit");
 
     // Switch without project config should work normally
-    snapshot_switch("post_start_no_config", &repo, &["--create", "feature"]);
+    snapshot_switch(
+        "post_start_no_config",
+        &repo,
+        &["--create", "feature"],
+        None,
+    );
 }
 
 #[test]
@@ -34,11 +45,17 @@ fn test_post_start_commands_empty_array() {
     repo.commit("Add empty config");
 
     // Should work without prompting
-    snapshot_switch("post_start_empty_array", &repo, &["--create", "feature"]);
+    snapshot_switch(
+        "post_start_empty_array",
+        &repo,
+        &["--create", "feature"],
+        None,
+    );
 }
 
 #[test]
 fn test_post_start_commands_with_approval() {
+    let temp_home = TempDir::new().unwrap();
     let repo = TestRepo::new();
     repo.commit("Initial commit");
 
@@ -53,12 +70,11 @@ fn test_post_start_commands_with_approval() {
 
     repo.commit("Add config");
 
-    // Pre-approve the command by setting up the user config
-    // This simulates the command being already approved
-    let home_dir = std::env::var("HOME").unwrap();
-    let user_config_dir =
-        std::path::Path::new(&home_dir).join("Library/Application Support/worktrunk");
-    fs::create_dir_all(&user_config_dir).ok();
+    // Pre-approve the command by setting up the user config in temp HOME
+    let user_config_dir = temp_home
+        .path()
+        .join("Library/Application Support/worktrunk");
+    fs::create_dir_all(&user_config_dir).expect("Failed to create user config dir");
     fs::write(
         user_config_dir.join("config.toml"),
         r#"worktree-path = "../{repo}.{branch}"
@@ -68,10 +84,15 @@ project = "main"
 command = "echo 'Setup complete'"
 "#,
     )
-    .ok();
+    .expect("Failed to write user config");
 
     // Command should execute without prompting
-    snapshot_switch("post_start_with_approval", &repo, &["--create", "feature"]);
+    snapshot_switch(
+        "post_start_with_approval",
+        &repo,
+        &["--create", "feature"],
+        Some(temp_home.path()),
+    );
 }
 
 #[test]
@@ -91,11 +112,17 @@ fn test_post_start_commands_invalid_toml() {
     repo.commit("Add invalid config");
 
     // Should continue without executing commands, showing warning
-    snapshot_switch("post_start_invalid_toml", &repo, &["--create", "feature"]);
+    snapshot_switch(
+        "post_start_invalid_toml",
+        &repo,
+        &["--create", "feature"],
+        None,
+    );
 }
 
 #[test]
 fn test_post_start_commands_failing_command() {
+    let temp_home = TempDir::new().unwrap();
     let repo = TestRepo::new();
     repo.commit("Initial commit");
 
@@ -110,12 +137,13 @@ fn test_post_start_commands_failing_command() {
 
     repo.commit("Add config with failing command");
 
-    // Pre-approve the command
-    let home_dir = std::env::var("HOME").unwrap();
-    let config_dir = std::path::Path::new(&home_dir).join("Library/Application Support/worktrunk");
-    fs::create_dir_all(&config_dir).ok();
+    // Pre-approve the command in temp HOME
+    let user_config_dir = temp_home
+        .path()
+        .join("Library/Application Support/worktrunk");
+    fs::create_dir_all(&user_config_dir).expect("Failed to create user config dir");
     fs::write(
-        config_dir.join("config.toml"),
+        user_config_dir.join("config.toml"),
         r#"worktree-path = "../{repo}.{branch}"
 
 [[approved-commands]]
@@ -123,18 +151,20 @@ project = "main"
 command = "exit 1"
 "#,
     )
-    .ok();
+    .expect("Failed to write user config");
 
     // Should show warning but continue (worktree should still be created)
     snapshot_switch(
         "post_start_failing_command",
         &repo,
         &["--create", "feature"],
+        Some(temp_home.path()),
     );
 }
 
 #[test]
 fn test_post_start_commands_multiple_commands() {
+    let temp_home = TempDir::new().unwrap();
     let repo = TestRepo::new();
     repo.commit("Initial commit");
 
@@ -149,12 +179,13 @@ fn test_post_start_commands_multiple_commands() {
 
     repo.commit("Add config with multiple commands");
 
-    // Pre-approve both commands
-    let home_dir = std::env::var("HOME").unwrap();
-    let config_dir = std::path::Path::new(&home_dir).join("Library/Application Support/worktrunk");
-    fs::create_dir_all(&config_dir).ok();
+    // Pre-approve both commands in temp HOME
+    let user_config_dir = temp_home
+        .path()
+        .join("Library/Application Support/worktrunk");
+    fs::create_dir_all(&user_config_dir).expect("Failed to create user config dir");
     fs::write(
-        config_dir.join("config.toml"),
+        user_config_dir.join("config.toml"),
         r#"worktree-path = "../{repo}.{branch}"
 
 [[approved-commands]]
@@ -166,18 +197,20 @@ project = "main"
 command = "echo 'Second'"
 "#,
     )
-    .ok();
+    .expect("Failed to write user config");
 
     // Both commands should execute
     snapshot_switch(
         "post_start_multiple_commands",
         &repo,
         &["--create", "feature"],
+        Some(temp_home.path()),
     );
 }
 
 #[test]
 fn test_post_start_commands_template_expansion() {
+    let temp_home = TempDir::new().unwrap();
     let repo = TestRepo::new();
     repo.commit("Initial commit");
 
@@ -197,11 +230,11 @@ fn test_post_start_commands_template_expansion() {
 
     repo.commit("Add config with templates");
 
-    // Pre-approve all commands
-    let home_dir = std::env::var("HOME").unwrap();
-    let user_config_dir =
-        std::path::Path::new(&home_dir).join("Library/Application Support/worktrunk");
-    fs::create_dir_all(&user_config_dir).ok();
+    // Pre-approve all commands in temp HOME
+    let user_config_dir = temp_home
+        .path()
+        .join("Library/Application Support/worktrunk");
+    fs::create_dir_all(&user_config_dir).expect("Failed to create user config dir");
     let repo_name = "main";
     fs::write(
         user_config_dir.join("config.toml"),
@@ -224,13 +257,14 @@ project = "main"
 command = "echo 'Root: {repo_root}' >> info.txt"
 "#,
     )
-    .ok();
+    .expect("Failed to write user config");
 
     // Commands should execute with expanded templates
     snapshot_switch(
         "post_start_template_expansion",
         &repo,
         &["--create", "feature/test"],
+        Some(temp_home.path()),
     );
 
     // Verify template expansion actually worked by checking the output file

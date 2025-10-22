@@ -2,8 +2,48 @@ use crate::display::{format_relative_time, shorten_path, truncate_at_word_bounda
 use anstyle::{AnsiColor, Color, Style};
 use worktrunk::styling::{ADDITION, CURRENT, DELETION, StyledLine};
 
-use super::layout::LayoutConfig;
+use super::layout::{DiffWidths, LayoutConfig};
 use super::{ListItem, WorktreeInfo};
+
+/// Format diff values as styled segments (right-aligned with attached signs)
+fn format_diff_column(
+    added: usize,
+    deleted: usize,
+    widths: &DiffWidths,
+    green: Style,
+    red: Style,
+) -> StyledLine {
+    let mut diff_segment = StyledLine::new();
+
+    if added > 0 || deleted > 0 {
+        let added_part = format!(
+            "{:>width$}",
+            format!("+{}", added),
+            width = 1 + widths.added_digits
+        );
+        let deleted_part = format!(
+            "{:>width$}",
+            format!("-{}", deleted),
+            width = 1 + widths.deleted_digits
+        );
+
+        // Calculate the content width
+        let content_width = (1 + widths.added_digits) + 1 + (1 + widths.deleted_digits);
+        // Add left padding to align to total width
+        let left_padding = widths.total.saturating_sub(content_width);
+
+        if left_padding > 0 {
+            diff_segment.push_raw(" ".repeat(left_padding));
+        }
+        diff_segment.push_styled(added_part, green);
+        diff_segment.push_raw(" ");
+        diff_segment.push_styled(deleted_part, red);
+    } else {
+        diff_segment.push_raw(" ".repeat(widths.total));
+    }
+
+    diff_segment
+}
 
 pub fn format_all_states(info: &WorktreeInfo) -> String {
     let mut states = Vec::new();
@@ -204,25 +244,15 @@ fn format_item_line(
     // Branch diff (line diff in commits)
     if widths.branch_diff.total > 0 {
         if !item.is_primary() {
-            if branch_diff.0 > 0 || branch_diff.1 > 0 {
-                // Right-align numbers within their fields: "+{num:width$} -{num:width$}"
-                let formatted = format!(
-                    "+{:width_add$} -{:width_del$}",
-                    branch_diff.0,
-                    branch_diff.1,
-                    width_add = widths.branch_diff.added_digits,
-                    width_del = widths.branch_diff.deleted_digits
-                );
-                let mut diff_segment = StyledLine::new();
-                // Split at the space between + and -
-                let split_pos = 1 + widths.branch_diff.added_digits;
-                diff_segment.push_styled(&formatted[..split_pos], ADDITION);
-                diff_segment.push_styled(&formatted[split_pos..], DELETION);
-                for segment in diff_segment.segments {
-                    line.push(segment);
-                }
-            } else {
-                line.push_raw(" ".repeat(widths.branch_diff.total));
+            let diff_segment = format_diff_column(
+                branch_diff.0,
+                branch_diff.1,
+                &widths.branch_diff,
+                ADDITION,
+                DELETION,
+            );
+            for segment in diff_segment.segments {
+                line.push(segment);
             }
         } else {
             line.push_raw(" ".repeat(widths.branch_diff.total));
@@ -234,25 +264,15 @@ fn format_item_line(
     if widths.working_diff.total > 0 {
         if let ListItem::Worktree(info) = item {
             let (wt_added, wt_deleted) = info.working_tree_diff;
-            if wt_added > 0 || wt_deleted > 0 {
-                // Right-align numbers within their fields: "+{num:width$} -{num:width$}"
-                let formatted = format!(
-                    "+{:width_add$} -{:width_del$}",
-                    wt_added,
-                    wt_deleted,
-                    width_add = widths.working_diff.added_digits,
-                    width_del = widths.working_diff.deleted_digits
-                );
-                let mut diff_segment = StyledLine::new();
-                // Split at the space between + and -
-                let split_pos = 1 + widths.working_diff.added_digits;
-                diff_segment.push_styled(&formatted[..split_pos], ADDITION);
-                diff_segment.push_styled(&formatted[split_pos..], DELETION);
-                for segment in diff_segment.segments {
-                    line.push(segment);
-                }
-            } else {
-                line.push_raw(" ".repeat(widths.working_diff.total));
+            let diff_segment = format_diff_column(
+                wt_added,
+                wt_deleted,
+                &widths.working_diff,
+                ADDITION,
+                DELETION,
+            );
+            for segment in diff_segment.segments {
+                line.push(segment);
             }
         } else {
             line.push_raw(" ".repeat(widths.working_diff.total));
@@ -289,12 +309,11 @@ fn format_item_line(
 
     // Message
     if widths.message > 0 {
-        let msg = format!(
-            "{:width$}",
-            truncate_at_word_boundary(&commit.commit_message, layout.max_message_len),
-            width = widths.message
-        );
+        let msg = truncate_at_word_boundary(&commit.commit_message, layout.max_message_len);
+        let msg_start = line.width();
         line.push_styled(msg, Style::new().dimmed());
+        // Pad to correct visual width (not character count - important for unicode!)
+        line.pad_to(msg_start + widths.message);
         line.push_raw("  ");
     }
 
@@ -512,6 +531,188 @@ mod tests {
         assert_eq!(
             header_width_without_path, data_width_without_path,
             "Header and data rows should have same width before Path column"
+        );
+    }
+
+    #[test]
+    fn test_format_diff_column_pads_to_total_width() {
+        // Test that diff column is padded to total width when content is smaller
+
+        // Case 1: Single-digit diffs with total=6 (to fit "WT +/-" header)
+        let widths = DiffWidths {
+            total: 6,
+            added_digits: 1,
+            deleted_digits: 1,
+        };
+        let result = format_diff_column(1, 1, &widths, ADDITION, DELETION);
+        assert_eq!(
+            result.width(),
+            6,
+            "Diff '+1 -1' should be padded to 6 chars"
+        );
+
+        // Case 2: Two-digit diffs with total=8
+        let widths = DiffWidths {
+            total: 8,
+            added_digits: 2,
+            deleted_digits: 2,
+        };
+        let result = format_diff_column(10, 50, &widths, ADDITION, DELETION);
+        assert_eq!(
+            result.width(),
+            8,
+            "Diff '+10 -50' should be padded to 8 chars"
+        );
+
+        // Case 3: Asymmetric digit counts with total=9
+        let widths = DiffWidths {
+            total: 9,
+            added_digits: 3,
+            deleted_digits: 2,
+        };
+        let result = format_diff_column(100, 50, &widths, ADDITION, DELETION);
+        assert_eq!(
+            result.width(),
+            9,
+            "Diff '+100 -50' should be padded to 9 chars"
+        );
+
+        // Case 4: Zero diff should also pad to total width
+        let widths = DiffWidths {
+            total: 6,
+            added_digits: 1,
+            deleted_digits: 1,
+        };
+        let result = format_diff_column(0, 0, &widths, ADDITION, DELETION);
+        assert_eq!(result.width(), 6, "Empty diff should be 6 spaces");
+    }
+
+    #[test]
+    fn test_format_diff_column_right_alignment() {
+        // Test that diff values are right-aligned within the total width
+        let widths = DiffWidths {
+            total: 6,
+            added_digits: 1,
+            deleted_digits: 1,
+        };
+
+        let result = format_diff_column(1, 1, &widths, ADDITION, DELETION);
+        let rendered = result.render();
+
+        // Strip ANSI codes to check alignment
+        let ansi_escape = regex::Regex::new(r"\x1b\[[0-9;]*m").unwrap();
+        let clean = ansi_escape.replace_all(&rendered, "");
+
+        // Should be " +1 -1" (with leading space for right-alignment)
+        assert_eq!(clean.as_ref(), " +1 -1", "Diff should be right-aligned");
+    }
+
+    #[test]
+    fn test_message_padding_with_unicode() {
+        use unicode_width::UnicodeWidthStr;
+
+        // Test that messages with wide unicode characters (emojis, CJK) are padded correctly
+
+        // Case 1: Message with emoji (☕ takes 2 visual columns but 1 character)
+        let msg_with_emoji = "Fix bug with café ☕...";
+        assert_eq!(
+            msg_with_emoji.chars().count(),
+            22,
+            "Emoji message should be 22 characters"
+        );
+        assert_eq!(
+            msg_with_emoji.width(),
+            23,
+            "Emoji message should have visual width 23"
+        );
+
+        let mut line = StyledLine::new();
+        let msg_start = line.width(); // 0
+        line.push_styled(msg_with_emoji.to_string(), Style::new().dimmed());
+        line.pad_to(msg_start + 24); // Pad to width 24
+
+        // After padding, line should have visual width 24
+        assert_eq!(
+            line.width(),
+            24,
+            "Line with emoji should be padded to visual width 24"
+        );
+
+        // The rendered output should have correct spacing
+        let rendered = line.render();
+        let ansi_escape = regex::Regex::new(r"\x1b\[[0-9;]*m").unwrap();
+        let clean = ansi_escape.replace_all(&rendered, "");
+        assert_eq!(
+            clean.width(),
+            24,
+            "Rendered line should have visual width 24"
+        );
+
+        // Case 2: Message with only ASCII should also pad to 24
+        let msg_ascii = "Add support for...";
+        assert_eq!(
+            msg_ascii.width(),
+            18,
+            "ASCII message should have visual width 18"
+        );
+
+        let mut line2 = StyledLine::new();
+        let msg_start2 = line2.width();
+        line2.push_styled(msg_ascii.to_string(), Style::new().dimmed());
+        line2.pad_to(msg_start2 + 24);
+
+        assert_eq!(
+            line2.width(),
+            24,
+            "Line with ASCII should be padded to visual width 24"
+        );
+
+        // Both should have the same visual width
+        assert_eq!(
+            line.width(),
+            line2.width(),
+            "Unicode and ASCII messages should pad to same visual width"
+        );
+    }
+
+    #[test]
+    fn test_branch_name_padding_with_unicode() {
+        use unicode_width::UnicodeWidthStr;
+
+        // Test that branch names with unicode are padded correctly
+
+        // Case 1: Branch with Japanese characters (each takes 2 visual columns)
+        let branch_ja = "feature-日本語-test";
+        // "feature-" (8) + "日本語" (6 visual, 3 chars) + "-test" (5) = 19 visual width
+        assert_eq!(branch_ja.width(), 19);
+
+        let mut line1 = StyledLine::new();
+        line1.push_styled(
+            branch_ja.to_string(),
+            Style::new().fg_color(Some(Color::Ansi(AnsiColor::Cyan))),
+        );
+        line1.pad_to(20); // Pad to width 20
+
+        assert_eq!(line1.width(), 20, "Japanese branch should pad to 20");
+
+        // Case 2: Regular ASCII branch
+        let branch_ascii = "feature-test";
+        assert_eq!(branch_ascii.width(), 12);
+
+        let mut line2 = StyledLine::new();
+        line2.push_styled(
+            branch_ascii.to_string(),
+            Style::new().fg_color(Some(Color::Ansi(AnsiColor::Cyan))),
+        );
+        line2.pad_to(20);
+
+        assert_eq!(line2.width(), 20, "ASCII branch should pad to 20");
+
+        // Both should have the same visual width after padding
+        assert_eq!(
+            line1.width(),
+            line2.width(),
+            "Unicode and ASCII branches should pad to same visual width"
         );
     }
 }

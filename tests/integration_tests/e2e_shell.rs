@@ -105,10 +105,10 @@ fn path_export_syntax(shell: &str, bin_path: &str) -> String {
 }
 
 #[rstest]
-// Tier 1: Shells available in standard Ubuntu repos
+// Test with bash (POSIX baseline) and fish (different syntax)
+// zsh removed - too similar to bash
 #[case("bash")]
 #[case("fish")]
-#[case("zsh")]
 // Tier 2: Shells requiring extra setup
 #[cfg_attr(feature = "tier-2-integration-tests", case("elvish"))]
 #[cfg_attr(feature = "tier-2-integration-tests", case("nushell"))]
@@ -148,10 +148,10 @@ fn test_e2e_switch_changes_directory(#[case] shell: &str) {
 }
 
 #[rstest]
-// Tier 1: Shells available in standard Ubuntu repos
+// Test with bash (POSIX baseline) and fish (different syntax)
+// zsh removed - too similar to bash
 #[case("bash")]
 #[case("fish")]
-#[case("zsh")]
 // Tier 2: Shells requiring extra setup
 #[cfg_attr(feature = "tier-2-integration-tests", case("elvish"))]
 #[cfg_attr(feature = "tier-2-integration-tests", case("nushell"))]

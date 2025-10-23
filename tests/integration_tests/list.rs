@@ -161,19 +161,7 @@ fn test_list_locked_no_reason() {
     snapshot_list("locked_no_reason", &repo);
 }
 
-#[test]
-fn test_list_long_branch_name() {
-    let mut repo = TestRepo::new();
-    repo.commit("Initial commit");
-
-    // Create worktree with very long branch name
-    repo.add_worktree(
-        "feature-this-is-a-very-long-branch-name-that-should-test-column-alignment",
-        "feature-this-is-a-very-long-branch-name-that-should-test-column-alignment",
-    );
-
-    snapshot_list("long_branch_name", &repo);
-}
+// Removed: test_list_long_branch_name - covered by spacing_edge_cases.rs
 
 #[test]
 fn test_list_long_commit_message() {
@@ -188,17 +176,7 @@ fn test_list_long_commit_message() {
     snapshot_list("long_commit_message", &repo);
 }
 
-#[test]
-fn test_list_unicode_branch_name() {
-    let mut repo = TestRepo::new();
-    repo.commit("Initial commit");
-
-    // Create worktree with Unicode in branch name
-    repo.add_worktree("feature-日本語-test", "feature-日本語-test");
-    repo.add_worktree("fix-émoji-🎉", "fix-émoji-🎉");
-
-    snapshot_list("unicode_branch_name", &repo);
-}
+// Removed: test_list_unicode_branch_name - covered by spacing_edge_cases.rs
 
 #[test]
 fn test_list_unicode_commit_message() {
@@ -231,24 +209,8 @@ fn test_list_many_worktrees_with_varied_stats() {
     snapshot_list("many_worktrees_varied", &repo);
 }
 
-#[test]
-fn test_list_json_single_worktree() {
-    let repo = TestRepo::new();
-    repo.commit("Initial commit");
-
-    snapshot_list_json("json_single_worktree", &repo);
-}
-
-#[test]
-fn test_list_json_multiple_worktrees() {
-    let mut repo = TestRepo::new();
-    repo.commit("Initial commit");
-
-    repo.add_worktree("feature-a", "feature-a");
-    repo.add_worktree("feature-b", "feature-b");
-
-    snapshot_list_json("json_multiple_worktrees", &repo);
-}
+// Removed: test_list_json_single_worktree and test_list_json_multiple_worktrees
+// Basic JSON serialization is covered by test_list_json_with_metadata
 
 #[test]
 fn test_list_json_with_metadata() {

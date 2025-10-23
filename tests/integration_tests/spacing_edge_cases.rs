@@ -151,3 +151,74 @@ fn test_terminal_width_150_shows_all_columns() {
 
     snapshot_list_with_width("terminal_width_150", &repo, 150);
 }
+
+// Column alignment tests with varying diff sizes
+// (Merged from column_alignment.rs)
+
+#[test]
+fn test_column_alignment_varying_diff_widths() {
+    let mut repo = TestRepo::new();
+    repo.commit("Initial commit");
+
+    // Create worktrees with varying diff sizes to test alignment
+    repo.add_worktree("feature-small", "feature-small");
+    repo.add_worktree("feature-medium", "feature-medium");
+    repo.add_worktree("feature-large", "feature-large");
+
+    // Add files to create diffs with different digit counts
+    let small_path = repo.worktrees.get("feature-small").unwrap();
+    for i in 0..5 {
+        std::fs::write(small_path.join(format!("file{}.txt", i)), "content").unwrap();
+    }
+
+    let medium_path = repo.worktrees.get("feature-medium").unwrap();
+    for i in 0..50 {
+        std::fs::write(medium_path.join(format!("file{}.txt", i)), "content").unwrap();
+    }
+
+    let large_path = repo.worktrees.get("feature-large").unwrap();
+    for i in 0..500 {
+        std::fs::write(large_path.join(format!("file{}.txt", i)), "content").unwrap();
+    }
+
+    // Test at a width where WT +/- column is visible
+    snapshot_list_with_width("alignment_varying_diffs", &repo, 180);
+}
+
+#[test]
+fn test_column_alignment_with_empty_diffs() {
+    let mut repo = TestRepo::new();
+    repo.commit("Initial commit");
+
+    // Mix of worktrees with and without diffs
+    repo.add_worktree("no-changes", "no-changes");
+
+    repo.add_worktree("with-changes", "with-changes");
+    let changes_path = repo.worktrees.get("with-changes").unwrap();
+    std::fs::write(changes_path.join("file.txt"), "content").unwrap();
+
+    repo.add_worktree("also-no-changes", "also-no-changes");
+
+    // Path column should align even when some rows have diffs and others don't
+    snapshot_list_with_width("alignment_empty_diffs", &repo, 180);
+}
+
+#[test]
+fn test_column_alignment_extreme_diff_sizes() {
+    let mut repo = TestRepo::new();
+    repo.commit("Initial commit");
+
+    // Create worktrees with extreme diff size differences
+    repo.add_worktree("tiny", "tiny");
+    repo.add_worktree("huge", "huge");
+
+    let tiny_path = repo.worktrees.get("tiny").unwrap();
+    std::fs::write(tiny_path.join("file.txt"), "x").unwrap();
+
+    let huge_path = repo.worktrees.get("huge").unwrap();
+    for i in 0..9999 {
+        std::fs::write(huge_path.join(format!("file{}.txt", i)), "content").unwrap();
+    }
+
+    snapshot_list_with_width("alignment_extreme_diffs", &repo, 180);
+}

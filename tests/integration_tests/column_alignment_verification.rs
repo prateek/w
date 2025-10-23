@@ -1,3 +1,16 @@
+//! Column Alignment Verification Tests
+//!
+//! NOTE: These tests may appear duplicative with snapshot tests, but they serve a critical purpose.
+//! LLMs are poor at assessing precise positional/alignment values in text snapshots. When reviewing
+//! snapshot changes, an LLM might approve misaligned columns that look "close enough" visually.
+//!
+//! These imperative tests explicitly verify that:
+//! - Column headers and data align at exact character positions
+//! - Unicode width calculations are correct (not just byte lengths)
+//! - Sparse columns (empty cells) don't break alignment
+//!
+//! The detailed verification logic here catches alignment bugs that would slip through snapshot review.
+
 use crate::common::TestRepo;
 use insta_cmd::get_cargo_bin;
 use std::process::Command;

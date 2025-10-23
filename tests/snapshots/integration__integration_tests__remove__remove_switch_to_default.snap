@@ -18,6 +18,6 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-✅ [32mSwitched to default branch [1m[32mmain[0m[0m
+✅ [32mSwitched to default branch [1mmain[0m[0m
 
 ----- stderr -----

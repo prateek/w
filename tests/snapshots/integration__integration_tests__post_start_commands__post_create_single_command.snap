@@ -13,7 +13,7 @@ info:
     GIT_CONFIG_GLOBAL: /dev/null
     GIT_CONFIG_SYSTEM: /dev/null
     GIT_EDITOR: ""
-    HOME: /var/folders/wf/s6ycxvvs4ln8qsdbfx40hnc40000gn/T/.tmpCIH1Ds
+    HOME: /var/folders/wf/s6ycxvvs4ln8qsdbfx40hnc40000gn/T/.tmpYozSFb
     LANG: C
     LC_ALL: C
     SOURCE_DATE_EPOCH: "1704067200"
@@ -21,12 +21,16 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-Setup complete
-✅ [32mCreated new worktree for [1m[32mfeature[0m[0m
-  [2mPath: [REPO]/../test-repo.feature[0m
+✅ [32mCreated new worktree for [1mfeature[0m
+  [2mPath: [REPO]/../test-repo.feature[0m[0m
 
 To enable automatic cd, run: wt configure-shell
 
 ----- stderr -----
-🔄 [36mExecuting (post-create):[0m
+
+🟡 [33mPermission required to execute in worktree[0m
+
+[1mtest-repo[0m ([2mtest-repo[0m) wants to execute:
 [40m [0m echo 'Setup complete'
+
+💡 Allow and remember? [1m[y/N][0m [2mSkipping command: echo 'Setup complete'[0m

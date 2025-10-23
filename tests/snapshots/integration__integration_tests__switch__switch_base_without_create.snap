@@ -21,7 +21,7 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-✅ [32mSwitched to worktree for [1m[32mmain[0m[0m
+✅ [32mSwitched to worktree for [1mmain[0m[0m
 
 To enable automatic cd, run: wt configure-shell
 

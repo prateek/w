@@ -101,7 +101,7 @@ pub fn handle_merge(
         let result = handle_remove()?;
 
         // Display output based on mode
-        handle_remove_output(&result, internal)?;
+        handle_remove_output(&result)?;
 
         // Check if we need to switch to target branch
         let primary_repo = Repository::at(&primary_worktree_dir);
@@ -126,23 +126,11 @@ pub fn handle_merge(
 
         // Print comprehensive summary
         println!();
-        handle_merge_summary_output(
-            &current_branch,
-            &target_branch,
-            squashed_count,
-            true,
-            internal,
-        )?;
+        handle_merge_summary_output(&current_branch, &target_branch, squashed_count, true)?;
     } else {
         // Print comprehensive summary (worktree preserved)
         println!();
-        handle_merge_summary_output(
-            &current_branch,
-            &target_branch,
-            squashed_count,
-            false,
-            internal,
-        )?;
+        handle_merge_summary_output(&current_branch, &target_branch, squashed_count, false)?;
     }
 
     Ok(())
@@ -155,15 +143,14 @@ fn format_merge_summary(
     squashed_count: Option<usize>,
     cleaned_up: bool,
 ) -> String {
-    let green = AnstyleStyle::new().fg_color(Some(Color::Ansi(AnsiColor::Green)));
-    let green_bold = green.bold();
+    let bold = AnstyleStyle::new().bold();
     let dim = AnstyleStyle::new().dimmed();
 
-    let mut output = format!("✅ {green}Merge complete{green:#}\n\n");
+    let mut output = format!("Merge complete\n\n");
 
     // Show what was merged
     output.push_str(&format!(
-        "  {dim}Merged: {green_bold}{from_branch}{green_bold:#} → {green_bold}{to_branch}{green_bold:#}{dim:#}\n"
+        "  {dim}Merged: {bold}{from_branch}{bold:#} → {bold}{to_branch}{bold:#}{dim:#}\n"
     ));
 
     // Show squash info if applicable
@@ -183,33 +170,20 @@ fn format_merge_summary(
     output
 }
 
-/// Handle output for merge summary
-///
-/// In internal mode: outputs directives for shell wrapper
-/// In non-internal mode: prints message directly
+/// Handle output for merge summary using global output context
 fn handle_merge_summary_output(
     from_branch: &str,
     to_branch: &str,
     squashed_count: Option<usize>,
     cleaned_up: bool,
-    internal: bool,
 ) -> Result<(), GitError> {
-    use crate::output::{Directive, DirectiveOutput};
-
     let message = format_merge_summary(from_branch, to_branch, squashed_count, cleaned_up);
 
-    if internal {
-        // Internal mode: output directives for shell wrapper
-        let mut output = DirectiveOutput::new();
-        output.add(Directive::Message(message));
+    // Show success message (formatting added by OutputContext)
+    crate::output::success(message).map_err(|e| GitError::CommandFailed(e.to_string()))?;
 
-        output
-            .write_to_stdout()
-            .map_err(|e| GitError::CommandFailed(e.to_string()))?;
-    } else {
-        // Non-internal mode: print directly
-        println!("{}", message);
-    }
+    // Flush output
+    crate::output::flush().map_err(|e| GitError::CommandFailed(e.to_string()))?;
 
     Ok(())
 }

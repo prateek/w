@@ -18,9 +18,7 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-✅ [32mRemoved worktree and returned to primary[0m
-  [2mPath: [REPO][0m
-
-To enable automatic cd, run: wt configure-shell
+✅ [32mRemoved worktree, returned to primary
+  [2mPath: [REPO][0m[0m
 
 ----- stderr -----

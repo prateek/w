@@ -311,23 +311,39 @@ fn main() {
             force,
             no_config_commands,
             internal,
-        } => WorktrunkConfig::load()
-            .map_err(|e| GitError::CommandFailed(format!("Failed to load config: {}", e)))
-            .and_then(|config| {
-                handle_switch(
-                    &branch,
-                    create,
-                    base.as_deref(),
-                    force,
-                    no_config_commands,
-                    &config,
-                )
-                .and_then(|result| {
-                    handle_switch_output(&result, &branch, execute.as_deref(), internal)
+        } => {
+            // Initialize output context based on mode
+            let output_mode = if internal {
+                output::OutputMode::Directive
+            } else {
+                output::OutputMode::Interactive
+            };
+            output::initialize(output_mode);
+
+            WorktrunkConfig::load()
+                .map_err(|e| GitError::CommandFailed(format!("Failed to load config: {}", e)))
+                .and_then(|config| {
+                    handle_switch(
+                        &branch,
+                        create,
+                        base.as_deref(),
+                        force,
+                        no_config_commands,
+                        &config,
+                    )
+                    .and_then(|result| handle_switch_output(&result, &branch, execute.as_deref()))
                 })
-            }),
+        }
         Commands::Remove { internal } => {
-            handle_remove().and_then(|result| handle_remove_output(&result, internal))
+            // Initialize output context based on mode
+            let output_mode = if internal {
+                output::OutputMode::Directive
+            } else {
+                output::OutputMode::Interactive
+            };
+            output::initialize(output_mode);
+
+            handle_remove().and_then(|result| handle_remove_output(&result))
         }
         Commands::Push {
             target,
@@ -341,15 +357,25 @@ fn main() {
             no_verify,
             force,
             internal,
-        } => handle_merge(
-            target.as_deref(),
-            squash,
-            keep,
-            message.as_deref(),
-            no_verify,
-            force,
-            internal,
-        ),
+        } => {
+            // Initialize output context based on mode
+            let output_mode = if internal {
+                output::OutputMode::Directive
+            } else {
+                output::OutputMode::Interactive
+            };
+            output::initialize(output_mode);
+
+            handle_merge(
+                target.as_deref(),
+                squash,
+                keep,
+                message.as_deref(),
+                no_verify,
+                force,
+                internal,
+            )
+        }
         Commands::Completion { shell } => {
             let mut cli_cmd = Cli::command();
             handle_completion(shell, &mut cli_cmd);

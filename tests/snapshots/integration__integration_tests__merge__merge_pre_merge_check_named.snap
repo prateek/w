@@ -33,14 +33,12 @@ exit_code: 0
 
 ✅ [32mPushed to [1m[32mmain[0m (1 commit, 1 file, [32m+1[0m)  [0m
 🔄 [36mCleaning up worktree...[0m
-✅ [32mRemoved worktree and returned to primary[0m
-  [2mPath: [REPO][0m
+✅ [32mRemoved worktree, returned to primary
+  [2mPath: [REPO][0m[0m
 
-To enable automatic cd, run: wt configure-shell
+✅ [32mMerge complete
 
-✅ [32mMerge complete[0m
-
-  [2mMerged: [1m[32mfeature[0m → [1m[32mmain[0m[0m
-  [2mWorktree: Removed[0m
+  [2mMerged: [1mfeature[0m → [1mmain[0m[0m
+  [2mWorktree: Removed[0m[0m
 
 ----- stderr -----

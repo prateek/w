@@ -13,7 +13,7 @@ info:
     GIT_CONFIG_GLOBAL: /dev/null
     GIT_CONFIG_SYSTEM: /dev/null
     GIT_EDITOR: ""
-    HOME: /var/folders/wf/s6ycxvvs4ln8qsdbfx40hnc40000gn/T/.tmpeoYZa6
+    HOME: /var/folders/wf/s6ycxvvs4ln8qsdbfx40hnc40000gn/T/.tmp04jzX0
     LANG: C
     LC_ALL: C
     SOURCE_DATE_EPOCH: "1704067200"
@@ -21,11 +21,16 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-✅ [32mCreated new worktree for [1m[32mfeature[0m[0m
-  [2mPath: [REPO]/../test-repo.feature[0m
+✅ [32mCreated new worktree for [1mfeature[0m
+  [2mPath: [REPO]/../test-repo.feature[0m[0m
 
 To enable automatic cd, run: wt configure-shell
 
 ----- stderr -----
-🔄 [36mStarting (background): sleep 1 && echo 'Background task done' > background.txt[0m
-  [2m→ Logs: .git/wt-logs/post-start-[NAME]-[TIMESTAMP].log[0m
+
+🟡 [33mPermission required to execute in worktree[0m
+
+[1mtest-repo[0m ([2mtest-repo[0m) wants to execute:
+[40m [0m sleep 1 && echo 'Background task done' > background.txt
+
+💡 Allow and remember? [1m[y/N][0m [2mSkipping command: sleep 1 && echo 'Background task done' > background.txt[0m

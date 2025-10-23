@@ -21,7 +21,6 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-✅ [32mSwitched to worktree for [1m[32mexisting-exec[0m[0m
-
+✅ [32mSwitched to worktree for [1mexisting-exec[0m[0m
 
 ----- stderr -----

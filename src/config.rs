@@ -23,9 +23,9 @@ use toml;
 /// # Repository-namespaced (useful for shared directories with multiple repos)
 /// worktree-path = "../worktrees/{main-worktree}/{branch}"
 ///
-/// # LLM configuration for commit message generation
-/// [llm]
-/// command = "llm"  # Command to invoke LLM (e.g., "llm", "claude")
+/// # Commit generation configuration
+/// [commit-generation]
+/// command = "llm"  # Command to invoke for generating commit messages (e.g., "llm", "claude")
 /// args = ["-s"]    # Arguments to pass to the command
 /// ```
 ///
@@ -40,22 +40,22 @@ pub struct WorktrunkConfig {
     #[serde(rename = "worktree-path")]
     pub worktree_path: String,
 
-    #[serde(default)]
-    pub llm: LlmConfig,
+    #[serde(default, rename = "commit-generation")]
+    pub commit_generation: CommitGenerationConfig,
 
     /// Commands that have been approved for automatic execution
     #[serde(default, rename = "approved-commands")]
     pub approved_commands: Vec<ApprovedCommand>,
 }
 
-/// Configuration for LLM integration
+/// Configuration for commit message generation
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
-pub struct LlmConfig {
-    /// Command to invoke LLM (e.g., "llm", "claude")
+pub struct CommitGenerationConfig {
+    /// Command to invoke for generating commit messages (e.g., "llm", "claude")
     #[serde(default)]
     pub command: Option<String>,
 
-    /// Arguments to pass to the LLM command
+    /// Arguments to pass to the command
     #[serde(default)]
     pub args: Vec<String>,
 }
@@ -122,7 +122,7 @@ impl Default for WorktrunkConfig {
     fn default() -> Self {
         Self {
             worktree_path: "../{main-worktree}.{branch}".to_string(),
-            llm: LlmConfig::default(),
+            commit_generation: CommitGenerationConfig::default(),
             approved_commands: Vec::new(),
         }
     }
@@ -140,8 +140,11 @@ impl WorktrunkConfig {
 
         let mut builder = Config::builder()
             .set_default("worktree-path", defaults.worktree_path)?
-            .set_default("llm.command", defaults.llm.command.unwrap_or_default())?
-            .set_default("llm.args", defaults.llm.args)?;
+            .set_default(
+                "commit-generation.command",
+                defaults.commit_generation.command.unwrap_or_default(),
+            )?
+            .set_default("commit-generation.args", defaults.commit_generation.args)?;
 
         // Add config file if it exists
         if let Some(config_path) = get_config_path()
@@ -321,6 +324,7 @@ mod tests {
         let toml = toml::to_string(&config).unwrap();
         assert!(toml.contains("worktree-path"));
         assert!(toml.contains("../{main-worktree}.{branch}"));
+        assert!(toml.contains("commit-generation"));
     }
 
     #[test]
@@ -334,7 +338,7 @@ mod tests {
     fn test_format_worktree_path() {
         let config = WorktrunkConfig {
             worktree_path: "{main-worktree}.{branch}".to_string(),
-            llm: LlmConfig::default(),
+            commit_generation: CommitGenerationConfig::default(),
             approved_commands: Vec::new(),
         };
         assert_eq!(
@@ -347,7 +351,7 @@ mod tests {
     fn test_format_worktree_path_custom_template() {
         let config = WorktrunkConfig {
             worktree_path: "{main-worktree}-{branch}".to_string(),
-            llm: LlmConfig::default(),
+            commit_generation: CommitGenerationConfig::default(),
             approved_commands: Vec::new(),
         };
         assert_eq!(
@@ -360,7 +364,7 @@ mod tests {
     fn test_format_worktree_path_only_branch() {
         let config = WorktrunkConfig {
             worktree_path: ".worktrees/{main-worktree}/{branch}".to_string(),
-            llm: LlmConfig::default(),
+            commit_generation: CommitGenerationConfig::default(),
             approved_commands: Vec::new(),
         };
         assert_eq!(
@@ -374,7 +378,7 @@ mod tests {
         // Slashes should be replaced with dashes to prevent directory traversal
         let config = WorktrunkConfig {
             worktree_path: "{main-worktree}.{branch}".to_string(),
-            llm: LlmConfig::default(),
+            commit_generation: CommitGenerationConfig::default(),
             approved_commands: Vec::new(),
         };
         assert_eq!(
@@ -387,7 +391,7 @@ mod tests {
     fn test_format_worktree_path_with_multiple_slashes() {
         let config = WorktrunkConfig {
             worktree_path: ".worktrees/{main-worktree}/{branch}".to_string(),
-            llm: LlmConfig::default(),
+            commit_generation: CommitGenerationConfig::default(),
             approved_commands: Vec::new(),
         };
         assert_eq!(
@@ -401,7 +405,7 @@ mod tests {
         // Windows-style path separators should also be sanitized
         let config = WorktrunkConfig {
             worktree_path: ".worktrees/{main-worktree}/{branch}".to_string(),
-            llm: LlmConfig::default(),
+            commit_generation: CommitGenerationConfig::default(),
             approved_commands: Vec::new(),
         };
         assert_eq!(

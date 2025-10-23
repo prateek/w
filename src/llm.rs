@@ -1,26 +1,30 @@
 use std::process;
-use worktrunk::config::LlmConfig;
+use worktrunk::config::CommitGenerationConfig;
 use worktrunk::git::{GitError, Repository};
-use worktrunk::styling::{WARNING, WARNING_EMOJI, eprintln};
 
 pub fn generate_commit_message(
     custom_instruction: Option<&str>,
-    llm_config: &LlmConfig,
+    commit_generation_config: &CommitGenerationConfig,
 ) -> Result<String, GitError> {
-    // Try LLM generation if configured
-    if let Some(ref command) = llm_config.command {
-        if let Ok(llm_message) =
-            try_generate_commit_message(custom_instruction, command, &llm_config.args)
-        {
-            return Ok(llm_message);
+    // Check if commit generation is configured (non-empty command)
+    if let Some(ref command) = commit_generation_config.command {
+        if !command.trim().is_empty() {
+            // Commit generation is explicitly configured - fail if it doesn't work
+            return try_generate_commit_message(
+                custom_instruction,
+                command,
+                &commit_generation_config.args,
+            )
+            .map_err(|e| {
+                GitError::CommandFailed(format!(
+                    "Commit generation command '{}' failed: {}",
+                    command, e
+                ))
+            });
         }
-        // If LLM fails, fall through to deterministic approach
-        eprintln!(
-            "{WARNING_EMOJI} {WARNING}LLM generation failed, using deterministic message{WARNING:#}"
-        );
     }
 
-    // Fallback: simple deterministic commit message
+    // Fallback: simple deterministic commit message (only when not configured)
     Ok("WIP: Auto-commit before merge".to_string())
 }
 
@@ -139,29 +143,29 @@ fn try_generate_commit_message(
 pub fn generate_squash_message(
     target_branch: &str,
     subjects: &[String],
-    llm_config: &LlmConfig,
-) -> String {
-    // Try LLM generation if configured
-    if let Some(ref command) = llm_config.command {
-        if let Ok(llm_message) =
-            try_generate_llm_message(target_branch, subjects, command, &llm_config.args)
-        {
-            return llm_message;
+    commit_generation_config: &CommitGenerationConfig,
+) -> Result<String, Box<dyn std::error::Error>> {
+    // Check if commit generation is configured (non-empty command)
+    if let Some(ref command) = commit_generation_config.command {
+        if !command.trim().is_empty() {
+            // Commit generation is explicitly configured - fail if it doesn't work
+            return try_generate_llm_message(
+                target_branch,
+                subjects,
+                command,
+                &commit_generation_config.args,
+            );
         }
-        // If LLM fails, fall through to deterministic approach
-        eprintln!(
-            "{WARNING_EMOJI} {WARNING}LLM generation failed, using deterministic message{WARNING:#}"
-        );
     }
 
-    // Fallback: deterministic commit message
+    // Fallback: deterministic commit message (only when not configured)
     let mut commit_message = format!("Squash commits from {}\n\n", target_branch);
     commit_message.push_str("Combined commits:\n");
     for subject in subjects.iter().rev() {
         // Reverse so they're in chronological order
         commit_message.push_str(&format!("- {}\n", subject));
     }
-    commit_message
+    Ok(commit_message)
 }
 
 fn try_generate_llm_message(

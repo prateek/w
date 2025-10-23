@@ -45,4 +45,3 @@ To enable automatic cd, run: wt configure-shell
   [2mWorktree: Removed[0m
 
 ----- stderr -----
-🟡 [33mLLM generation failed, using deterministic message[0m

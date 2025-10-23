@@ -373,10 +373,10 @@ fn test_merge_squash_with_llm() {
         &["main", "--squash"],
         Some(&feature_wt),
         &[
-            ("WORKTRUNK_LLM__COMMAND", "sh"),
-            ("WORKTRUNK_LLM__ARGS__0", "-c"),
+            ("WORKTRUNK_COMMIT_GENERATION__COMMAND", "sh"),
+            ("WORKTRUNK_COMMIT_GENERATION__ARGS__0", "-c"),
             (
-                "WORKTRUNK_LLM__ARGS__1",
+                "WORKTRUNK_COMMIT_GENERATION__ARGS__1",
                 "cat >/dev/null && echo 'feat: implement user authentication system'",
             ),
         ],
@@ -430,13 +430,16 @@ fn test_merge_squash_llm_fallback() {
         .expect("Failed to commit");
 
     // Configure LLM command that will fail (non-existent command)
-    // Should fall back to deterministic message and print warning
+    // Should now error instead of falling back
     snapshot_merge_with_env(
         "merge_squash_llm_fallback",
         &repo,
         &["main", "--squash"],
         Some(&feature_wt),
-        &[("WORKTRUNK_LLM__COMMAND", "nonexistent-llm-command")],
+        &[(
+            "WORKTRUNK_COMMIT_GENERATION__COMMAND",
+            "nonexistent-llm-command",
+        )],
     );
 }
 
@@ -572,8 +575,11 @@ fn test_merge_auto_commit_with_llm() {
         &["main"],
         Some(&feature_wt),
         &[
-            ("WORKTRUNK_LLM__COMMAND", "echo"),
-            ("WORKTRUNK_LLM__ARGS", "fix: improve auth validation logic"),
+            ("WORKTRUNK_COMMIT_GENERATION__COMMAND", "echo"),
+            (
+                "WORKTRUNK_COMMIT_GENERATION__ARGS",
+                "fix: improve auth validation logic",
+            ),
         ],
     );
 }
@@ -622,8 +628,11 @@ fn test_merge_auto_commit_with_message() {
         &["main", "-m", "Complete the user dashboard feature"],
         Some(&feature_wt),
         &[
-            ("WORKTRUNK_LLM__COMMAND", "echo"),
-            ("WORKTRUNK_LLM__ARGS", "feat: complete user dashboard"),
+            ("WORKTRUNK_COMMIT_GENERATION__COMMAND", "echo"),
+            (
+                "WORKTRUNK_COMMIT_GENERATION__ARGS",
+                "feat: complete user dashboard",
+            ),
         ],
     );
 }
@@ -687,9 +696,12 @@ fn test_merge_auto_commit_and_squash() {
         &["main", "--squash"],
         Some(&feature_wt),
         &[
-            ("WORKTRUNK_LLM__COMMAND", "echo"),
+            ("WORKTRUNK_COMMIT_GENERATION__COMMAND", "echo"),
             // First message is for auto-commit
-            ("WORKTRUNK_LLM__ARGS", "fix: update file 1 content"),
+            (
+                "WORKTRUNK_COMMIT_GENERATION__ARGS",
+                "fix: update file 1 content",
+            ),
         ],
     );
 }

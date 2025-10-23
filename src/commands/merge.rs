@@ -47,7 +47,7 @@ pub fn handle_merge(
 
     // Auto-commit uncommitted changes if they exist
     if repo.is_dirty()? {
-        handle_commit_changes(message, &config.llm)?;
+        handle_commit_changes(message, &config.commit_generation)?;
     }
 
     // Run pre-merge checks unless --no-verify was specified
@@ -218,7 +218,7 @@ fn handle_merge_summary_output(
 /// Commit uncommitted changes with LLM-generated message
 fn handle_commit_changes(
     custom_instruction: Option<&str>,
-    llm_config: &worktrunk::config::LlmConfig,
+    commit_generation_config: &worktrunk::config::CommitGenerationConfig,
 ) -> Result<(), GitError> {
     let repo = Repository::current();
 
@@ -239,7 +239,8 @@ fn handle_commit_changes(
     }
 
     // Generate commit message
-    let commit_message = crate::llm::generate_commit_message(custom_instruction, llm_config)?;
+    let commit_message =
+        crate::llm::generate_commit_message(custom_instruction, commit_generation_config)?;
 
     // Commit
     repo.run_command(&["commit", "-m", &commit_message])
@@ -308,7 +309,11 @@ fn handle_squash(target_branch: &str, internal: bool) -> Result<Option<usize>, G
     // Load config and generate commit message
     let config = WorktrunkConfig::load()
         .map_err(|e| GitError::CommandFailed(format!("Failed to load config: {}", e)))?;
-    let commit_message = crate::llm::generate_squash_message(target_branch, &subjects, &config.llm);
+    let commit_message =
+        crate::llm::generate_squash_message(target_branch, &subjects, &config.commit_generation)
+            .map_err(|e| {
+                GitError::CommandFailed(format!("Failed to generate commit message: {}", e))
+            })?;
 
     // Reset to merge base (soft reset stages all changes)
     repo.run_command(&["reset", "--soft", &merge_base])

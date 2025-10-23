@@ -270,7 +270,7 @@ Global Config: /path/to/config
 
 **Command approval:**
 ```
-  project wants to execute:
+project wants to execute:
  [ -d {repo_root}/target ] &&
  [ ! -e {worktree}/target ] &&
  cp -cR {repo_root}/target/. {worktree}/target/

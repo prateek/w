@@ -2,7 +2,7 @@ use anstyle::{AnsiColor, Color};
 use etcetera::base_strategy::{BaseStrategy, choose_base_strategy};
 use std::path::PathBuf;
 use worktrunk::git::{GitError, Repository};
-use worktrunk::styling::{AnstyleStyle, HINT, HINT_EMOJI, println};
+use worktrunk::styling::{AnstyleStyle, HINT, HINT_EMOJI, format_toml, print, println};
 
 /// Example configuration file content
 const CONFIG_EXAMPLE: &str = include_str!("../../config.example.toml");
@@ -91,14 +91,8 @@ fn display_global_config() -> Result<(), GitError> {
         return Ok(());
     }
 
-    // Display each line with indentation
-    for line in contents.lines() {
-        if !line.trim().is_empty() {
-            println!("  {dim}{line}{dim:#}");
-        } else {
-            println!();
-        }
-    }
+    // Display TOML with syntax highlighting
+    print!("{}", format_toml(&contents, "  "));
 
     Ok(())
 }
@@ -135,14 +129,8 @@ fn display_project_config() -> Result<(), GitError> {
         return Ok(());
     }
 
-    // Display each line with indentation
-    for line in contents.lines() {
-        if !line.trim().is_empty() {
-            println!("  {dim}{line}{dim:#}");
-        } else {
-            println!();
-        }
-    }
+    // Display TOML with syntax highlighting
+    print!("{}", format_toml(&contents, "  "));
 
     Ok(())
 }

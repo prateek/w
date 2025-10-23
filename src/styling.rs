@@ -6,6 +6,7 @@
 //! - Semantic style constants for domain-specific use
 
 use anstyle::{AnsiColor, Color, Style};
+use synoptic::{TokOpt, from_extension};
 use unicode_width::UnicodeWidthStr;
 
 // ============================================================================
@@ -159,12 +160,145 @@ impl StyledLine {
 }
 
 // ============================================================================
+// TOML Syntax Highlighting
+// ============================================================================
+
+/// Formats TOML content with syntax highlighting using synoptic
+pub fn format_toml(content: &str, indent: &str) -> String {
+    // Get TOML highlighter from synoptic's built-in rules (tab_width = 4)
+    let mut highlighter = match from_extension("toml", 4) {
+        Some(h) => h,
+        None => {
+            // Fallback: return dimmed content if TOML highlighter not available
+            let dim = Style::new().dimmed();
+            let mut output = String::new();
+            for line in content.lines() {
+                output.push_str(&format!("{indent}{dim}{line}{dim:#}\n"));
+            }
+            return output;
+        }
+    };
+
+    let mut output = String::new();
+    let lines: Vec<String> = content.lines().map(|s| s.to_string()).collect();
+
+    // Process all lines through the highlighter
+    highlighter.run(&lines);
+
+    // Render each line with appropriate styling
+    for (y, line) in lines.iter().enumerate() {
+        // Add indentation first
+        output.push_str(indent);
+
+        // Render each token with appropriate styling
+        for token in highlighter.line(y, line) {
+            match token {
+                TokOpt::Some(text, kind) => {
+                    let style = toml_token_style(&kind);
+                    if let Some(s) = style {
+                        output.push_str(&format!("{s}{text}{s:#}"));
+                    } else {
+                        output.push_str(&text);
+                    }
+                }
+                TokOpt::None(text) => {
+                    output.push_str(&text);
+                }
+            }
+        }
+
+        output.push('\n');
+    }
+
+    output
+}
+
+/// Maps TOML token kinds to anstyle styles
+///
+/// Token names come from synoptic's TOML highlighter:
+/// - "string": quoted strings
+/// - "comment": hash-prefixed comments
+/// - "boolean": true/false values
+/// - "table": table headers [...]
+/// - "digit": numeric values
+fn toml_token_style(kind: &str) -> Option<Style> {
+    match kind {
+        // Strings (quoted values)
+        "string" => Some(Style::new().fg_color(Some(Color::Ansi(AnsiColor::Green)))),
+
+        // Comments (hash-prefixed)
+        "comment" => Some(Style::new().dimmed()),
+
+        // Table headers [table] and [[array]]
+        "table" => Some(
+            Style::new()
+                .fg_color(Some(Color::Ansi(AnsiColor::Cyan)))
+                .bold(),
+        ),
+
+        // Booleans and numbers
+        "boolean" | "digit" => Some(Style::new().fg_color(Some(Color::Ansi(AnsiColor::Yellow)))),
+
+        // Everything else (operators, punctuation, keys)
+        _ => None,
+    }
+}
+
+// ============================================================================
 // Tests
 // ============================================================================
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_toml_formatting() {
+        let toml_content = r#"worktree-path = "../{repo}.{branch}"
+
+[llm]
+args = []
+
+# This is a comment
+[[approved-commands]]
+project = "github.com/user/repo"
+command = "npm install"
+"#;
+
+        let output = format_toml(toml_content, "  ");
+
+        // Check that output contains ANSI escape codes
+        assert!(
+            output.contains("\x1b["),
+            "Output should contain ANSI escape codes"
+        );
+
+        // Check that strings are highlighted (green = 32)
+        assert!(
+            output.contains("\x1b[32m"),
+            "Should contain green color for strings"
+        );
+
+        // Check that comments are dimmed (dim = 2)
+        assert!(
+            output.contains("\x1b[2m"),
+            "Should contain dim style for comments"
+        );
+
+        // Check that table headers are highlighted (cyan = 36, bold = 1)
+        assert!(
+            output.contains("\x1b[36m") || output.contains("\x1b[1m"),
+            "Should contain cyan or bold for tables"
+        );
+
+        // Check indentation is preserved
+        assert!(
+            output
+                .lines()
+                .all(|line| line.starts_with("  ") || line.is_empty()),
+            "All lines should be indented"
+        );
+    }
 
     // StyledString tests
     #[test]

@@ -130,6 +130,9 @@ _wt() {
             wt,completion)
                 cmd="wt__completion"
                 ;;
+            wt,config)
+                cmd="wt__config"
+                ;;
             wt,configure-shell)
                 cmd="wt__configure__shell"
                 ;;
@@ -151,6 +154,9 @@ _wt() {
             wt,switch)
                 cmd="wt__switch"
                 ;;
+            wt__config,list)
+                cmd="wt__config__list"
+                ;;
             *)
                 ;;
         esac
@@ -158,7 +164,7 @@ _wt() {
 
     case "${cmd}" in
         wt)
-            opts="-h -V --help --version init configure-shell list switch remove push merge completion complete"
+            opts="-h -V --help --version init configure-shell config list switch remove push merge completion complete"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -188,6 +194,34 @@ _wt() {
         wt__completion)
             opts="-h --help bash elvish fish nushell oil powershell xonsh zsh"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        wt__config)
+            opts="-h --help list"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        wt__config__list)
+            opts="-h --help"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
             fi

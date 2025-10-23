@@ -104,6 +104,41 @@ println!("Switched to worktree: {bold}{branch}{bold:#}");
 println!("Switched to worktree: {branch}")
 ```
 
+### Information Hierarchy & Path Styling
+
+**Principle: Bold what answers the user's question, dim what provides context.**
+
+Style elements based on **user intent**, not data type. The same information (like a file path) can be primary in one context and secondary in another.
+
+**File paths:**
+
+- **Primary information** (answering the user's main question): **Bold**
+  - Example: `wt config list` - paths are the answer to "where is my config?"
+
+- **Secondary information** (contextual metadata): **Dim**
+  - Example: `wt switch` output - path provides context, branch name is the answer
+
+```rust
+use worktrunk::styling::AnstyleStyle;
+
+// Path as primary answer (config list)
+let bold = AnstyleStyle::new().bold();
+println!("Global Config: {bold}{}{bold:#}", path.display());
+
+// Path as secondary context (switch output)
+let dim = AnstyleStyle::new().dimmed();
+println!("✅ Created {bold}{branch}{bold:#}\n  {dim}Path: {}{dim:#}", path.display());
+```
+
+**Visual hierarchy patterns:**
+
+| Element | Primary (answers question) | Secondary (provides context) |
+|---------|---------------------------|------------------------------|
+| Branch names | **Bold** (always) | **Bold** (always) |
+| File paths | **Bold** (`config list`) | **Dim** (`switch` output) |
+| Config values | Normal | **Dim** |
+| Metadata | Dim | **Dim** |
+
 ### Color Detection
 
 Colors automatically adjust based on environment:

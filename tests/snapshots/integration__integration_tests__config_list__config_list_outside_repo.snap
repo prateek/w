@@ -1,0 +1,19 @@
+---
+source: tests/integration_tests/config_list.rs
+info:
+  program: wt
+  args:
+    - config
+    - list
+  env:
+    HOME: /var/folders/wf/s6ycxvvs4ln8qsdbfx40hnc40000gn/T/.tmppt3s1F
+---
+success: true
+exit_code: 0
+----- stdout -----
+Global Config: [TEMP_HOME]/Library/Application Support/worktrunk/config.toml
+  worktree-path = "../{repo}.{branch}"
+
+Project Config: Not in a git repository
+
+----- stderr -----

@@ -1,0 +1,36 @@
+---
+source: tests/integration_tests/config_list.rs
+info:
+  program: wt
+  args:
+    - config
+    - list
+  env:
+    CLICOLOR_FORCE: "1"
+    GIT_AUTHOR_DATE: "2025-01-01T00:00:00Z"
+    GIT_COMMITTER_DATE: "2025-01-01T00:00:00Z"
+    GIT_CONFIG_GLOBAL: /dev/null
+    GIT_CONFIG_SYSTEM: /dev/null
+    GIT_EDITOR: ""
+    HOME: /var/folders/wf/s6ycxvvs4ln8qsdbfx40hnc40000gn/T/.tmpS3zikH
+    LANG: C
+    LC_ALL: C
+    SOURCE_DATE_EPOCH: "1704067200"
+---
+success: true
+exit_code: 0
+----- stdout -----
+Global Config: [1m[TEMP_HOME]/Library/Application Support/worktrunk/config.toml[0m
+  [2mworktree-path = "../{repo}.{branch}"[0m
+
+  [2m[[approved-commands]][0m
+  [2mproject = "test-project"[0m
+  [2mcommand = "npm install"[0m
+
+Project Config: [1m[REPO]/.config/wt.toml[0m
+  [2mpost-create-command = "npm install"[0m
+
+  [2m[post-start-command][0m
+  [2mserver = "npm run dev"[0m
+
+----- stderr -----

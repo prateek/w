@@ -11,8 +11,9 @@ mod llm;
 mod output;
 
 use commands::{
-    ConfigAction, Shell, handle_complete, handle_completion, handle_configure_shell, handle_init,
-    handle_list, handle_merge, handle_push, handle_remove, handle_switch,
+    ConfigAction, Shell, handle_complete, handle_completion, handle_config_list,
+    handle_configure_shell, handle_init, handle_list, handle_merge, handle_push, handle_remove,
+    handle_switch,
 };
 use output::{handle_remove_output, handle_switch_output};
 
@@ -32,6 +33,12 @@ pub enum OutputFormat {
 struct Cli {
     #[command(subcommand)]
     command: Commands,
+}
+
+#[derive(Subcommand)]
+enum ConfigCommand {
+    /// List all configuration files and their locations
+    List,
 }
 
 #[derive(Subcommand)]
@@ -59,6 +66,12 @@ enum Commands {
         /// Skip confirmation prompt
         #[arg(long, short)]
         yes: bool,
+    },
+
+    /// Manage configuration
+    Config {
+        #[command(subcommand)]
+        action: ConfigCommand,
     },
 
     /// List all worktrees
@@ -211,6 +224,9 @@ fn main() {
                 })
                 .map_err(GitError::CommandFailed)
         }
+        Commands::Config { action } => match action {
+            ConfigCommand::List => handle_config_list(),
+        },
         Commands::List { format, branches } => handle_list(format, branches),
         Commands::Switch {
             branch,

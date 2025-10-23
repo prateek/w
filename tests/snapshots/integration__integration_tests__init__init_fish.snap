@@ -140,6 +140,7 @@ complete -c wt -n "__fish_wt_needs_command" -s h -l help -d 'Print help'
 complete -c wt -n "__fish_wt_needs_command" -s V -l version -d 'Print version'
 complete -c wt -n "__fish_wt_needs_command" -f -a "init" -d 'Generate shell integration code'
 complete -c wt -n "__fish_wt_needs_command" -f -a "configure-shell" -d 'Configure shell by writing to config files'
+complete -c wt -n "__fish_wt_needs_command" -f -a "config" -d 'Manage configuration'
 complete -c wt -n "__fish_wt_needs_command" -f -a "list" -d 'List all worktrees'
 complete -c wt -n "__fish_wt_needs_command" -f -a "switch" -d 'Switch to a worktree'
 complete -c wt -n "__fish_wt_needs_command" -f -a "remove" -d 'Finish current worktree, returning to primary if current'
@@ -158,6 +159,9 @@ zsh\t''"
 complete -c wt -n "__fish_wt_using_subcommand configure-shell" -l cmd -d 'Command prefix (default: wt)' -r
 complete -c wt -n "__fish_wt_using_subcommand configure-shell" -s y -l yes -d 'Skip confirmation prompt'
 complete -c wt -n "__fish_wt_using_subcommand configure-shell" -s h -l help -d 'Print help'
+complete -c wt -n "__fish_wt_using_subcommand config; and not __fish_seen_subcommand_from list" -s h -l help -d 'Print help'
+complete -c wt -n "__fish_wt_using_subcommand config; and not __fish_seen_subcommand_from list" -f -a "list" -d 'List all configuration files and their locations'
+complete -c wt -n "__fish_wt_using_subcommand config; and __fish_seen_subcommand_from list" -s h -l help -d 'Print help'
 complete -c wt -n "__fish_wt_using_subcommand list" -l format -d 'Output format' -r -f -a "table\t'Human-readable table format'
 json\t'JSON format'"
 complete -c wt -n "__fish_wt_using_subcommand list" -l branches -d 'Also display branches that don\'t have worktrees'

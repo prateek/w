@@ -1,5 +1,6 @@
 ---
 source: tests/integration_tests/switch.rs
+assertion_line: 23
 info:
   program: wt
   args:
@@ -21,6 +22,6 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-✅ [32mSwitched to worktree for [1mexisting-exec[0m[0m
+✅ [32mSwitched to worktree for [1mexisting-exec[0m at [WORKTREE_EXISTING_EXEC][0m
 
 ----- stderr -----

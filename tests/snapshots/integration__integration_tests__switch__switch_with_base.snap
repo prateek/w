@@ -22,8 +22,7 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-✅ [32mCreated new worktree for [1mfeature-with-base[0m
-[2mPath: [REPO].feature-with-base[0m[0m
+✅ [32mCreated new worktree for [1mfeature-with-base[0m at [REPO].feature-with-base[0m
 
 To enable automatic cd, run: wt configure-shell
 

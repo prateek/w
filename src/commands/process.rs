@@ -43,9 +43,8 @@ pub fn spawn_detached(
     fs::create_dir_all(&log_dir)
         .map_err(|e| GitError::CommandFailed(format!("Failed to create log directory: {}", e)))?;
 
-    // Generate log filename with timestamp
-    let timestamp = chrono::Local::now().format("%Y%m%d-%H%M%S");
-    let log_path = log_dir.join(format!("post-start-{}-{}.log", name, timestamp));
+    // Generate log filename (no timestamp - overwrites on each run)
+    let log_path = log_dir.join(format!("post-start-{}.log", name));
 
     // Create log file
     let log_file = fs::File::create(&log_path)

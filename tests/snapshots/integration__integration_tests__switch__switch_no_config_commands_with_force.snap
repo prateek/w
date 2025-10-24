@@ -15,7 +15,7 @@ info:
     GIT_CONFIG_GLOBAL: /dev/null
     GIT_CONFIG_SYSTEM: /dev/null
     GIT_EDITOR: ""
-    HOME: /var/folders/wf/s6ycxvvs4ln8qsdbfx40hnc40000gn/T/.tmps62pQa
+    HOME: /var/folders/wf/s6ycxvvs4ln8qsdbfx40hnc40000gn/T/.tmp6hwXw9
     LANG: C
     LC_ALL: C
     SOURCE_DATE_EPOCH: "1704067200"
@@ -23,8 +23,7 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-✅ [32mCreated new worktree for [1mforce-no-config-commands[0m
-[2mPath: [REPO].force-no-config-commands[0m[0m
+✅ [32mCreated new worktree for [1mforce-no-config-commands[0m at [REPO].force-no-config-commands[0m
 
 To enable automatic cd, run: wt configure-shell
 

@@ -1,5 +1,6 @@
 ---
 source: tests/integration_tests/post_start_commands.rs
+assertion_line: 30
 info:
   program: wt
   args:
@@ -13,7 +14,7 @@ info:
     GIT_CONFIG_GLOBAL: /dev/null
     GIT_CONFIG_SYSTEM: /dev/null
     GIT_EDITOR: ""
-    HOME: /var/folders/wf/s6ycxvvs4ln8qsdbfx40hnc40000gn/T/.tmpktoojo
+    HOME: /var/folders/wf/s6ycxvvs4ln8qsdbfx40hnc40000gn/T/.tmpvq8LHj
     LANG: C
     LC_ALL: C
     SOURCE_DATE_EPOCH: "1704067200"
@@ -21,8 +22,7 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-✅ [32mCreated new worktree for [1mfeature/test[0m
-[2mPath: [REPO].feature-test[0m[0m
+✅ [32mCreated new worktree for [1mfeature/test[0m at [REPO].feature-test[0m
 
 To enable automatic cd, run: wt configure-shell
 

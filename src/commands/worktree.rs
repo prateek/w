@@ -516,15 +516,9 @@ fn spawn_post_start_commands(
         let _ = std::io::stderr().flush();
 
         match spawn_detached(worktree_path, &prepared.expanded, &prepared.name) {
-            Ok(log_path) => {
-                let dim = AnstyleStyle::new().dimmed();
-                // Show relative path from worktree/.git/wt-logs/
-                let display_path = if let Some(filename) = log_path.file_name() {
-                    format!(".git/wt-logs/{}", filename.to_string_lossy())
-                } else {
-                    log_path.display().to_string()
-                };
-                eprintln!("{dim}Logs: {}{dim:#}", display_path);
+            Ok(_log_path) => {
+                // Background command spawned successfully
+                // Log file path not shown - only needed for debugging failures
             }
             Err(e) => {
                 eprintln!(

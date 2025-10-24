@@ -9,22 +9,24 @@ fn format_switch_message_plain(result: &SwitchResult, branch: &str) -> String {
     let bold = AnstyleStyle::new().bold();
 
     match result {
-        SwitchResult::ExistingWorktree(_) => {
-            format!("Switched to worktree for {bold}{branch}{bold:#}")
+        SwitchResult::ExistingWorktree(path) => {
+            format!(
+                "Switched to worktree for {bold}{branch}{bold:#} at {}",
+                path.display()
+            )
         }
         SwitchResult::CreatedWorktree {
             path,
             created_branch,
         } => {
-            let dim = AnstyleStyle::new().dimmed();
             if *created_branch {
                 format!(
-                    "Created new worktree for {bold}{branch}{bold:#}\n{dim}Path: {}{dim:#}",
+                    "Created new worktree for {bold}{branch}{bold:#} at {}",
                     path.display()
                 )
             } else {
                 format!(
-                    "Added worktree for {bold}{branch}{bold:#}\n{dim}Path: {}{dim:#}",
+                    "Added worktree for {bold}{branch}{bold:#} at {}",
                     path.display()
                 )
             }
@@ -35,7 +37,6 @@ fn format_switch_message_plain(result: &SwitchResult, branch: &str) -> String {
 /// Format plain message for remove operation (no emoji - added by OutputContext)
 fn format_remove_message_plain(result: &RemoveResult) -> String {
     let bold = AnstyleStyle::new().bold();
-    let dim = AnstyleStyle::new().dimmed();
 
     match result {
         RemoveResult::AlreadyOnDefault(branch) => {
@@ -43,7 +44,7 @@ fn format_remove_message_plain(result: &RemoveResult) -> String {
         }
         RemoveResult::RemovedWorktree { primary_path } => {
             format!(
-                "Removed worktree, returned to primary\n{dim}Path: {}{dim:#}",
+                "Removed worktree, returned to primary at {}",
                 primary_path.display()
             )
         }

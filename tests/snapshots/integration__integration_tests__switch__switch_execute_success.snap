@@ -22,8 +22,7 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-✅ [32mCreated new worktree for [1mexec-test[0m
-[2mPath: [REPO].exec-test[0m[0m
+✅ [32mCreated new worktree for [1mexec-test[0m at [REPO].exec-test[0m
 test output
 
 ----- stderr -----

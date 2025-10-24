@@ -22,7 +22,7 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-✅ [32mSwitched to worktree for [1mexisting-no-config-commands[0m[0m
+✅ [32mSwitched to worktree for [1mexisting-no-config-commands[0m at [WORKTREE_EXISTING_NO_CONFIG_COMMANDS][0m
 execute still runs
 
 ----- stderr -----

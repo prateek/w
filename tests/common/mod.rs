@@ -413,6 +413,22 @@ pub fn setup_snapshot_settings(repo: &TestRepo) -> insta::Settings {
         "[PROJECT_ID]",
     );
 
+    // Normalize WORKTRUNK_CONFIG_PATH temp directory in snapshots
+    // Matches any temp directory path ending with test-config.toml
+    // Examples:
+    //   macOS: /var/folders/.../T/.tmpXXX/test-config.toml
+    //   Linux: /tmp/.tmpXXX/test-config.toml
+    //   Windows: C:\Users\...\Temp\.tmpXXX\test-config.toml (after backslash normalization)
+    settings.add_filter(r".*/\.tmp[^/]+/test-config\.toml", "[TEST_CONFIG]");
+
+    // Normalize HOME temp directory in snapshots
+    // Matches any temp directory path (without trailing filename)
+    // Examples:
+    //   macOS: HOME: /var/folders/.../T/.tmpXXX
+    //   Linux: HOME: /tmp/.tmpXXX
+    //   Windows: HOME: C:\Users\...\Temp\.tmpXXX (after backslash normalization)
+    settings.add_filter(r"HOME: .*/\.tmp[^/\s]+", "HOME: [TEST_HOME]");
+
     // Normalize timestamps in log filenames (format: YYYYMMDD-HHMMSS)
     // The SHA filter runs first, so we match: post-start-NAME-[SHA]-HHMMSS.log
     settings.add_filter(

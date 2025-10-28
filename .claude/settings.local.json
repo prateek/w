@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Read(//Users/maximilian/.config/worktrunk/**)"
+      "Read(//Users/maximilian/.config/worktrunk/**)",
+      "Read(//Users/maximilian/workspace/worktrunk/.git/worktrees/worktrunk.insta-path/**)"
     ],
     "deny": [],
     "ask": []

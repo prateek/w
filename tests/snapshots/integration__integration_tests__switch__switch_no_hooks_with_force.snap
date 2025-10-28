@@ -15,11 +15,11 @@ info:
     GIT_CONFIG_GLOBAL: /dev/null
     GIT_CONFIG_SYSTEM: /dev/null
     GIT_EDITOR: ""
-    HOME: /var/folders/wf/s6ycxvvs4ln8qsdbfx40hnc40000gn/T/.tmpg6pglk
+    HOME: [TEST_HOME]
     LANG: C
     LC_ALL: C
     SOURCE_DATE_EPOCH: "1761609600"
-    WORKTRUNK_CONFIG_PATH: /var/folders/wf/s6ycxvvs4ln8qsdbfx40hnc40000gn/T/.tmpNOkzZH/test-config.toml
+    WORKTRUNK_CONFIG_PATH: [TEST_CONFIG]
 ---
 success: true
 exit_code: 0

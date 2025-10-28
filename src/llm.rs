@@ -1,6 +1,64 @@
-use std::process;
+use std::io::Write;
+use std::process::{self, Stdio};
 use worktrunk::config::CommitGenerationConfig;
 use worktrunk::git::{GitError, Repository};
+
+/// Execute an LLM command with the given prompt via stdin.
+///
+/// This is the canonical way to execute LLM commands in this codebase.
+/// All LLM execution should go through this function to maintain consistency.
+fn execute_llm_command(
+    command: &str,
+    args: &[String],
+    system_instruction: Option<&str>,
+    prompt: &str,
+) -> Result<String, Box<dyn std::error::Error>> {
+    // Build command args
+    let mut cmd = process::Command::new(command);
+    cmd.args(args);
+
+    // Add system instruction if provided
+    if let Some(instruction) = system_instruction {
+        cmd.arg("--system").arg(instruction);
+    }
+
+    cmd.stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
+
+    // Log execution
+    log::debug!("$ {} {}", command, args.join(" "));
+    if let Some(instruction) = system_instruction {
+        log::debug!("  System: {}", instruction);
+    }
+    log::debug!("  Prompt (stdin):");
+    for line in prompt.lines() {
+        log::debug!("    {}", line);
+    }
+
+    let mut child = cmd.spawn()?;
+
+    // Write prompt to stdin
+    if let Some(mut stdin) = child.stdin.take() {
+        stdin.write_all(prompt.as_bytes())?;
+        // stdin is dropped here, closing the pipe
+    }
+
+    let output = child.wait_with_output()?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(format!("LLM command failed: {}", stderr).into());
+    }
+
+    let message = String::from_utf8_lossy(&output.stdout).trim().to_owned();
+
+    if message.is_empty() {
+        return Err("LLM returned empty message".into());
+    }
+
+    Ok(message)
+}
 
 pub fn generate_commit_message(
     custom_instruction: Option<&str>,
@@ -33,9 +91,6 @@ fn try_generate_commit_message(
     command: &str,
     args: &[String],
 ) -> Result<String, Box<dyn std::error::Error>> {
-    use std::io::Write;
-    use std::process::Stdio;
-
     let repo = Repository::current();
 
     // Get staged diff
@@ -115,43 +170,7 @@ fn try_generate_commit_message(
 
     prompt.push_str("</git-info>\n\n");
 
-    // Execute LLM command with prompt via stdin
-    log::debug!("$ {} {}", command, args.join(" "));
-    log::debug!("  System: {}", user_instruction);
-    log::debug!("  Prompt (stdin):");
-    for line in prompt.lines() {
-        log::debug!("    {}", line);
-    }
-
-    let mut child = process::Command::new(command)
-        .args(args)
-        .arg("--system")
-        .arg(user_instruction)
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()?;
-
-    // Write prompt to stdin
-    if let Some(mut stdin) = child.stdin.take() {
-        stdin.write_all(prompt.as_bytes())?;
-        // stdin is dropped here, closing the pipe
-    }
-
-    let output = child.wait_with_output()?;
-
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(format!("LLM command failed: {}", stderr).into());
-    }
-
-    let message = String::from_utf8_lossy(&output.stdout).trim().to_owned();
-
-    if message.is_empty() {
-        return Err("LLM returned empty message".into());
-    }
-
-    Ok(message)
+    execute_llm_command(command, args, Some(user_instruction), &prompt)
 }
 
 pub fn generate_squash_message(
@@ -188,9 +207,6 @@ fn try_generate_llm_message(
     command: &str,
     args: &[String],
 ) -> Result<String, Box<dyn std::error::Error>> {
-    use std::io::Write;
-    use std::process::Stdio;
-
     // Build context prompt
     let mut context = format!(
         "Squashing commits on current branch since branching from {}\n\n",
@@ -204,38 +220,5 @@ fn try_generate_llm_message(
     let prompt = "Generate a conventional commit message (feat/fix/docs/style/refactor) that combines these changes into one cohesive message. Output only the commit message without any explanation.";
     let full_prompt = format!("{}\n\n{}", context, prompt);
 
-    // Execute LLM command with prompt via stdin
-    log::debug!("$ {} {}", command, args.join(" "));
-    log::debug!("  Prompt (stdin):");
-    for line in full_prompt.lines() {
-        log::debug!("  {}", line);
-    }
-
-    let mut child = process::Command::new(command)
-        .args(args)
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()?;
-
-    // Write prompt to stdin
-    if let Some(mut stdin) = child.stdin.take() {
-        stdin.write_all(full_prompt.as_bytes())?;
-        // stdin is dropped here, closing the pipe
-    }
-
-    let output = child.wait_with_output()?;
-
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(format!("LLM command failed: {}", stderr).into());
-    }
-
-    let message = String::from_utf8_lossy(&output.stdout).trim().to_owned();
-
-    if message.is_empty() {
-        return Err("LLM returned empty message".into());
-    }
-
-    Ok(message)
+    execute_llm_command(command, args, None, &full_prompt)
 }

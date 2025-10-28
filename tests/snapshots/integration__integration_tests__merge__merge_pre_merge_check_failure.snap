@@ -16,7 +16,7 @@ info:
     LANG: C
     LC_ALL: C
     SOURCE_DATE_EPOCH: "1761609600"
-    WORKTRUNK_CONFIG_PATH: /var/folders/wf/s6ycxvvs4ln8qsdbfx40hnc40000gn/T/.tmplG3FdQ/test-config.toml
+    WORKTRUNK_CONFIG_PATH: /var/folders/wf/s6ycxvvs4ln8qsdbfx40hnc40000gn/T/.tmp1qPE9E/test-config.toml
 ---
 success: false
 exit_code: 1
@@ -24,7 +24,7 @@ exit_code: 1
 🔄 [36mValidating merge...[0m
 
 ----- stderr -----
-🔄 [36mRunning pre-merge check 'cmd':[0m
+🔄 [36mRunning pre-merge check [1m[36mcmd[0m:[0m
 [40m [0m exit 1
 ❌ [31mPre-merge check failed: [1m[31mcmd[0m[0m
 

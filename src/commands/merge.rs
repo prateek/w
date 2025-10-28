@@ -237,6 +237,10 @@ fn handle_commit_changes(
     let formatted_message = format_commit_message_for_display(&commit_message);
     print!("{}", format_with_gutter(&formatted_message, "", None));
 
+    // Flush stdout to ensure message appears immediately (before any subsequent stderr output)
+    use std::io::Write;
+    let _ = std::io::stdout().flush();
+
     // Commit
     repo.run_command(&["commit", "-m", &commit_message])
         .map_err(|e| GitError::CommandFailed(format!("Failed to commit: {}", e)))?;
@@ -313,6 +317,10 @@ fn handle_squash(target_branch: &str) -> Result<Option<usize>, GitError> {
     let formatted_message = format_commit_message_for_display(&commit_message);
     print!("{}", format_with_gutter(&formatted_message, "", None));
 
+    // Flush stdout to ensure message appears immediately (before any subsequent stderr output)
+    use std::io::Write;
+    let _ = std::io::stdout().flush();
+
     // Reset to merge base (soft reset stages all changes)
     repo.run_command(&["reset", "--soft", &merge_base])
         .map_err(|e| GitError::CommandFailed(format!("Failed to reset to merge base: {}", e)))?;
@@ -360,7 +368,7 @@ fn run_pre_merge_checks(
         use worktrunk::styling;
 
         eprintln!(
-            "🔄 {CYAN}Running pre-merge check '{name}':{CYAN:#}",
+            "🔄 {CYAN}Running pre-merge check {CYAN_BOLD}{name}{CYAN_BOLD:#}:{CYAN:#}",
             name = prepared.name
         );
         eprint!("{}", format_with_gutter(&prepared.expanded, "", None)); // Gutter at column 0
@@ -427,7 +435,10 @@ fn execute_post_merge_commands(
     // Execute each command sequentially in the main worktree
     for prepared in commands {
         use std::io::Write;
-        eprintln!("🔄 {CYAN}Executing (post-merge):{CYAN:#}");
+        eprintln!(
+            "🔄 {CYAN}Running post-merge command {CYAN_BOLD}{name}{CYAN_BOLD:#}:{CYAN:#}",
+            name = prepared.name
+        );
         eprint!("{}", format_with_gutter(&prepared.expanded, "", None));
         let _ = std::io::stderr().flush();
 

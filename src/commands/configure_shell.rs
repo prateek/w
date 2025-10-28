@@ -341,7 +341,7 @@ fn prompt_for_confirmation(results: &[ConfigureResult]) -> Result<bool, String> 
     let cyan_bold = cyan.bold();
 
     eprintln!();
-    eprintln!("🔧 {cyan_bold}Configuration changes:{cyan_bold:#}");
+    eprintln!("{HINT_EMOJI} {cyan_bold}Configuration changes:{cyan_bold:#}");
     eprintln!();
 
     for result in results {

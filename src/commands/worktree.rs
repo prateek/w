@@ -105,7 +105,7 @@ use worktrunk::config::{ProjectConfig, WorktrunkConfig};
 use worktrunk::git::{GitError, Repository};
 use worktrunk::styling::{
     ADDITION, AnstyleStyle, CYAN, CYAN_BOLD, DELETION, ERROR, ERROR_EMOJI, GREEN, GREEN_BOLD, HINT,
-    HINT_EMOJI, WARNING, WARNING_EMOJI, eprint, eprintln, format_with_gutter,
+    HINT_EMOJI, SUCCESS_EMOJI, WARNING, WARNING_EMOJI, eprint, eprintln, format_with_gutter,
 };
 
 use super::command_executor::{CommandContext, prepare_project_commands};
@@ -664,13 +664,13 @@ pub fn handle_push(target: Option<&str>, allow_merge_commits: bool) -> Result<()
         }
 
         crate::output::progress(format!(
-            "✅ {GREEN}Pushed to {GREEN_BOLD}{target_branch}{GREEN_BOLD:#} ({})  {GREEN:#}",
+            "{SUCCESS_EMOJI} {GREEN}Pushed to {GREEN_BOLD}{target_branch}{GREEN_BOLD:#} ({})  {GREEN:#}",
             summary_parts.join(", ")
         ))
         .map_err(|e| GitError::CommandFailed(e.to_string()))?;
     } else {
         crate::output::progress(format!(
-            "✅ {GREEN}Pushed to {GREEN_BOLD}{target_branch}{GREEN_BOLD:#}{GREEN:#}"
+            "{SUCCESS_EMOJI} {GREEN}Pushed to {GREEN_BOLD}{target_branch}{GREEN_BOLD:#}{GREEN:#}"
         ))
         .map_err(|e| GitError::CommandFailed(e.to_string()))?;
     }

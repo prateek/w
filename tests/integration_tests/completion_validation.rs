@@ -1,5 +1,6 @@
 use assert_cmd::Command;
 use std::collections::HashSet;
+use worktrunk::styling::SUCCESS_EMOJI;
 
 /// Issue found during validation
 #[derive(Debug)]
@@ -322,6 +323,6 @@ fn test_completion_validation() {
     }
 
     if errors.is_empty() && warnings.is_empty() {
-        println!("✅ All shell completions validated successfully!");
+        println!("{SUCCESS_EMOJI} All shell completions validated successfully!");
     }
 }

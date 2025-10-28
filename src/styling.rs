@@ -46,6 +46,9 @@ pub const ERROR: Style = Style::new().fg_color(Some(Color::Ansi(AnsiColor::Red))
 /// Progress emoji - use with cyan style: `println!("{PROGRESS_EMOJI} {cyan}message{cyan:#}");`
 pub const PROGRESS_EMOJI: &str = "🔄";
 
+/// Success emoji - use with GREEN style: `println!("{SUCCESS_EMOJI} {GREEN}message{GREEN:#}");`
+pub const SUCCESS_EMOJI: &str = "✅";
+
 /// Error emoji - use with ERROR style: `eprintln!("{ERROR_EMOJI} {ERROR}message{ERROR:#}");`
 pub const ERROR_EMOJI: &str = "❌";
 

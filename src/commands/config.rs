@@ -1,7 +1,9 @@
 use etcetera::base_strategy::{BaseStrategy, choose_base_strategy};
 use std::path::PathBuf;
 use worktrunk::git::{GitError, Repository};
-use worktrunk::styling::{AnstyleStyle, GREEN, HINT, HINT_EMOJI, format_toml, print, println};
+use worktrunk::styling::{
+    AnstyleStyle, GREEN, HINT, HINT_EMOJI, SUCCESS_EMOJI, format_toml, print, println,
+};
 
 /// Example configuration file content
 const CONFIG_EXAMPLE: &str = include_str!("../../config.example.toml");
@@ -37,7 +39,7 @@ pub fn handle_config_init() -> Result<(), GitError> {
 
     // Success message
     let bold = AnstyleStyle::new().bold();
-    println!("✅ {GREEN}Created config file{GREEN:#}");
+    println!("{SUCCESS_EMOJI} {GREEN}Created config file{GREEN:#}");
     println!("   {bold}{}{bold:#}", config_path.display());
     println!();
     println!(

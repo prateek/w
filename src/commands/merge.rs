@@ -1,8 +1,8 @@
 use worktrunk::config::{ProjectConfig, WorktrunkConfig};
 use worktrunk::git::{GitError, Repository};
 use worktrunk::styling::{
-    AnstyleStyle, CYAN, CYAN_BOLD, ERROR, ERROR_EMOJI, GREEN, GREEN_BOLD, HINT, HINT_EMOJI, eprint,
-    eprintln, format_with_gutter, println,
+    AnstyleStyle, CYAN, CYAN_BOLD, ERROR, ERROR_EMOJI, GREEN, GREEN_BOLD, HINT, HINT_EMOJI,
+    SUCCESS_EMOJI, eprint, eprintln, format_with_gutter, println,
 };
 
 use super::command_executor::{CommandContext, prepare_project_commands};
@@ -34,7 +34,7 @@ pub fn handle_merge(
     // Check if already on target branch
     if current_branch == target_branch {
         println!(
-            "✅ {GREEN}Already on {GREEN_BOLD}{target_branch}{GREEN_BOLD:#}, nothing to merge{GREEN:#}"
+            "{SUCCESS_EMOJI} {GREEN}Already on {GREEN_BOLD}{target_branch}{GREEN_BOLD:#}, nothing to merge{GREEN:#}"
         );
         return Ok(());
     }
@@ -242,7 +242,7 @@ fn handle_commit_changes(
     repo.run_command(&["commit", "-m", &commit_message])
         .map_err(|e| GitError::CommandFailed(format!("Failed to commit: {}", e)))?;
 
-    println!("✅ {GREEN}Committed changes{GREEN:#}");
+    println!("{SUCCESS_EMOJI} {GREEN}Committed changes{GREEN:#}");
 
     Ok(())
 }
@@ -325,7 +325,7 @@ fn handle_squash(target_branch: &str) -> Result<Option<usize>, GitError> {
         .map_err(|e| GitError::CommandFailed(format!("Failed to create squash commit: {}", e)))?;
 
     crate::output::progress(format!(
-        "✅ {GREEN}Squashed {commit_count} commits into one{GREEN:#}"
+        "{SUCCESS_EMOJI} {GREEN}Squashed {commit_count} commits into one{GREEN:#}"
     ))
     .map_err(|e| GitError::CommandFailed(e.to_string()))?;
     Ok(Some(commit_count))

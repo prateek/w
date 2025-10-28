@@ -2,7 +2,7 @@
 
 use std::io::{self, Write};
 use std::path::Path;
-use worktrunk::styling::{GREEN, println};
+use worktrunk::styling::{GREEN, SUCCESS_EMOJI, println};
 
 /// Interactive output mode for human users
 ///
@@ -19,7 +19,7 @@ impl InteractiveOutput {
     }
 
     pub fn success(&mut self, message: String) -> io::Result<()> {
-        println!("✅ {GREEN}{message}{GREEN:#}");
+        println!("{SUCCESS_EMOJI} {GREEN}{message}{GREEN:#}");
         Ok(())
     }
 

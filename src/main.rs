@@ -3,7 +3,7 @@ use clap::{CommandFactory, Parser, Subcommand};
 use std::process;
 use worktrunk::config::WorktrunkConfig;
 use worktrunk::git::GitError;
-use worktrunk::styling::println;
+use worktrunk::styling::{SUCCESS_EMOJI, println};
 
 mod commands;
 mod display;
@@ -266,7 +266,7 @@ fn main() {
                     if changes_count == 0 {
                         // All shells already configured
                         let green = Style::new().fg_color(Some(Color::Ansi(AnsiColor::Green)));
-                        println!("✅ {green}All shells already configured{green:#}");
+                        println!("{SUCCESS_EMOJI} {green}All shells already configured{green:#}");
                         return;
                     }
 
@@ -288,7 +288,9 @@ fn main() {
                     println!();
                     let green = Style::new().fg_color(Some(Color::Ansi(AnsiColor::Green)));
                     let plural = if changes_count == 1 { "" } else { "s" };
-                    println!("✅ {green}Configured {changes_count} shell{plural}{green:#}");
+                    println!(
+                        "{SUCCESS_EMOJI} {green}Configured {changes_count} shell{plural}{green:#}"
+                    );
 
                     // Show hint about restarting shell
                     println!();

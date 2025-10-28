@@ -1,14 +1,13 @@
 use worktrunk::config::{ProjectConfig, WorktrunkConfig};
 use worktrunk::git::{GitError, Repository};
 use worktrunk::styling::{
-    AnstyleStyle, CYAN, CYAN_BOLD, GREEN, SUCCESS_EMOJI, eprint, eprintln, format_with_gutter,
-    println,
+    AnstyleStyle, CYAN, CYAN_BOLD, eprint, eprintln, format_with_gutter, println,
 };
 
 use super::command_executor::{CommandContext, prepare_project_commands};
 use super::worktree::handle_push;
 use super::worktree::handle_remove;
-use crate::output::{execute_command_in_worktree, handle_remove_output};
+use crate::output::execute_command_in_worktree;
 
 pub fn handle_merge(
     target: Option<&str>,
@@ -67,12 +66,9 @@ pub fn handle_merge(
         handle_commit_changes(message, &config.commit_generation)?;
     }
 
-    // Track operations for summary
-    let mut squashed_count: Option<usize> = None;
-
     // Squash commits if requested
     if squash {
-        squashed_count = handle_squash(&target_branch)?;
+        handle_squash(&target_branch)?;
     }
 
     // Rebase onto target
@@ -121,8 +117,11 @@ pub fn handle_merge(
 
         let result = handle_remove(None)?;
 
-        // Display output based on mode
-        handle_remove_output(&result)?;
+        // Set directory for shell integration (but don't print separate success message)
+        if let super::worktree::RemoveResult::RemovedWorktree { primary_path } = &result {
+            crate::output::change_directory(primary_path)
+                .map_err(|e| GitError::CommandFailed(e.to_string()))?;
+        }
 
         // Check if we need to switch to target branch
         let primary_repo = Repository::at(&primary_worktree_dir);
@@ -144,58 +143,29 @@ pub fn handle_merge(
 
         // Print comprehensive summary
         println!();
-        handle_merge_summary_output(&current_branch, &target_branch, squashed_count, true)?;
+        handle_merge_summary_output(Some(&primary_worktree_dir))?;
     } else {
         // Print comprehensive summary (worktree preserved)
         println!();
-        handle_merge_summary_output(&current_branch, &target_branch, squashed_count, false)?;
+        handle_merge_summary_output(None)?;
     }
 
     Ok(())
 }
 
 /// Format the merge summary message
-fn format_merge_summary(
-    from_branch: &str,
-    to_branch: &str,
-    squashed_count: Option<usize>,
-    cleaned_up: bool,
-) -> String {
-    let bold = AnstyleStyle::new().bold();
-    let dim = AnstyleStyle::new().dimmed();
-
-    let mut output = "Merge complete\n\n".to_string();
-
-    // Show what was merged
-    output.push_str(&format!(
-        "{dim}Merged: {bold}{from_branch}{bold:#} → {bold}{to_branch}{bold:#}{dim:#}\n"
-    ));
-
-    // Show squash info if applicable
-    if let Some(count) = squashed_count {
-        output.push_str(&format!("{dim}Squashed: {count} commits into 1{dim:#}\n"));
-    }
-
-    // Show worktree status
-    if cleaned_up {
-        output.push_str(&format!("{dim}Worktree: Removed{dim:#}"));
+fn format_merge_summary(primary_path: Option<&std::path::Path>) -> String {
+    // Show where we ended up
+    if let Some(path) = primary_path {
+        format!("Returned to primary at {}", path.display())
     } else {
-        output.push_str(&format!(
-            "{dim}Worktree: Kept (use 'wt remove' to clean up){dim:#}"
-        ));
+        "Kept worktree (use 'wt remove' to clean up)".to_string()
     }
-
-    output
 }
 
 /// Handle output for merge summary using global output context
-fn handle_merge_summary_output(
-    from_branch: &str,
-    to_branch: &str,
-    squashed_count: Option<usize>,
-    cleaned_up: bool,
-) -> Result<(), GitError> {
-    let message = format_merge_summary(from_branch, to_branch, squashed_count, cleaned_up);
+fn handle_merge_summary_output(primary_path: Option<&std::path::Path>) -> Result<(), GitError> {
+    let message = format_merge_summary(primary_path);
 
     // Show success message (formatting added by OutputContext)
     crate::output::success(message).map_err(|e| GitError::CommandFailed(e.to_string()))?;
@@ -340,10 +310,10 @@ fn handle_squash(target_branch: &str) -> Result<Option<usize>, GitError> {
     repo.run_command(&["commit", "-m", &commit_message])
         .map_err(|e| GitError::CommandFailed(format!("Failed to create squash commit: {}", e)))?;
 
-    crate::output::progress(format!(
-        "{SUCCESS_EMOJI} {GREEN}Squashed {commit_count} commits into one{GREEN:#}"
-    ))
-    .map_err(|e| GitError::CommandFailed(e.to_string()))?;
+    // Show success immediately after completing the squash
+    crate::output::success(format!("Squashed {commit_count} commits into one"))
+        .map_err(|e| GitError::CommandFailed(e.to_string()))?;
+
     Ok(Some(commit_count))
 }
 

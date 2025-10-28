@@ -16,9 +16,7 @@ info:
     LANG: C
     LC_ALL: C
     SOURCE_DATE_EPOCH: "1761609600"
-    WORKTRUNK_CONFIG_PATH: /var/folders/wf/s6ycxvvs4ln8qsdbfx40hnc40000gn/T/.tmpYZnBXJ/test-config.toml
-    WORKTRUNK_CONFIG_PATH: /var/folders/wf/s6ycxvvs4ln8qsdbfx40hnc40000gn/T/.tmpQhrD0r/test-config.toml
-    WORKTRUNK_CONFIG_PATH: /var/folders/wf/s6ycxvvs4ln8qsdbfx40hnc40000gn/T/.tmpQhrD0r/test-config.toml
+    WORKTRUNK_CONFIG_PATH: /var/folders/wf/s6ycxvvs4ln8qsdbfx40hnc40000gn/T/.tmpaMchnL/test-config.toml
 ---
 success: true
 exit_code: 0
@@ -34,9 +32,6 @@ exit_code: 0
 
 ✅ [32mPushed to [1m[32mmain[0m (1 commit, 1 file, [32m+1[0m)  [0m
 
-✅ [32mMerge complete
-
-[2mMerged: [1mfeature[0m → [1mmain[0m[0m
-[2mWorktree: Kept (use 'wt remove' to clean up)[0m[0m
+✅ [32mKept worktree (use 'wt remove' to clean up)[0m
 
 ----- stderr -----

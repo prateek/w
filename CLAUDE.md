@@ -46,6 +46,58 @@ Five canonical message patterns with their emojis:
 4. **Warnings**: 🟡 + yellow text (non-blocking issues)
 5. **Hints**: 💡 + dimmed text (helpful suggestions)
 
+### Temporal Locality: Show Success When Actions Complete
+
+**Principle: Emit success messages immediately when operations complete, not just in summaries.**
+
+Users need instant feedback that an operation succeeded. Summaries at the end are useful for context, but immediate feedback at the point of completion is critical for good UX.
+
+**Good pattern:**
+```
+🔄 Squashing 3 commits into one...
+🔄 Generating squash commit message...
+  [commit message display]
+✅ Squashed 3 commits into one          ← Immediate feedback
+🔄 Rebasing onto main...
+...
+✅ Merged feature → main                ← Final summary
+Squashed 3 commits                      ← Context in summary
+```
+
+**Bad pattern:**
+```
+🔄 Squashing 3 commits into one...
+🔄 Generating squash commit message...
+  [commit message display]
+                                        ← No immediate feedback!
+🔄 Rebasing onto main...
+...
+✅ Merged feature → main
+Squashed 3 commits                      ← Only mentioned in summary
+```
+
+**Why this matters:**
+- **Temporal locality**: Feedback should appear when the action completes, not minutes later
+- **User confidence**: Immediate success messages confirm the operation worked
+- **Debugging**: If something fails later, users know which steps succeeded
+- **Progress visibility**: Users can see what's done vs. what's still in progress
+
+**Implementation:**
+```rust
+// After completing a significant operation, emit success immediately
+crate::output::success("Squashed 3 commits into one")?;
+
+// The summary can still include this info for context
+let summary = format!("Merged {from} → {to}\nSquashed {count} commits\n...");
+crate::output::success(summary)?;
+```
+
+**Apply this to:**
+- Squashing commits: Show "✅ Squashed N commits" immediately after squashing
+- Pushing changes: Show "✅ Pushed to branch" immediately after pushing
+- Committing changes: Show "✅ Committed changes" immediately after committing
+- Any multi-step operation: Show success after each major step completes
+
 ### Semantic Style Constants
 
 **Style constants defined in `src/styling.rs`:**

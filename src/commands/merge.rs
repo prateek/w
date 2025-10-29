@@ -1,6 +1,6 @@
 use worktrunk::config::{ProjectConfig, WorktrunkConfig};
 use worktrunk::git::{GitError, GitResultExt, Repository};
-use worktrunk::styling::{AnstyleStyle, CYAN, CYAN_BOLD, format_with_gutter};
+use worktrunk::styling::{AnstyleStyle, CYAN, CYAN_BOLD, HINT, HINT_EMOJI, format_with_gutter};
 
 use super::command_executor::{CommandContext, prepare_project_commands};
 use super::worktree::handle_push;
@@ -262,9 +262,8 @@ fn handle_squash(target_branch: &str) -> Result<Option<usize>, GitError> {
 
     if commit_count == 1 && !has_staged {
         // Single commit, no staged changes - nothing to do
-        let dim = AnstyleStyle::new().dimmed();
-        crate::output::progress(format!(
-            "{dim}Only 1 commit since {CYAN_BOLD}{target_branch}{CYAN_BOLD:#} - no squashing needed{dim:#}"
+        crate::output::hint(format!(
+            "{HINT_EMOJI} {HINT}Only 1 commit since {CYAN_BOLD}{target_branch}{CYAN_BOLD:#} - no squashing needed{HINT:#}"
         ))?;
         return Ok(None);
     }

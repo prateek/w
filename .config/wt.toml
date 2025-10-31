@@ -14,14 +14,8 @@
 post-start-command = """
 [ -d {repo_root}/target ] &&
 [ ! -e {worktree}/target ] &&
-cp -cR {repo_root}/target/. {worktree}/target/ &&
-echo '✓ CoW seeded target/'
+cp -cR {repo_root}/target/. {worktree}/target/
 """
-
-# Post-merge commands
-# These run in the main worktree after successful merge and push
-# Available template variables: {repo}, {branch}, {worktree}, {repo_root}, {target}
-post-merge-command = "cargo install --path ."
 
 # Pre-merge commands
 # These run sequentially before merging to main
@@ -29,3 +23,8 @@ post-merge-command = "cargo install --path ."
 [pre-merge-command]
 pre-commit = "pre-commit run --all-files"
 insta = "NEXTEST_STATUS_LEVEL=fail NEXTEST_SUCCESS_OUTPUT=never cargo insta test --test-runner nextest --test-runner-fallback true"
+
+# Post-merge commands
+# These run in the main worktree after successful merge and push
+# Available template variables: {repo}, {branch}, {worktree}, {repo_root}, {target}
+post-merge-command = "cargo install --path ."

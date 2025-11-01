@@ -1,5 +1,6 @@
 ---
 source: tests/integration_tests/merge.rs
+assertion_line: 1170
 expression: output
 ---
 Exit code: 0

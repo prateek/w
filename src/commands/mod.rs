@@ -27,11 +27,16 @@ pub use worktrunk::shell::Shell;
 /// Format command execution label with optional command name.
 ///
 /// Examples:
-/// - `format_command_label("post-create", Some("install"))` → `"Running post-create: install"`
+/// - `format_command_label("post-create", Some("install"))` → `"Running post-create: install"` (with bold)
 /// - `format_command_label("post-create", None)` → `"Running post-create:"`
 pub fn format_command_label(command_type: &str, name: Option<&str>) -> String {
+    use worktrunk::styling::AnstyleStyle;
+
     match name {
-        Some(name) => format!("Running {command_type}: {name}"),
+        Some(name) => {
+            let bold = AnstyleStyle::new().bold();
+            format!("Running {command_type}: {bold}{name}{bold:#}")
+        }
         None => format!("Running {command_type}:"),
     }
 }

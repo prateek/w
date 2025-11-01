@@ -1,11 +1,11 @@
 ---
 source: tests/integration_tests/merge.rs
+assertion_line: 12
 info:
   program: wt
   args:
     - merge
     - main
-    - "--squash"
     - "--force"
   env:
     CLICOLOR_FORCE: "1"
@@ -18,19 +18,24 @@ info:
     LANG: C
     LC_ALL: C
     SOURCE_DATE_EPOCH: "1761609600"
-    WORKTRUNK_CONFIG_PATH: /var/folders/wf/s6ycxvvs4ln8qsdbfx40hnc40000gn/T/.tmptB95SO/test-config.toml
+    WORKTRUNK_CONFIG_PATH: /var/folders/wf/s6ycxvvs4ln8qsdbfx40hnc40000gn/T/.tmpUEoQg8/test-config.toml
 ---
 success: true
 exit_code: 0
 ----- stdout -----
-🔄 [36mRunning pre-squash:[0m
-[40m [0m [1m[34mecho [32m'Pre-squash check passed'
+🔄 [36mRunning pre-commit:[0m
+[40m [0m [1m[34mecho [32m'Pre-commit check passed'
 
-💡 [2mOnly 1 commit since [1m[36mmain[0m - no squashing needed[0m
+🔄 [36mCommitting changes...[0m (1 file, [32m+1[0m)
+🔄 [36mGenerating commit message...[0m
+💡 [2mUsing fallback commit message. Run 'wt config help' to configure LLM-generated messages[0m
+[40m [0m [1mWIP: Auto-commit before merge[0m
+
+✅ [32mCommitted changes[0m @ [SHA]
 🔄 [36mRebasing onto [1m[36mmain[0m...[0m
 🔄 [36mMerging 1 commit to [1m[36mmain[0m[0m @ [SHA]
 
-* [SHA][33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeature[m[33m)[m Add feature file
+* [SHA][33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeature[m[33m)[m WIP: Auto-commit before merge
 
  feature.txt | 1 [32m+[m
  1 file changed, 1 insertion(+)
@@ -41,4 +46,4 @@ exit_code: 0
 ✅ [32mReturned to primary at [2m[REPO][0m[0m
 
 ----- stderr -----
-Pre-squash check passed
+Pre-commit check passed

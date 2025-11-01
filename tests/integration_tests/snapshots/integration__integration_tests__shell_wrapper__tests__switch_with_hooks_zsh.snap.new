@@ -1,5 +1,6 @@
 ---
 source: tests/integration_tests/shell_wrapper.rs
+assertion_line: 551
 expression: output.normalized().as_ref()
 ---
 Installing dependencies...

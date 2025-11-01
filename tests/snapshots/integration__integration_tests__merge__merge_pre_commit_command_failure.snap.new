@@ -1,11 +1,11 @@
 ---
 source: tests/integration_tests/merge.rs
+assertion_line: 12
 info:
   program: wt
   args:
     - merge
     - main
-    - "--squash"
     - "--force"
   env:
     CLICOLOR_FORCE: "1"
@@ -18,18 +18,18 @@ info:
     LANG: C
     LC_ALL: C
     SOURCE_DATE_EPOCH: "1761609600"
-    WORKTRUNK_CONFIG_PATH: /var/folders/wf/s6ycxvvs4ln8qsdbfx40hnc40000gn/T/.tmp2L2QHX/test-config.toml
+    WORKTRUNK_CONFIG_PATH: /var/folders/wf/s6ycxvvs4ln8qsdbfx40hnc40000gn/T/.tmpUsIoJF/test-config.toml
 ---
 success: false
 exit_code: 1
 ----- stdout -----
-🔄 [36mRunning pre-squash:[0m
+🔄 [36mRunning pre-commit:[0m
 [40m [0m [1m[34mexit 1
 
 
 ----- stderr -----
-❌ [31mPre-squash command failed[0m
+❌ [31mPre-commit command failed[0m
 
 Command failed with exit code: exit status: 1
 
-💡 [2mUse --no-hooks to skip pre-squash commands[0m
+💡 [2mUse --no-hooks to skip pre-commit commands[0m

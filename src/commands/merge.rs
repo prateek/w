@@ -616,12 +616,8 @@ pub fn run_pre_commit_commands(
 
     // Execute each command sequentially
     for prepared in commands {
-        let header = if let Some(name) = &prepared.name {
-            format!("🔄 {CYAN}Running pre-commit command {CYAN_BOLD}{name}{CYAN_BOLD:#}:{CYAN:#}")
-        } else {
-            format!("🔄 {CYAN}Running pre-commit command:{CYAN:#}")
-        };
-        crate::output::progress(header)?;
+        let label = crate::commands::format_command_label("pre-commit", prepared.name.as_deref());
+        crate::output::progress(format!("🔄 {CYAN}{label}{CYAN:#}"))?;
         crate::output::progress(format_bash_with_gutter(&prepared.expanded, ""))?;
 
         if let Err(e) = execute_command_in_worktree(worktree_path, &prepared.expanded) {
@@ -678,12 +674,8 @@ pub fn run_pre_squash_commands(
 
     // Execute each command sequentially
     for prepared in commands {
-        let header = if let Some(name) = &prepared.name {
-            format!("🔄 {CYAN}Running pre-squash command {CYAN_BOLD}{name}{CYAN_BOLD:#}:{CYAN:#}")
-        } else {
-            format!("🔄 {CYAN}Running pre-squash command:{CYAN:#}")
-        };
-        crate::output::progress(header)?;
+        let label = crate::commands::format_command_label("pre-squash", prepared.name.as_deref());
+        crate::output::progress(format!("🔄 {CYAN}{label}{CYAN:#}"))?;
         crate::output::progress(format_bash_with_gutter(&prepared.expanded, ""))?;
 
         if let Err(e) = execute_command_in_worktree(worktree_path, &prepared.expanded) {

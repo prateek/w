@@ -1,5 +1,6 @@
 ---
 source: tests/integration_tests/shell_wrapper.rs
+assertion_line: 637
 expression: output.normalized().as_ref()
 ---
 🔄 [36mRebasing onto [1m[36mmain[0m...[0m

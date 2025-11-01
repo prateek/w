@@ -1,3 +1,42 @@
+//! Configuration system for worktrunk
+//!
+//! Worktrunk has two independent configuration files:
+//!
+//! # User Config (~/.config/worktrunk/config.toml)
+//!
+//! **Purpose**: Personal preferences, not checked into git
+//!
+//! **Settings**:
+//! - `worktree-path` - Template for worktree paths (relative to repo root)
+//! - `commit-generation` - LLM command and templates for commit messages
+//! - `approved-commands` - Commands approved for automatic execution
+//!
+//! **Managed by**: Each developer maintains their own user config
+//!
+//! # Project Config (<repo>/.config/wt.toml)
+//!
+//! **Purpose**: Project-specific hooks and commands, checked into git
+//!
+//! **Settings**:
+//! - `post-create-command` - Sequential blocking commands when creating worktree
+//! - `post-start-command` - Parallel background commands after worktree created
+//! - `pre-commit-command` - Validation before committing
+//! - `pre-squash-command` - Validation before squashing commits
+//! - `pre-merge-command` - Validation before merging
+//! - `post-merge-command` - Cleanup after successful merge
+//!
+//! **Managed by**: Checked into the repository, shared across all developers
+//!
+//! # Configuration Model
+//!
+//! The two configs are **completely independent**:
+//! - No overlap in settings (they configure different things)
+//! - No merging or precedence rules needed
+//! - Loaded separately and used in different contexts
+//!
+//! User config controls "how worktrunk behaves for me", project config controls
+//! "what commands run for this project".
+
 use config::{Config, ConfigError, File};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -6,7 +45,10 @@ use toml;
 #[cfg(not(test))]
 use etcetera::base_strategy::{BaseStrategy, choose_base_strategy};
 
-/// Configuration for worktree path formatting and LLM integration.
+/// User-level configuration for worktree path formatting and LLM integration.
+///
+/// This config is stored at `~/.config/worktrunk/config.toml` (or platform equivalent)
+/// and is NOT checked into git. Each developer maintains their own user config.
 ///
 /// The `worktree-path` template is relative to the repository root.
 /// Supported variables:
@@ -82,7 +124,11 @@ pub struct CommitGenerationConfig {
     pub squash_template_file: Option<String>,
 }
 
-/// Project-specific configuration (stored in .config/wt.toml within the project)
+/// Project-specific configuration with hooks and commands.
+///
+/// This config is stored at `<repo>/.config/wt.toml` within the repository and
+/// IS checked into git. It defines project-specific commands that run automatically
+/// during worktree operations. All developers working on the project share this config.
 ///
 /// # Template Variables
 ///

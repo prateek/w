@@ -12,11 +12,10 @@ info:
     GIT_COMMITTER_DATE: "2025-01-01T00:00:00Z"
     GIT_CONFIG_GLOBAL: /dev/null
     GIT_CONFIG_SYSTEM: /dev/null
-    GIT_EDITOR: ""
     LANG: C
     LC_ALL: C
     SOURCE_DATE_EPOCH: "1761609600"
-    WORKTRUNK_CONFIG_PATH: /var/folders/wf/s6ycxvvs4ln8qsdbfx40hnc40000gn/T/.tmpkIyPq0/test-config.toml
+    WORKTRUNK_CONFIG_PATH: /var/folders/wf/s6ycxvvs4ln8qsdbfx40hnc40000gn/T/.tmpDxsSjV/test-config.toml
 ---
 success: false
 exit_code: 1
@@ -25,7 +24,11 @@ exit_code: 1
 🔄 [36mRebasing onto [0m[1m[36mmain[0m[36m...[0m
 
 ----- stderr -----
-❌ [31mRebase onto [0m[1m[31mmain[0m[31m incomplete: REBASING 1/1[0m
-
-💡 [2mResolve conflicts and run 'git rebase --continue'[0m
-💡 [2mOr abort with 'git rebase --abort'[0m
+❌ [31mRebase onto [0m[1m[31mmain[0m[31m incomplete[0m
+[40m [0m Rebasing (1/1)error: could not apply [SHA]... Update shared.txt in feature
+[40m [0m hint: Resolve all conflicts manually, mark them as resolved with
+[40m [0m hint: "git add/rm <conflicted_files>", then run "git rebase --continue".
+[40m [0m hint: You can instead skip this commit: run "git rebase --skip".
+[40m [0m hint: To abort and get back to the state before "git rebase", run "git rebase --abort".
+[40m [0m hint: Disable this message with "git config set advice.mergeConflict false"
+[40m [0m Could not apply [SHA]... # Update shared.txt in feature

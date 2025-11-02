@@ -324,9 +324,15 @@ pub fn handle_dev_rebase(target: Option<&str>) -> Result<(), GitError> {
         if let Some(state) = repo.worktree_state()?
             && state.starts_with("REBASING")
         {
+            // Extract git's stderr output from the error
+            let git_output = match &e {
+                GitError::CommandFailed(msg) => msg.clone(),
+                _ => e.to_string(),
+            };
             return Err(GitError::RebaseConflict {
                 state,
                 target_branch: target_branch.to_string(),
+                git_output,
             });
         }
         // Not a rebase conflict, return original error
@@ -341,6 +347,7 @@ pub fn handle_dev_rebase(target: Option<&str>) -> Result<(), GitError> {
         return Err(GitError::RebaseConflict {
             state,
             target_branch: target_branch.to_string(),
+            git_output: String::new(), // No error output in this edge case
         });
     }
 

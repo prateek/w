@@ -68,6 +68,7 @@ pub enum GitError {
     RebaseConflict {
         state: String,
         target_branch: String,
+        git_output: String,
     },
 }
 
@@ -227,14 +228,30 @@ impl std::fmt::Display for GitError {
 
             // Rebase conflict
             GitError::RebaseConflict {
-                state,
+                state: _,
                 target_branch,
+                git_output,
             } => {
+                use crate::styling::format_with_gutter;
                 let error_bold = ERROR.bold();
+
                 write!(
                     f,
-                    "{ERROR_EMOJI} {ERROR}Rebase onto {ERROR:#}{error_bold}{target_branch}{error_bold:#}{ERROR} incomplete: {state}{ERROR:#}\n\n{HINT_EMOJI} {HINT}Resolve conflicts and run 'git rebase --continue'{HINT:#}\n{HINT_EMOJI} {HINT}Or abort with 'git rebase --abort'{HINT:#}"
-                )
+                    "{ERROR_EMOJI} {ERROR}Rebase onto {ERROR:#}{error_bold}{target_branch}{error_bold:#}{ERROR} incomplete{ERROR:#}"
+                )?;
+
+                if !git_output.is_empty() {
+                    writeln!(f)?;
+                    write!(f, "{}", format_with_gutter(git_output, "", None))?;
+                } else {
+                    // Fallback hints if no git output (edge case)
+                    write!(
+                        f,
+                        "\n\n{HINT_EMOJI} {HINT}Resolve conflicts and run 'git rebase --continue'{HINT:#}\n{HINT_EMOJI} {HINT}Or abort with 'git rebase --abort'{HINT:#}"
+                    )?;
+                }
+
+                Ok(())
             }
         }
     }

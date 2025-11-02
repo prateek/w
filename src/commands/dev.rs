@@ -130,15 +130,15 @@ fn check_hook_configured<T>(hook: &Option<T>, hook_type: HookType) -> Result<(),
 }
 
 /// Handle `wt dev commit` command
-pub fn handle_dev_commit(force: bool, no_hooks: bool) -> Result<(), GitError> {
+pub fn handle_dev_commit(force: bool, no_verify: bool) -> Result<(), GitError> {
     let repo = Repository::current();
     let config = WorktrunkConfig::load().git_context("Failed to load config")?;
     let current_branch = repo
         .current_branch()?
         .ok_or_else(|| GitError::CommandFailed("Not on a branch (detached HEAD)".to_string()))?;
 
-    // Run pre-commit hook unless --no-hooks was specified
-    if !no_hooks && let Ok(Some(project_config)) = ProjectConfig::load(&repo.worktree_root()?) {
+    // Run pre-commit hook unless --no-verify was specified
+    if !no_verify && let Ok(Some(project_config)) = ProjectConfig::load(&repo.worktree_root()?) {
         let worktree_path =
             std::env::current_dir().git_context("Failed to get current directory")?;
         run_pre_commit_commands(
@@ -162,7 +162,7 @@ pub fn handle_dev_commit(force: bool, no_hooks: bool) -> Result<(), GitError> {
 pub fn handle_dev_squash(
     target: Option<&str>,
     force: bool,
-    no_hooks: bool,
+    no_verify: bool,
 ) -> Result<(), GitError> {
     let repo = Repository::current();
     let config = WorktrunkConfig::load().git_context("Failed to load config")?;
@@ -173,8 +173,8 @@ pub fn handle_dev_squash(
     // Get target branch (default to default branch if not provided)
     let target_branch = repo.resolve_target_branch(target)?;
 
-    // Run pre-squash hook unless --no-hooks was specified
-    if !no_hooks && let Ok(Some(project_config)) = ProjectConfig::load(&repo.worktree_root()?) {
+    // Run pre-squash hook unless --no-verify was specified
+    if !no_verify && let Ok(Some(project_config)) = ProjectConfig::load(&repo.worktree_root()?) {
         let worktree_path =
             std::env::current_dir().git_context("Failed to get current directory")?;
         run_pre_squash_commands(

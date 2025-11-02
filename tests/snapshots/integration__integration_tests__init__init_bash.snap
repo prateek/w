@@ -16,7 +16,7 @@ info:
     LANG: C
     LC_ALL: C
     SOURCE_DATE_EPOCH: "1761609600"
-    WORKTRUNK_CONFIG_PATH: /var/folders/wf/s6ycxvvs4ln8qsdbfx40hnc40000gn/T/.tmpp3kdWd/test-config.toml
+    WORKTRUNK_CONFIG_PATH: /var/folders/wf/s6ycxvvs4ln8qsdbfx40hnc40000gn/T/.tmp4mPiBI/test-config.toml
 ---
 success: true
 exit_code: 0
@@ -368,7 +368,7 @@ _wt() {
             return 0
             ;;
         wt__dev__commit)
-            opts="-f -v -h --force --no-hooks --verbose --help"
+            opts="-f -v -h --force --no-verify --verbose --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -424,7 +424,7 @@ _wt() {
             return 0
             ;;
         wt__dev__squash)
-            opts="-f -v -h --force --no-hooks --verbose --help [TARGET]"
+            opts="-f -v -h --force --no-verify --verbose --help [TARGET]"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -470,7 +470,7 @@ _wt() {
             return 0
             ;;
         wt__merge)
-            opts="-k -f -v -h --no-squash --keep --no-hooks --force --tracked-only --verbose --help [TARGET]"
+            opts="-k -f -v -h --no-squash --keep --no-verify --force --tracked-only --verbose --help [TARGET]"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -512,7 +512,7 @@ _wt() {
             return 0
             ;;
         wt__switch)
-            opts="-c -b -x -f -v -h --create --base --execute --force --no-hooks --verbose --help <BRANCH>"
+            opts="-c -b -x -f -v -h --create --base --execute --force --no-verify --verbose --help <BRANCH>"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0

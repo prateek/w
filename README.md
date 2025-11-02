@@ -271,7 +271,7 @@ Automate common tasks by creating `.config/wt.toml` in your repository root. Run
 
 **Template variables:** `{repo}`, `{branch}`, `{worktree}`, `{repo_root}`, `{target}`
 
-**Skipping hooks:** `wt switch --no-hooks` or `wt merge --no-hooks`
+**Skipping hooks:** `wt switch --no-verify` or `wt merge --no-verify`
 
 **Security:** Commands require approval on first run. Use `--force` to bypass.
 

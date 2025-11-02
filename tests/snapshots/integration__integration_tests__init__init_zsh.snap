@@ -16,7 +16,7 @@ info:
     LANG: C
     LC_ALL: C
     SOURCE_DATE_EPOCH: "1761609600"
-    WORKTRUNK_CONFIG_PATH: /var/folders/wf/s6ycxvvs4ln8qsdbfx40hnc40000gn/T/.tmpVE3LFA/test-config.toml
+    WORKTRUNK_CONFIG_PATH: /var/folders/wf/s6ycxvvs4ln8qsdbfx40hnc40000gn/T/.tmpb12hgn/test-config.toml
 ---
 success: true
 exit_code: 0
@@ -255,7 +255,7 @@ _arguments "${_arguments_options[@]}" : \
 _arguments "${_arguments_options[@]}" : \
 '-f[Skip command approval prompts]' \
 '--force[Skip command approval prompts]' \
-'--no-hooks[Skip all project hooks (pre-commit-command)]' \
+'--no-verify[Skip all project hooks (pre-commit-command)]' \
 '-v[Enable verbose output (show git commands and debug info)]' \
 '--verbose[Enable verbose output (show git commands and debug info)]' \
 '-h[Print help]' \
@@ -266,7 +266,7 @@ _arguments "${_arguments_options[@]}" : \
 _arguments "${_arguments_options[@]}" : \
 '-f[Skip command approval prompts]' \
 '--force[Skip command approval prompts]' \
-'--no-hooks[Skip all project hooks (pre-squash-command)]' \
+'--no-verify[Skip all project hooks (pre-squash-command)]' \
 '-v[Enable verbose output (show git commands and debug info)]' \
 '--verbose[Enable verbose output (show git commands and debug info)]' \
 '-h[Print help]' \
@@ -320,7 +320,7 @@ _arguments "${_arguments_options[@]}" : \
 '--create[Create a new branch]' \
 '-f[Skip confirmation prompt]' \
 '--force[Skip confirmation prompt]' \
-'--no-hooks[Skip all project hooks (post-create, post-start)]' \
+'--no-verify[Skip all project hooks (post-create, post-start)]' \
 '-v[Enable verbose output (show git commands and debug info)]' \
 '--verbose[Enable verbose output (show git commands and debug info)]' \
 '-h[Print help]' \
@@ -352,7 +352,7 @@ _arguments "${_arguments_options[@]}" : \
 '--no-squash[Disable squashing commits (by default, commits are squashed into one before merging)]' \
 '-k[Keep worktree after merging (don'\''t remove)]' \
 '--keep[Keep worktree after merging (don'\''t remove)]' \
-'--no-hooks[Skip all project hooks (pre-merge-command)]' \
+'--no-verify[Skip all project hooks (pre-merge-command)]' \
 '-f[Skip approval prompts for commands]' \
 '--force[Skip approval prompts for commands]' \
 '--tracked-only[Only stage tracked files (git add -u) instead of all files (git add -A)]' \

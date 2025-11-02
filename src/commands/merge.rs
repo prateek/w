@@ -50,7 +50,7 @@ pub fn handle_merge(
     target: Option<&str>,
     squash_enabled: bool,
     keep: bool,
-    no_hooks: bool,
+    no_verify: bool,
     force: bool,
     tracked_only: bool,
 ) -> Result<(), GitError> {
@@ -95,7 +95,7 @@ pub fn handle_merge(
             handle_commit_changes(
                 &config.commit_generation,
                 &current_branch,
-                no_hooks,
+                no_verify,
                 force,
                 tracked_only,
             )?;
@@ -104,15 +104,15 @@ pub fn handle_merge(
 
     // Squash commits if enabled
     if squash_enabled {
-        handle_squash(&target_branch, no_hooks, force)?;
+        handle_squash(&target_branch, no_verify, force)?;
     }
 
     // Rebase onto target (delegate to atomic dev command)
     super::dev::handle_dev_rebase(Some(&target_branch))?;
 
-    // Run pre-merge checks unless --no-hooks was specified
+    // Run pre-merge checks unless --no-verify was specified
     // Do this AFTER rebase to validate the final state that will be pushed
-    if !no_hooks && let Ok(Some(project_config)) = ProjectConfig::load(&repo.worktree_root()?) {
+    if !no_verify && let Ok(Some(project_config)) = ProjectConfig::load(&repo.worktree_root()?) {
         let worktree_path =
             std::env::current_dir().git_context("Failed to get current directory")?;
         run_pre_merge_commands(
@@ -310,15 +310,15 @@ pub fn commit_with_generated_message(
 fn handle_commit_changes(
     commit_generation_config: &worktrunk::config::CommitGenerationConfig,
     current_branch: &str,
-    no_hooks: bool,
+    no_verify: bool,
     force: bool,
     tracked_only: bool,
 ) -> Result<(), GitError> {
     let repo = Repository::current();
     let config = WorktrunkConfig::load().git_context("Failed to load config")?;
 
-    // Run pre-commit hook unless --no-hooks was specified
-    if !no_hooks && let Ok(Some(project_config)) = ProjectConfig::load(&repo.worktree_root()?) {
+    // Run pre-commit hook unless --no-verify was specified
+    if !no_verify && let Ok(Some(project_config)) = ProjectConfig::load(&repo.worktree_root()?) {
         let worktree_path =
             std::env::current_dir().git_context("Failed to get current directory")?;
         run_pre_commit_commands(
@@ -350,11 +350,11 @@ fn handle_commit_changes(
 
 fn handle_squash(
     target_branch: &str,
-    no_hooks: bool,
+    no_verify: bool,
     force: bool,
 ) -> Result<Option<usize>, GitError> {
     // Delegate to the atomic dev command
-    super::dev::handle_dev_squash(Some(target_branch), force, no_hooks)?;
+    super::dev::handle_dev_squash(Some(target_branch), force, no_verify)?;
     Ok(None)
 }
 

@@ -87,7 +87,7 @@ enum DevCommand {
 
         /// Skip all project hooks (pre-commit-command)
         #[arg(long)]
-        no_hooks: bool,
+        no_verify: bool,
     },
 
     /// Squash commits with LLM-generated message
@@ -101,7 +101,7 @@ enum DevCommand {
 
         /// Skip all project hooks (pre-squash-command)
         #[arg(long)]
-        no_hooks: bool,
+        no_verify: bool,
     },
 
     /// Push changes to target branch
@@ -195,7 +195,7 @@ enum Commands {
 
         /// Skip all project hooks (post-create, post-start)
         #[arg(long)]
-        no_hooks: bool,
+        no_verify: bool,
     },
 
     /// Finish current worktree, returning to primary if current
@@ -241,7 +241,7 @@ The merge operation follows a strict order designed for fail-fast execution:
 5. Run pre-merge commands
    Runs commands from project config's [pre-merge-command] after rebase completes.
    These receive {target} placeholder for the target branch. Commands run sequentially
-   and any failure aborts the merge immediately. Skip with --no-hooks.
+   and any failure aborts the merge immediately. Skip with --no-verify.
 
 6. Push to target
    Fast-forward pushes to target branch. Rejects non-fast-forward pushes (ensures
@@ -263,7 +263,7 @@ Keep worktree after merging:
   wt merge --keep
 
 Skip pre-merge commands:
-  wt merge --no-hooks")]
+  wt merge --no-verify")]
     Merge {
         /// Target branch to merge into (defaults to default branch)
         target: Option<String>,
@@ -278,7 +278,7 @@ Skip pre-merge commands:
 
         /// Skip all project hooks (pre-merge-command)
         #[arg(long)]
-        no_hooks: bool,
+        no_verify: bool,
 
         /// Skip approval prompts for commands
         #[arg(short, long)]
@@ -435,12 +435,12 @@ fn main() {
         },
         Commands::Dev { action } => match action {
             DevCommand::RunHook { hook_type, force } => handle_dev_run_hook(hook_type, force),
-            DevCommand::Commit { force, no_hooks } => handle_dev_commit(force, no_hooks),
+            DevCommand::Commit { force, no_verify } => handle_dev_commit(force, no_verify),
             DevCommand::Squash {
                 target,
                 force,
-                no_hooks,
-            } => handle_dev_squash(target.as_deref(), force, no_hooks),
+                no_verify,
+            } => handle_dev_squash(target.as_deref(), force, no_verify),
             DevCommand::Push {
                 target,
                 allow_merge_commits,
@@ -463,19 +463,19 @@ fn main() {
             base,
             execute,
             force,
-            no_hooks,
+            no_verify,
         } => WorktrunkConfig::load()
             .git_context("Failed to load config")
             .and_then(|config| {
                 // Execute switch operation (creates worktree, runs post-create hooks)
                 let result =
-                    handle_switch(&branch, create, base.as_deref(), force, no_hooks, &config)?;
+                    handle_switch(&branch, create, base.as_deref(), force, no_verify, &config)?;
 
                 // Show success message (temporal locality: immediately after worktree creation)
                 handle_switch_output(&result, &branch, execute.as_deref())?;
 
                 // Now spawn post-start hooks (background processes, after success message)
-                if !no_hooks {
+                if !no_verify {
                     let repo = Repository::current();
                     commands::worktree::spawn_post_start_commands(
                         result.path(),
@@ -542,14 +542,14 @@ fn main() {
             target,
             squash_enabled,
             keep,
-            no_hooks,
+            no_verify,
             force,
             tracked_only,
         } => handle_merge(
             target.as_deref(),
             squash_enabled,
             keep,
-            no_hooks,
+            no_verify,
             force,
             tracked_only,
         ),

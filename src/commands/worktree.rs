@@ -149,7 +149,7 @@ pub fn handle_switch(
     create: bool,
     base: Option<&str>,
     force: bool,
-    no_hooks: bool,
+    no_verify: bool,
     config: &WorktrunkConfig,
 ) -> Result<SwitchResult, GitError> {
     let repo = Repository::current();
@@ -216,7 +216,7 @@ pub fn handle_switch(
         .git_context("Failed to canonicalize worktree path")?;
 
     // Execute post-create commands (sequential, blocking)
-    if !no_hooks {
+    if !no_verify {
         execute_post_create_commands(&worktree_path, &repo, config, branch, force)?;
     }
 

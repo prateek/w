@@ -16,7 +16,7 @@ info:
     LANG: C
     LC_ALL: C
     SOURCE_DATE_EPOCH: "1761609600"
-    WORKTRUNK_CONFIG_PATH: /var/folders/wf/s6ycxvvs4ln8qsdbfx40hnc40000gn/T/.tmp93y4Df/test-config.toml
+    WORKTRUNK_CONFIG_PATH: /var/folders/wf/s6ycxvvs4ln8qsdbfx40hnc40000gn/T/.tmpIjUcUr/test-config.toml
 ---
 success: true
 exit_code: 0
@@ -24,12 +24,12 @@ exit_code: 0
 🟡 [33mAuto-staging untracked files: dirty.txt[0m
 🔄 [36mCommitting with default message...[0m (1 file, [32m+1[0m)
 💡 [2mUsing fallback commit message. Run 'wt config help' to configure LLM-generated messages[0m
-[40m [0m  [1mWIP: Auto-commit before merge[0m
+[40m [0m  [1mChanges to dirty.txt[0m
 
 ✅ [32mCommitted changes @ [2m[SHA][0m
 🔄 [36mMerging 1 commit to [1m[36mmain[0m @ [2m[SHA][0m (no squashing needed, no rebasing needed)
 
-* [SHA][33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeature[m[33m)[m WIP: Auto-commit before merge
+* [SHA][33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeature[m[33m)[m Changes to dirty.txt
 
  dirty.txt | 1 [32m+[m
  1 file changed, 1 insertion(+)

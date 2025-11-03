@@ -1,4 +1,5 @@
 use std::io::Write;
+use std::path::Path;
 use std::process::{self, Stdio};
 use worktrunk::config::CommitGenerationConfig;
 use worktrunk::git::{GitError, Repository};
@@ -218,8 +219,33 @@ pub fn generate_commit_message(
         });
     }
 
-    // Fallback: simple deterministic commit message (only when not configured)
-    Ok("WIP: Auto-commit before merge".to_string())
+    // Fallback: generate a descriptive commit message based on changed files
+    let repo = Repository::current();
+    let file_list = repo.run_command(&["diff", "--staged", "--name-only"])?;
+    let staged_files = file_list
+        .lines()
+        .map(|line| line.trim())
+        .filter(|line| !line.is_empty())
+        .map(|path| {
+            Path::new(path)
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or(path)
+        })
+        .collect::<Vec<_>>();
+
+    let message = match staged_files.len() {
+        0 => "WIP: Changes".to_string(),
+        1 => format!("Changes to {}", staged_files[0]),
+        2 => format!("Changes to {} & {}", staged_files[0], staged_files[1]),
+        3 => format!(
+            "Changes to {}, {} & {}",
+            staged_files[0], staged_files[1], staged_files[2]
+        ),
+        n => format!("Changes to {} files", n),
+    };
+
+    Ok(message)
 }
 
 fn try_generate_commit_message(

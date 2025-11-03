@@ -300,24 +300,24 @@ pub fn format_header_line(layout: &LayoutConfig) {
     push_header_at(&mut line, HEADER_PATH, widths.path, positions.path, style);
     push_header_at(
         &mut line,
+        HEADER_CI,
+        widths.ci_status,
+        positions.ci_status,
+        style,
+    );
+    push_header_at(
+        &mut line,
         HEADER_UPSTREAM,
         widths.upstream.total,
         positions.upstream,
         style,
     );
+    push_header_at(&mut line, HEADER_AGE, widths.time, positions.time, style);
     push_header_at(
         &mut line,
         HEADER_COMMIT,
         widths.commit,
         positions.commit,
-        style,
-    );
-    push_header_at(&mut line, HEADER_AGE, widths.time, positions.time, style);
-    push_header_at(
-        &mut line,
-        HEADER_CI,
-        widths.ci_status,
-        positions.ci_status,
         style,
     );
     push_header_at(
@@ -485,6 +485,18 @@ pub fn format_list_item_line(
         }
     }
 
+    // CI status
+    if widths.ci_status > 0 {
+        line.pad_to(positions.ci_status);
+        if let Some(pr_status) = item.pr_status() {
+            let mut ci_segment = format_ci_status(pr_status);
+            ci_segment.pad_to(widths.ci_status);
+            append_line(&mut line, ci_segment);
+        } else {
+            push_blank(&mut line, widths.ci_status);
+        }
+    }
+
     // Upstream tracking
     if widths.upstream.total > 0 {
         line.pad_to(positions.upstream);
@@ -522,18 +534,6 @@ pub fn format_list_item_line(
             width = widths.time
         );
         line.push_styled(time_str, Style::new().dimmed());
-    }
-
-    // CI status
-    if widths.ci_status > 0 {
-        line.pad_to(positions.ci_status);
-        if let Some(pr_status) = item.pr_status() {
-            let mut ci_segment = format_ci_status(pr_status);
-            ci_segment.pad_to(widths.ci_status);
-            append_line(&mut line, ci_segment);
-        } else {
-            push_blank(&mut line, widths.ci_status);
-        }
     }
 
     // Message

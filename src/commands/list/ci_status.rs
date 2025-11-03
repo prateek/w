@@ -27,16 +27,27 @@ pub struct PrStatus {
 }
 
 impl PrStatus {
-    /// Detect PR status for a branch using gh/glab CLI
-    /// Returns None if no PR found or CLI tools unavailable
+    /// Detect CI status for a branch using gh/glab CLI
+    /// First tries to find PR/MR status, then falls back to workflow/pipeline runs
+    /// Returns None if no CI found or CLI tools unavailable
     pub fn detect(branch: &str, local_head: &str) -> Option<Self> {
-        // Try GitHub first
+        // Try GitHub PR first
         if let Some(status) = Self::detect_github(branch, local_head) {
             return Some(status);
         }
 
-        // Fall back to GitLab
-        Self::detect_gitlab(branch, local_head)
+        // Try GitHub workflow runs (for branches without PRs)
+        if let Some(status) = Self::detect_github_workflow(branch, local_head) {
+            return Some(status);
+        }
+
+        // Try GitLab MR
+        if let Some(status) = Self::detect_gitlab(branch, local_head) {
+            return Some(status);
+        }
+
+        // Fall back to GitLab pipeline (for branches without MRs)
+        Self::detect_gitlab_pipeline(branch, local_head)
     }
 
     fn detect_github(branch: &str, local_head: &str) -> Option<Self> {
@@ -189,6 +200,101 @@ impl PrStatus {
             _ => CiStatus::NoCI,
         }
     }
+
+    fn detect_github_workflow(branch: &str, _local_head: &str) -> Option<Self> {
+        // Check if gh is available and authenticated
+        if !Command::new("gh")
+            .args(["auth", "status"])
+            .output()
+            .map(|o| o.status.success())
+            .unwrap_or(false)
+        {
+            return None;
+        }
+
+        // Get most recent workflow run for the branch
+        let output = Command::new("gh")
+            .args([
+                "run",
+                "list",
+                "--branch",
+                branch,
+                "--limit",
+                "1",
+                "--json",
+                "status,conclusion",
+            ])
+            .output()
+            .ok()?;
+
+        if !output.status.success() {
+            return None;
+        }
+
+        let runs: Vec<GitHubWorkflowRun> = serde_json::from_slice(&output.stdout).ok()?;
+        let run = runs.first()?;
+
+        // Analyze workflow run status
+        let ci_status = Self::analyze_github_workflow_run(run);
+
+        // Workflow runs don't have staleness concept (no PR to compare against)
+        Some(PrStatus {
+            ci_status,
+            is_stale: false,
+        })
+    }
+
+    fn analyze_github_workflow_run(run: &GitHubWorkflowRun) -> CiStatus {
+        match run.status.as_deref() {
+            Some("in_progress" | "queued" | "pending" | "waiting") => CiStatus::Running,
+            Some("completed") => match run.conclusion.as_deref() {
+                Some("success") => CiStatus::Passed,
+                Some("failure" | "cancelled" | "timed_out" | "action_required") => CiStatus::Failed,
+                Some("skipped" | "neutral") | None => CiStatus::NoCI,
+                _ => CiStatus::NoCI,
+            },
+            _ => CiStatus::NoCI,
+        }
+    }
+
+    fn detect_gitlab_pipeline(branch: &str, _local_head: &str) -> Option<Self> {
+        // Check if glab is available
+        if !Command::new("glab")
+            .arg("--version")
+            .output()
+            .map(|o| o.status.success())
+            .unwrap_or(false)
+        {
+            return None;
+        }
+
+        // Get most recent pipeline for the branch
+        let output = Command::new("glab")
+            .args(["ci", "list", "--per-page", "1"])
+            .env("BRANCH", branch) // glab ci list uses BRANCH env var
+            .output()
+            .ok()?;
+
+        if !output.status.success() {
+            return None;
+        }
+
+        // Parse glab ci list output (format: "• (<status>) <pipeline-info>")
+        let output_str = String::from_utf8(output.stdout).ok()?;
+        let first_line = output_str.lines().next()?;
+
+        // Extract status from format like "• (running) #12345"
+        let status_start = first_line.find('(')?;
+        let status_end = first_line.find(')')?;
+        let status = &first_line[status_start + 1..status_end];
+
+        let ci_status = Self::analyze_gitlab_pipeline(Some(&status.to_string()));
+
+        Some(PrStatus {
+            ci_status,
+            is_stale: false,
+        })
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -204,6 +310,12 @@ struct GitHubPrInfo {
 
 #[derive(Debug, Deserialize)]
 struct GitHubCheck {
+    status: Option<String>,
+    conclusion: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct GitHubWorkflowRun {
     status: Option<String>,
     conclusion: Option<String>,
 }

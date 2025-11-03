@@ -274,9 +274,9 @@ pub struct ColumnPositions {
     pub branch_diff: usize,
     pub states: usize,
     pub path: usize,
+    pub ci_status: usize,
     pub upstream: usize,
     pub time: usize,
-    pub ci_status: usize,
     pub commit: usize,
     pub message: usize,
 }
@@ -463,10 +463,10 @@ pub fn calculate_responsive_layout(
     // 4. branch_diff - line diff in commits (work volume in those commits)
     // 5. states - special states like [rebasing], (conflicts) (rare but urgent when present)
     // 6. path - location (where is this?)
-    // 7. upstream - tracking configuration (sync context)
-    // 8. commit - hash (reference info, precedes age for clarity)
+    // 7. ci_status - CI status (contextual when available)
+    // 8. upstream - tracking configuration (sync context)
     // 9. time - recency (nice-to-have context)
-    // 10. ci_status - CI/PR status (contextual when available)
+    // 10. commit - hash (reference info, rarely needed)
     // 11. message - description (nice-to-have, space-hungry)
 
     let mut remaining = terminal_width;
@@ -517,14 +517,14 @@ pub fn calculate_responsive_layout(
             has_data: true,
         },
         ColumnDescriptor {
-            column_type: ColumnType::Upstream,
+            column_type: ColumnType::CiStatus,
             base_priority: 7,
-            has_data: data_flags.upstream,
+            has_data: data_flags.ci_status,
         },
         ColumnDescriptor {
-            column_type: ColumnType::Commit,
+            column_type: ColumnType::Upstream,
             base_priority: 8,
-            has_data: true,
+            has_data: data_flags.upstream,
         },
         ColumnDescriptor {
             column_type: ColumnType::Time,
@@ -532,9 +532,9 @@ pub fn calculate_responsive_layout(
             has_data: true,
         },
         ColumnDescriptor {
-            column_type: ColumnType::CiStatus,
+            column_type: ColumnType::Commit,
             base_priority: 10,
-            has_data: data_flags.ci_status,
+            has_data: true,
         },
         ColumnDescriptor {
             column_type: ColumnType::Message,
@@ -669,10 +669,10 @@ pub fn calculate_responsive_layout(
         branch_diff: advance(widths.branch_diff.total),
         states: advance(widths.states),
         path: advance(widths.path),
-        upstream: advance(widths.upstream.total),
-        commit: advance(widths.commit),
-        time: advance(widths.time),
         ci_status: advance(widths.ci_status),
+        upstream: advance(widths.upstream.total),
+        time: advance(widths.time),
+        commit: advance(widths.commit),
         message: advance(widths.message),
     };
 

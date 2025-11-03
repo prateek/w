@@ -16,7 +16,7 @@ info:
     LANG: C
     LC_ALL: C
     SOURCE_DATE_EPOCH: "1761609600"
-    WORKTRUNK_CONFIG_PATH: /var/folders/wf/s6ycxvvs4ln8qsdbfx40hnc40000gn/T/.tmpUFP51D/test-config.toml
+    WORKTRUNK_CONFIG_PATH: /var/folders/wf/s6ycxvvs4ln8qsdbfx40hnc40000gn/T/.tmpd1IeyI/test-config.toml
 ---
 success: true
 exit_code: 0
@@ -30,14 +30,14 @@ exit_code: 0
 [40m [0m  - feat: initial feature
 
 ✅ [32mSquashed @ [2m[SHA][0m
-🔄 [36mMerging 1 commit to [1m[36mmain[0m @ [2m[SHA][0m (no rebasing needed)
+🔄 [36mMerging 1 commit to [1m[36mmain[0m[36m @ [2m[SHA][0m (no rebasing needed)
 
 * [SHA][33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeature[m[33m)[m Squash commits from main
 
  feature.txt | 1 [32m+[m
  1 file changed, 1 insertion(+)
 
-✅ [32mMerged to [1m[32mmain[0m (1 commit, 1 file, [32m+1[0m)  [0m
+✅ [32mMerged to [1m[32mmain[0m[0m (1 commit, 1 file, [32m+1[0m)
 🔄 [36mCleaning up worktree...[0m
 ✅ [32mReturned to primary at [1m[32m[REPO][0m[0m
 

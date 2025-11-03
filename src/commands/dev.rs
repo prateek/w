@@ -277,9 +277,10 @@ pub fn handle_dev_squash(
 
     // Check if there are actually any changes to commit
     if !repo.has_staged_changes()? {
-        use worktrunk::styling::{ERROR, ERROR_EMOJI, HINT};
+        use worktrunk::styling::{ERROR, ERROR_EMOJI, HINT, HINT_EMOJI};
+        let hint_bold = HINT.bold();
         return Err(GitError::CommandFailed(format!(
-            "{ERROR_EMOJI} {ERROR}No changes to commit after squashing {commit_count} commits{ERROR:#}\n\n{HINT_EMOJI} {HINT}The commits resulted in no net changes (e.g., changes were reverted or already in {HINT:#}{CYAN_BOLD}{target_branch}{CYAN_BOLD:#}{HINT}){HINT:#}"
+            "{ERROR_EMOJI} {ERROR}No changes to commit after squashing {commit_count} commits{ERROR:#}\n\n{HINT_EMOJI} {HINT}The commits resulted in no net changes (e.g., changes were reverted or already in {hint_bold}{target_branch}{hint_bold:#}{HINT}){HINT:#}"
         )));
     }
 
@@ -330,7 +331,7 @@ pub fn handle_dev_rebase(target: Option<&str>) -> Result<bool, GitError> {
 
     // Rebase onto target
     crate::output::progress(format!(
-        "🔄 {CYAN}Rebasing onto {CYAN:#}{CYAN_BOLD}{target_branch}{CYAN_BOLD:#}{CYAN}...{CYAN:#}"
+        "🔄 {CYAN}Rebasing onto {CYAN_BOLD}{target_branch}{CYAN_BOLD:#}{CYAN}...{CYAN:#}"
     ))?;
 
     let rebase_result = repo.run_command(&["rebase", &target_branch]);

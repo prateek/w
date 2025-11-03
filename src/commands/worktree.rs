@@ -662,7 +662,7 @@ pub fn handle_push(
         let cyan_dim = CYAN.dimmed();
 
         crate::output::progress(format!(
-            "🔄 {CYAN}{verb_ing} {commit_count} {commit_text} to {CYAN_BOLD}{target_branch}{CYAN_BOLD:#} @ {cyan_dim}{head_sha}{cyan_dim:#}{CYAN:#} ({operations_text})\n"
+            "🔄 {CYAN}{verb_ing} {commit_count} {commit_text} to {CYAN_BOLD}{target_branch}{CYAN_BOLD:#}{CYAN} @ {cyan_dim}{head_sha}{cyan_dim:#}{CYAN:#} ({operations_text})\n"
         ))?;
 
         // Show the commit graph with color
@@ -715,7 +715,7 @@ pub fn handle_push(
         summary_parts.extend(stats.format_summary());
 
         crate::output::progress(format!(
-            "{SUCCESS_EMOJI} {GREEN}{verb} {GREEN_BOLD}{target_branch}{GREEN_BOLD:#} ({})  {GREEN:#}",
+            "{SUCCESS_EMOJI} {GREEN}{verb} {GREEN_BOLD}{target_branch}{GREEN_BOLD:#}{GREEN:#} ({})",
             summary_parts.join(", ")
         ))?;
     } else {

@@ -110,7 +110,7 @@ impl std::fmt::Display for GitError {
                 match command_name {
                     Some(name) => write!(
                         f,
-                        "{ERROR_EMOJI} {ERROR}{hook_type} command failed: {ERROR:#}{error_bold}{name}{error_bold:#}\n\n{error}\n\n{HINT_EMOJI} {HINT}Use --no-hooks to skip {hook_type} commands{HINT:#}"
+                        "{ERROR_EMOJI} {ERROR}{hook_type} command failed: {error_bold}{name}{error_bold:#}{ERROR:#}\n\n{error}\n\n{HINT_EMOJI} {HINT}Use --no-hooks to skip {hook_type} commands{HINT:#}"
                     ),
                     None => write!(
                         f,
@@ -132,7 +132,7 @@ impl std::fmt::Display for GitError {
                 let error_bold = ERROR.bold();
                 write!(
                     f,
-                    "{ERROR_EMOJI} {ERROR}Branch {ERROR:#}{error_bold}{branch}{error_bold:#}{ERROR} already exists{ERROR:#}\n\n{HINT_EMOJI} {HINT}Remove --create flag to switch to it{HINT:#}"
+                    "{ERROR_EMOJI} {ERROR}Branch {error_bold}{branch}{error_bold:#}{ERROR} already exists{ERROR:#}\n\n{HINT_EMOJI} {HINT}Remove --create flag to switch to it{HINT:#}"
                 )
             }
 
@@ -141,7 +141,7 @@ impl std::fmt::Display for GitError {
                 let error_bold = ERROR.bold();
                 write!(
                     f,
-                    "{ERROR_EMOJI} {ERROR}Worktree directory missing for {ERROR:#}{error_bold}{branch}{error_bold:#}\n\n{HINT_EMOJI} {HINT}Run 'git worktree prune' to clean up{HINT:#}"
+                    "{ERROR_EMOJI} {ERROR}Worktree directory missing for {error_bold}{branch}{error_bold:#}{ERROR:#}\n\n{HINT_EMOJI} {HINT}Run 'git worktree prune' to clean up{HINT:#}"
                 )
             }
 
@@ -150,7 +150,7 @@ impl std::fmt::Display for GitError {
                 let error_bold = ERROR.bold();
                 write!(
                     f,
-                    "{ERROR_EMOJI} {ERROR}No worktree found for branch {ERROR:#}{error_bold}{branch}{error_bold:#}"
+                    "{ERROR_EMOJI} {ERROR}No worktree found for branch {error_bold}{branch}{error_bold:#}{ERROR:#}"
                 )
             }
 
@@ -236,7 +236,7 @@ impl std::fmt::Display for GitError {
 
                 write!(
                     f,
-                    "{ERROR_EMOJI} {ERROR}Rebase onto {ERROR:#}{error_bold}{target_branch}{error_bold:#}{ERROR} incomplete{ERROR:#}"
+                    "{ERROR_EMOJI} {ERROR}Rebase onto {error_bold}{target_branch}{error_bold:#}{ERROR} incomplete{ERROR:#}"
                 )?;
 
                 if !git_output.is_empty() {

@@ -169,7 +169,7 @@ pub fn handle_merge(
         let new_branch = primary_repo.current_branch()?;
         if new_branch.as_deref() != Some(&target_branch) {
             crate::output::progress(format!(
-                "🔄 {CYAN}Switching to {CYAN:#}{CYAN_BOLD}{target_branch}{CYAN_BOLD:#}{CYAN}...{CYAN:#}"
+                "🔄 {CYAN}Switching to {CYAN_BOLD}{target_branch}{CYAN_BOLD:#}{CYAN}...{CYAN:#}"
             ))?;
             primary_repo
                 .run_command(&["switch", &target_branch])

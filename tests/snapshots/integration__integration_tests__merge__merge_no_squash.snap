@@ -17,12 +17,12 @@ info:
     LANG: C
     LC_ALL: C
     SOURCE_DATE_EPOCH: "1761609600"
-    WORKTRUNK_CONFIG_PATH: /var/folders/wf/s6ycxvvs4ln8qsdbfx40hnc40000gn/T/.tmp47MZ2i/test-config.toml
+    WORKTRUNK_CONFIG_PATH: /var/folders/wf/s6ycxvvs4ln8qsdbfx40hnc40000gn/T/.tmp3R9uhq/test-config.toml
 ---
 success: true
 exit_code: 0
 ----- stdout -----
-🔄 [36mMerging 2 commits to [1m[36mmain[0m @ [2m[SHA][0m (no squashing needed, no rebasing needed)
+🔄 [36mMerging 2 commits to [1m[36mmain[0m[36m @ [2m[SHA][0m (no squashing needed, no rebasing needed)
 
 * [SHA][33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeature[m[33m)[m feat: add file 2
 * [SHA] feat: add file 1
@@ -31,7 +31,7 @@ exit_code: 0
  file2.txt | 1 [32m+[m
  2 files changed, 2 insertions(+)
 
-✅ [32mMerged to [1m[32mmain[0m (2 commits, 2 files, [32m+2[0m)  [0m
+✅ [32mMerged to [1m[32mmain[0m[0m (2 commits, 2 files, [32m+2[0m)
 🔄 [36mCleaning up worktree...[0m
 ✅ [32mReturned to primary at [1m[32m[REPO][0m[0m
 

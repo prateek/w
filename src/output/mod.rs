@@ -100,7 +100,7 @@ pub(crate) fn format_switch_success_message(
     };
 
     format!(
-        "{SUCCESS_EMOJI} {GREEN}{action} {green_bold}{branch}{green_bold:#}{GREEN}{location} {green_bold}{}{green_bold:#}",
+        "{SUCCESS_EMOJI} {GREEN}{action} {green_bold}{branch}{green_bold:#}{GREEN}{location} {green_bold}{}{green_bold:#}{GREEN:#}",
         path.display()
     )
 }

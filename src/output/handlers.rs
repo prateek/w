@@ -29,7 +29,7 @@ fn format_remove_message(result: &RemoveResult, branch: Option<&str>) -> String 
     match result {
         RemoveResult::AlreadyOnDefault(branch) => {
             format!(
-                "{SUCCESS_EMOJI} {GREEN}Already on default branch {GREEN:#}{green_bold}{branch}{green_bold:#}"
+                "{SUCCESS_EMOJI} {GREEN}Already on default branch {green_bold}{branch}{green_bold:#}{GREEN:#}"
             )
         }
         RemoveResult::RemovedWorktree {
@@ -51,7 +51,7 @@ fn format_remove_message(result: &RemoveResult, branch: Option<&str>) -> String 
         }
         RemoveResult::SwitchedToDefault(branch) => {
             format!(
-                "{SUCCESS_EMOJI} {GREEN}Switched to default branch {GREEN:#}{green_bold}{branch}{green_bold:#}"
+                "{SUCCESS_EMOJI} {GREEN}Switched to default branch {green_bold}{branch}{green_bold:#}{GREEN:#}"
             )
         }
     }

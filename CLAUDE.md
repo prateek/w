@@ -239,7 +239,9 @@ output.push_str(&format!("{}", anstyle::Reset));
 
 Style based on **user intent**, not data type. In messages, branch names are always bold. When a path is part of an action phrase (e.g., "changed directory to {path}"), it's bold because it answers "where?". When shown as supplementary metadata on a separate line (e.g., "Path: ..."), it's dimmed. Commit hashes are always dimmed in their surrounding color (reference info).
 
-Styled elements must maintain their surrounding color. Don't apply just `{bold}` or `{dim}` to elements in colored messages - compose the color with the style using `.bold()` or `.dimmed()` on the color style. Applying a style without color creates a color leak - the styled element loses its context color and appears in default terminal colors (black/white).
+**Parenthesized suffixes do NOT need to maintain surrounding color.** Parenthesized content (e.g., `(no squashing needed)`, `(3 files, +45, -12)`) can be unstyled/default color even within colored messages. These are supplementary details that don't need color emphasis.
+
+Styled elements (except parenthesized suffixes) must maintain their surrounding color. Don't apply just `{bold}` or `{dim}` to elements in colored messages - compose the color with the style using `.bold()` or `.dimmed()` on the color style. Applying a style without color creates a color leak - the styled element loses its context color and appears in default terminal colors (black/white).
 
 ```rust
 // WRONG - styled element loses surrounding color
@@ -259,6 +261,10 @@ println!("✅ {GREEN}Created worktree, changed directory to {green_bold}{}{green
 // Commit hash as reference info - dimmed in surrounding color
 let green_dim = GREEN.dimmed();
 println!("✅ {GREEN}Committed changes @ {green_dim}{hash}{green_dim:#}{GREEN:#}");
+
+// Parenthesized suffixes - unstyled even in colored messages
+let cyan_dim = CYAN.dimmed();
+println!("🔄 {CYAN}Merging to main @ {cyan_dim}{hash}{cyan_dim:#}{CYAN:#} (no squashing needed)");
 
 // Path as supplementary metadata (separate line) - dimmed in unstyled context
 let dim = AnstyleStyle::new().dimmed();

@@ -39,7 +39,7 @@ if (which wt | is-not-empty) or ($env.WORKTRUNK_BIN? | is-not-empty) {
         return $result.exit_code
     }
 
-    # Override {{ cmd_prefix }} command to add --internal flag for switch, remove, and merge
+    # Override {{ cmd_prefix }} command to add --internal flag
     # Use --wrapped to pass through all flags without parsing them
     export def --env --wrapped {{ cmd_prefix }} [...rest] {
         mut use_source = false
@@ -66,30 +66,9 @@ if (which wt | is-not-empty) or ($env.WORKTRUNK_BIN? | is-not-empty) {
             $_WORKTRUNK_CMD
         }
 
-        let subcommand = ($filtered_args | get 0? | default "")
-
-        match $subcommand {
-            "switch" | "remove" | "merge" => {
-                # Commands that need --internal for directory change support
-                let rest_args = ($filtered_args | skip 1)
-                let internal_args = (["--internal", $subcommand] | append $rest_args)
-                let exit_code = (_wt_exec $cmd ...$internal_args)
-                return $exit_code
-            }
-            ​"beta" => {
-                # Check if beta subcommand is select
-                let dev_subcommand = ($filtered_args | get 1? | default "")
-                if $dev_subcommand == "select" {
-                    let exit_code = (_wt_exec $cmd --internal ...$filtered_args)
-                    return $exit_code
-                } else {
-                    ^$cmd ...$filtered_args
-                }
-            }
-            _ => {
-                # All other commands pass through directly
-                ^$cmd ...$filtered_args
-            }
-        }
+        # Always use --internal mode for directive support
+        let internal_args = (["--internal"] | append $filtered_args)
+        let exit_code = (_wt_exec $cmd ...$internal_args)
+        return $exit_code
     }
 }

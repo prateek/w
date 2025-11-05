@@ -52,7 +52,7 @@ if command -v wt >/dev/null 2>&1 || [[ -n "${WORKTRUNK_BIN:-}" ]]; then
         return $exit_code
     }
 
-    # Override {{ cmd_prefix }} command to add --internal flag for switch, remove, and merge
+    # Override {{ cmd_prefix }} command to add --internal flag
     {{ cmd_prefix }}() {
         local use_source=false
         local args=()
@@ -76,32 +76,8 @@ if command -v wt >/dev/null 2>&1 || [[ -n "${WORKTRUNK_BIN:-}" ]]; then
             _WORKTRUNK_CMD="./target/debug/wt"
         fi
 
-        # Dispatch based on subcommand
-        if [[ ${{ '{' }}#args[@]} -gt 0 ]]; then
-            local subcommand="${args[0]}"
-
-            case "$subcommand" in
-                switch|remove|merge)
-                    # Commands that need --internal for directory change support
-                    _wt_exec --internal "${args[@]}"
-                    ;;
-                beta)
-                    # Check if beta subcommand is select
-                    if [[ ${{ '{' }}#args[@]} -gt 1 ]] && [[ "${args[1]}" == "select" ]]; then
-                        _wt_exec --internal "${args[@]}"
-                    else
-                        command "$_WORKTRUNK_CMD" "${args[@]}"
-                    fi
-                    ;;
-                *)
-                    # All other commands pass through directly
-                    command "$_WORKTRUNK_CMD" "${args[@]}"
-                    ;;
-            esac
-        else
-            # No arguments, just run the command
-            command "$_WORKTRUNK_CMD"
-        fi
+        # Always use --internal mode for directive support
+        _wt_exec --internal "${args[@]}"
 
         # Restore original command
         local result=$?

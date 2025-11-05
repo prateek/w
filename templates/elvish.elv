@@ -53,7 +53,7 @@ if (or (has-external wt) (has-env WORKTRUNK_BIN)) {
         }
     }
 
-    # Override {{ cmd_prefix }} command to add --internal flag for switch, remove, and merge
+    # Override {{ cmd_prefix }} command to add --internal flag
     fn {{ cmd_prefix }} {|@args|
         var use-source = $false
         var filtered-args = []
@@ -79,30 +79,8 @@ if (or (has-external wt) (has-env WORKTRUNK_BIN)) {
             set _WORKTRUNK_CMD = ./target/debug/wt
         }
 
-        # Dispatch based on subcommand
-        if (== (count $filtered-args) 0) {
-            e:$_WORKTRUNK_CMD
-            set _WORKTRUNK_CMD = $saved-cmd
-            return
-        }
-
-        var subcommand = $filtered-args[0]
-
-        if (or (eq $subcommand "switch") (eq $subcommand "remove") (eq $subcommand "merge")) {
-            # Commands that need --internal for directory change support
-            var rest-args = $filtered-args[1..]
-            _wt_exec --internal $subcommand $@rest-args
-        } elif (eq $subcommand ​"beta") {
-            # Check if beta subcommand is select
-            if (and (> (count $filtered-args) 1) (eq $filtered-args[1] "select")) {
-                _wt_exec --internal $@filtered-args
-            } else {
-                e:$_WORKTRUNK_CMD $@filtered-args
-            }
-        } else {
-            # All other commands pass through directly
-            e:$_WORKTRUNK_CMD $@filtered-args
-        }
+        # Always use --internal mode for directive support
+        _wt_exec --internal $@filtered-args
 
         # Restore original command
         set _WORKTRUNK_CMD = $saved-cmd

@@ -43,7 +43,7 @@ if shutil.which("wt") is not None or os.environ.get('WORKTRUNK_BIN'):
         return result.returncode
 
     def _{{ cmd_prefix }}_wrapper(args):
-        """Override {{ cmd_prefix }} command to add --internal flag for switch, remove, and merge"""
+        """Override {{ cmd_prefix }} command to add --internal flag"""
         use_source = False
         filtered_args = []
 
@@ -65,28 +65,8 @@ if shutil.which("wt") is not None or os.environ.get('WORKTRUNK_BIN'):
         else:
             cmd = _WORKTRUNK_CMD
 
-        if not filtered_args:
-            # No arguments, just run the command
-            ![@(cmd)]
-            return
-
-        subcommand = filtered_args[0]
-
-        if subcommand in ["switch", "remove", "merge"]:
-            # Commands that need --internal for directory change support
-            rest_args = filtered_args[1:]
-            return _wt_exec(["--internal", subcommand] + rest_args, cmd=cmd)
-        elif subcommand == "beta":
-            # Check if beta subcommand is select
-            if len(filtered_args) > 1 and filtered_args[1] == "select":
-                return _wt_exec(["--internal"] + filtered_args, cmd=cmd)
-            else:
-                result = ![@(cmd) @(filtered_args)]
-                return result.returncode
-        else:
-            # All other commands pass through directly
-            result = ![@(cmd) @(filtered_args)]
-            return result.returncode
+        # Always use --internal mode for directive support
+        return _wt_exec(["--internal"] + filtered_args, cmd=cmd)
 
     # Register the alias
     aliases['{{ cmd_prefix }}'] = _{{ cmd_prefix }}_wrapper

@@ -88,7 +88,7 @@ if type -q {{ cmd_prefix }}; or set -q WORKTRUNK_BIN
         return $exit_code
     end
 
-    # Override {{ cmd_prefix }} command to add --internal flag for switch, remove, and merge
+    # Override {{ cmd_prefix }} command to add --internal flag
     function {{ cmd_prefix }}
         set -l use_source false
         set -l args
@@ -112,29 +112,8 @@ if type -q {{ cmd_prefix }}; or set -q WORKTRUNK_BIN
             set _WORKTRUNK_CMD ./target/debug/wt
         end
 
-        # Dispatch based on subcommand
-        if test (count $args) -gt 0
-            set -l subcommand $args[1]
-
-            switch $subcommand
-                case switch remove merge
-                    # Commands that need --internal for directory change support
-                    _wt_exec --internal $args
-                case beta
-                    # Check if beta subcommand is select
-                    if test (count $args) -gt 1; and test "$args[2]" = "select"
-                        _wt_exec --internal $args
-                    else
-                        command $_WORKTRUNK_CMD $args
-                    end
-                case '*'
-                    # All other commands pass through directly
-                    command $_WORKTRUNK_CMD $args
-            end
-        else
-            # No arguments, just run the command
-            command $_WORKTRUNK_CMD
-        end
+        # Always use --internal mode for directive support
+        _wt_exec --internal $args
 
         # Restore original command
         set -l result $status

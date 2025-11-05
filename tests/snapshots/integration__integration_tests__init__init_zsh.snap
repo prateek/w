@@ -16,7 +16,7 @@ info:
     LANG: C
     LC_ALL: C
     SOURCE_DATE_EPOCH: "1761609600"
-    WORKTRUNK_CONFIG_PATH: /var/folders/wf/s6ycxvvs4ln8qsdbfx40hnc40000gn/T/.tmpGm8Bss/test-config.toml
+    WORKTRUNK_CONFIG_PATH: /var/folders/wf/s6ycxvvs4ln8qsdbfx40hnc40000gn/T/.tmpyaWw3x/test-config.toml
 ---
 success: true
 exit_code: 0
@@ -80,7 +80,7 @@ if command -v wt >/dev/null 2>&1 || [[ -n "${WORKTRUNK_BIN:-}" ]]; then
         return $exit_code
     }
 
-    # Override wt command to add --internal flag for switch, remove, and merge
+    # Override wt command to add --internal flag
     wt() {
         local use_source=false
         local -a args
@@ -104,32 +104,8 @@ if command -v wt >/dev/null 2>&1 || [[ -n "${WORKTRUNK_BIN:-}" ]]; then
             _WORKTRUNK_CMD="./target/debug/wt"
         fi
 
-        # Dispatch based on subcommand (zsh arrays are 1-indexed)
-        if [[ ${#args[@]} -gt 0 ]]; then
-            local subcommand="${args[1]}"
-
-            case "$subcommand" in
-                switch|remove|merge)
-                    # Commands that need --internal for directory change support
-                    _wt_exec --internal "${args[@]}"
-                    ;;
-                beta)
-                    # Check if beta subcommand is select
-                    if [[ ${#args[@]} -gt 1 ]] && [[ "${args[2]}" == "select" ]]; then
-                        _wt_exec --internal "${args[@]}"
-                    else
-                        command "$_WORKTRUNK_CMD" "${args[@]}"
-                    fi
-                    ;;
-                *)
-                    # All other commands pass through directly
-                    command "$_WORKTRUNK_CMD" "${args[@]}"
-                    ;;
-            esac
-        else
-            # No arguments, just run the command
-            command "$_WORKTRUNK_CMD"
-        fi
+        # Always use --internal mode for directive support
+        _wt_exec --internal "${args[@]}"
 
         # Restore original command
         local result=$?

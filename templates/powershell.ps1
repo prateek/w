@@ -49,7 +49,7 @@ if ((Get-Command wt -ErrorAction SilentlyContinue) -or $env:WORKTRUNK_BIN) {
         return $exitCode
     }
 
-    # Override {{ cmd_prefix }} command to add --internal flag for switch, remove, and merge
+    # Override {{ cmd_prefix }} command to add --internal flag
     function {{ cmd_prefix }} {
         param(
             [Parameter(ValueFromRemainingArguments=$true)]
@@ -81,35 +81,8 @@ if ((Get-Command wt -ErrorAction SilentlyContinue) -or $env:WORKTRUNK_BIN) {
             $cmd = $script:_WORKTRUNK_CMD
         }
 
-        if ($filteredArgs.Count -eq 0) {
-            & $cmd
-            return $LASTEXITCODE
-        }
-
-        $subcommand = $filteredArgs[0]
-
-        switch ($subcommand) {
-            { $_ -in @("switch", "remove", "merge") } {
-                # Commands that need --internal for directory change support
-                $restArgs = $filteredArgs[1..($filteredArgs.Count-1)]
-                $exitCode = _wt_exec -Command $cmd --internal $subcommand @restArgs
-                return $exitCode
-            }
-            "beta" {
-                # Check if beta subcommand is select
-                if ($filteredArgs.Count -gt 1 -and $filteredArgs[1] -eq "select") {
-                    $exitCode = _wt_exec -Command $cmd --internal @filteredArgs
-                    return $exitCode
-                } else {
-                    & $cmd @filteredArgs
-                    return $LASTEXITCODE
-                }
-            }
-            default {
-                # All other commands pass through directly
-                & $cmd @filteredArgs
-                return $LASTEXITCODE
-            }
-        }
+        # Always use --internal mode for directive support
+        $exitCode = _wt_exec -Command $cmd --internal @filteredArgs
+        return $exitCode
     }
 }

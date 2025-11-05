@@ -16,6 +16,7 @@ pub mod directives;
 pub mod e2e_shell;
 pub mod e2e_shell_post_start;
 pub mod init;
+pub mod internal_flag;
 pub mod list;
 pub mod merge;
 pub mod post_start_commands;

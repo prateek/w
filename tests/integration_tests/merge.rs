@@ -702,7 +702,7 @@ fn test_merge_squash_empty_changes() {
         .output()
         .expect("Failed to commit");
 
-    // Merge (squashing is default) - should fail with helpful error about no net changes
+    // Merge (squashing is default) - should succeed even when commits result in no net changes
     snapshot_merge(
         "merge_squash_empty_changes",
         &repo,

@@ -1,7 +1,9 @@
 use worktrunk::HookType;
 use worktrunk::config::{ProjectConfig, WorktrunkConfig};
 use worktrunk::git::{GitError, GitResultExt, Repository};
-use worktrunk::styling::{CYAN, CYAN_BOLD, HINT, HINT_EMOJI, eprintln, format_with_gutter};
+use worktrunk::styling::{
+    AnstyleStyle, CYAN, CYAN_BOLD, HINT, HINT_EMOJI, eprintln, format_with_gutter,
+};
 
 use super::merge::{
     commit_staged_changes, execute_post_merge_commands, format_commit_message_for_display,
@@ -281,11 +283,12 @@ pub fn handle_dev_squash(
 
     // Check if there are actually any changes to commit
     if !repo.has_staged_changes()? {
-        use worktrunk::styling::{ERROR, ERROR_EMOJI, HINT, HINT_EMOJI};
-        let hint_bold = HINT.bold();
-        return Err(GitError::CommandFailed(format!(
-            "{ERROR_EMOJI} {ERROR}No changes to commit after squashing {commit_count} commits{ERROR:#}\n\n{HINT_EMOJI} {HINT}The commits resulted in no net changes (e.g., changes were reverted or already in {hint_bold}{target_branch}{hint_bold:#}{HINT}){HINT:#}"
-        )));
+        use worktrunk::styling::INFO_EMOJI;
+        let dim = AnstyleStyle::new().dimmed();
+        crate::output::progress(format!(
+            "{INFO_EMOJI} {dim}No changes after squashing {commit_count} {commit_text} (commits resulted in no net changes){dim:#}"
+        ))?;
+        return Ok(false);
     }
 
     // Commit with the generated message

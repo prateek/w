@@ -76,6 +76,13 @@ if shutil.which("wt") is not None or os.environ.get('WORKTRUNK_BIN'):
             # Commands that need --internal for directory change support
             rest_args = filtered_args[1:]
             return _wt_exec(["--internal", subcommand] + rest_args, cmd=cmd)
+        elif subcommand == "dev":
+            # Check if dev subcommand is select
+            if len(filtered_args) > 1 and filtered_args[1] == "select":
+                return _wt_exec(["--internal"] + filtered_args, cmd=cmd)
+            else:
+                result = ![@(cmd) @(filtered_args)]
+                return result.returncode
         else:
             # All other commands pass through directly
             result = ![@(cmd) @(filtered_args)]

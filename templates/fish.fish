@@ -121,6 +121,13 @@ if type -q {{ cmd_prefix }}; or set -q WORKTRUNK_BIN
                 case switch remove merge
                     # Commands that need --internal for directory change support
                     _wt_exec --internal $args
+                case dev
+                    # Check if dev subcommand is select
+                    if test (count $args) -gt 1; and test "$args[2]" = "select"
+                        _wt_exec --internal $args
+                    else
+                        command $_WORKTRUNK_CMD $args
+                    end
                 case '*'
                     # All other commands pass through directly
                     command $_WORKTRUNK_CMD $args

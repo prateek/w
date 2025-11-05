@@ -1,0 +1,377 @@
+use skim::prelude::*;
+use std::borrow::Cow;
+use std::fs;
+use std::path::PathBuf;
+use std::sync::Arc;
+use worktrunk::config::WorktrunkConfig;
+use worktrunk::git::{GitError, GitResultExt, Repository};
+
+use super::list::model::{ListItem, gather_list_data};
+use super::worktree::handle_switch;
+use crate::output::handle_switch_output;
+
+/// Preview modes for the interactive selector
+///
+/// Each mode shows a different aspect of the worktree:
+/// 1. WorkingTree: Uncommitted changes (git diff HEAD --stat)
+/// 2. History: Commit history since diverging from main (git log with merge-base)
+/// 3. BranchDiff: Line diffs in commits ahead of main (git diff --stat main...)
+///
+/// Loosely aligned with `wt list` columns, though not a perfect match:
+/// - Mode 1 corresponds to "Working ±" column
+/// - Mode 2 shows commits (related to "Main ↕" counts)
+/// - Mode 3 corresponds to "Main ± (--full)" column
+///
+/// Note: Order of modes 2 & 3 could potentially be swapped
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum PreviewMode {
+    WorkingTree = 1,
+    History = 2,
+    BranchDiff = 3,
+}
+
+impl PreviewMode {
+    fn from_u8(n: u8) -> Self {
+        match n {
+            2 => Self::History,
+            3 => Self::BranchDiff,
+            _ => Self::WorkingTree,
+        }
+    }
+
+    fn read_from_state() -> Self {
+        let state_path = Self::state_path();
+        fs::read_to_string(&state_path)
+            .ok()
+            .and_then(|s| s.trim().parse::<u8>().ok())
+            .map(Self::from_u8)
+            .unwrap_or(Self::WorkingTree)
+    }
+
+    fn state_path() -> PathBuf {
+        // Use per-process temp file to avoid race conditions when running multiple instances
+        std::env::temp_dir().join(format!("wt-select-mode-{}", std::process::id()))
+    }
+}
+
+/// Wrapper to implement SkimItem for ListItem
+struct WorktreeSkimItem {
+    display_text: String,
+    branch_name: String,
+    item: Arc<ListItem>,
+}
+
+impl SkimItem for WorktreeSkimItem {
+    fn text(&self) -> Cow<'_, str> {
+        Cow::Borrowed(&self.display_text)
+    }
+
+    fn output(&self) -> Cow<'_, str> {
+        Cow::Borrowed(&self.branch_name)
+    }
+
+    fn preview(&self, _context: PreviewContext<'_>) -> ItemPreview {
+        let mode = PreviewMode::read_from_state();
+        let preview_text = match mode {
+            PreviewMode::WorkingTree => self.render_working_tree_preview(),
+            PreviewMode::History => self.render_history_preview(),
+            PreviewMode::BranchDiff => self.render_branch_diff_preview(),
+        };
+
+        ItemPreview::AnsiText(preview_text)
+    }
+}
+
+impl WorktreeSkimItem {
+    /// Render Mode 1: Working tree preview (uncommitted changes vs HEAD)
+    /// Matches `wt list` "Working ±" column
+    fn render_working_tree_preview(&self) -> String {
+        let mut output = String::new();
+        let repo = Repository::current();
+
+        let Some(wt_info) = self.item.worktree_info() else {
+            output.push_str("No worktree (branch only)\n");
+            return output;
+        };
+
+        let path_str = wt_info.worktree.path.display().to_string();
+
+        // Show working tree changes as --stat (uncommitted changes)
+        if let Ok(diff_stat) =
+            repo.run_command(&["-C", &path_str, "diff", "HEAD", "--stat", "--color=always"])
+            && !diff_stat.trim().is_empty()
+        {
+            output.push_str(&diff_stat);
+        } else {
+            output.push_str("No uncommitted changes\n");
+        }
+
+        output
+    }
+
+    /// Render Mode 3: Branch diff preview (line diffs in commits ahead of main)
+    /// Matches `wt list` "Main ± (--full)" column
+    fn render_branch_diff_preview(&self) -> String {
+        let mut output = String::new();
+        let repo = Repository::current();
+        let counts = self.item.counts();
+
+        if counts.ahead > 0 {
+            let head = self.item.head();
+            let merge_base = format!("main...{}", head);
+            if let Ok(diff_stat) =
+                repo.run_command(&["diff", "--stat", "--color=always", &merge_base])
+            {
+                output.push_str(&diff_stat);
+            } else {
+                output.push_str("No changes vs main\n");
+            }
+        } else {
+            output.push_str("No commits ahead of main\n");
+        }
+
+        output
+    }
+
+    /// Render Mode 2: History preview
+    fn render_history_preview(&self) -> String {
+        const HISTORY_LIMIT: &str = "40";
+
+        let mut output = String::new();
+        let repo = Repository::current();
+
+        let counts = self.item.counts();
+
+        // Show commits since diverging from main, with merge-base boundary
+        if counts.ahead > 0 {
+            // Use --boundary to show the merge-base commit where we diverged
+            let head = self.item.head();
+            let range = format!("main..{}", head);
+            if let Ok(log_output) = repo.run_command(&[
+                "log",
+                "--graph",
+                "--boundary",
+                "--decorate",
+                "--oneline",
+                "--color=always",
+                &range,
+            ]) {
+                output.push_str(&log_output);
+            } else {
+                output.push_str("No commits\n");
+            }
+        } else {
+            // Not ahead of main - just show recent history
+            if let Ok(log_output) = repo.run_command(&[
+                "log",
+                "--graph",
+                "--decorate",
+                "--oneline",
+                "--color=always",
+                "-n",
+                HISTORY_LIMIT,
+                self.item.head(),
+            ]) {
+                output.push_str(&log_output);
+            } else {
+                output.push_str("No commits\n");
+            }
+        }
+
+        output
+    }
+}
+
+pub fn handle_select() -> Result<(), GitError> {
+    let repo = Repository::current();
+
+    // Initialize preview mode state file (default to WorkingTree)
+    let state_path = PreviewMode::state_path();
+    if !state_path.exists() {
+        let _ = fs::write(&state_path, "1");
+    }
+
+    // Gather list data using existing logic
+    let Some(list_data) = gather_list_data(&repo, false, false, false)? else {
+        return Ok(());
+    };
+
+    // Calculate max branch name length for alignment
+    let max_branch_len = list_data
+        .items
+        .iter()
+        .map(|item| item.branch_name().len())
+        .max()
+        .unwrap_or(20);
+
+    // Convert to skim items - store full ListItem for preview rendering
+    let items: Vec<Arc<dyn SkimItem>> = list_data
+        .items
+        .into_iter()
+        .map(|item| {
+            let branch_name = item.branch_name().to_string();
+            let commit_msg = item
+                .commit_details()
+                .commit_message
+                .lines()
+                .next()
+                .unwrap_or("");
+
+            // Build display text with aligned columns
+            let mut display_text = format!("{:<width$}", branch_name, width = max_branch_len);
+
+            // Add status symbols for worktrees (fixed width)
+            let status = if let Some(wt_info) = item.worktree_info() {
+                format!("{:^8}", wt_info.status_symbols)
+            } else {
+                "        ".to_string()
+            };
+            display_text.push_str(&status);
+
+            // Add commit message
+            display_text.push_str("  ");
+            display_text.push_str(commit_msg);
+
+            Arc::new(WorktreeSkimItem {
+                display_text,
+                branch_name,
+                item: Arc::new(item),
+            }) as Arc<dyn SkimItem>
+        })
+        .collect();
+
+    // Get state path for key bindings
+    let state_path_str = state_path.display().to_string();
+
+    // Configure skim options with Rust-based preview and mode switching keybindings
+    let options = SkimOptionsBuilder::default()
+        .height("50%".to_string())
+        .multi(false)
+        .preview(Some("".to_string())) // Enable preview (empty string means use SkimItem::preview())
+        .preview_window("right:50%".to_string())
+        .color(Some(
+            "fg:-1,bg:-1,matched:108,current:-1,current_bg:254,current_match:108".to_string(),
+        ))
+        .bind(vec![
+            // Mode switching
+            format!(
+                "1:execute-silent(echo 1 > {})+refresh-preview",
+                state_path_str
+            ),
+            format!(
+                "2:execute-silent(echo 2 > {})+refresh-preview",
+                state_path_str
+            ),
+            format!(
+                "3:execute-silent(echo 3 > {})+refresh-preview",
+                state_path_str
+            ),
+            // Preview scrolling
+            "ctrl-u:preview-page-up".to_string(),
+            "ctrl-d:preview-page-down".to_string(),
+        ])
+        .header(Some(
+            "1: working | 2: commits | 3: diff | ctrl-u/d: scroll | ctrl-/: toggle".to_string(),
+        ))
+        .build()
+        .map_err(|e| GitError::CommandFailed(format!("Failed to build skim options: {}", e)))?;
+
+    // Create item receiver
+    let (tx, rx): (SkimItemSender, SkimItemReceiver) = unbounded();
+    for item in items {
+        tx.send(item)
+            .map_err(|e| GitError::CommandFailed(format!("Failed to send item to skim: {}", e)))?;
+    }
+    drop(tx);
+
+    // Run skim
+    let output = Skim::run_with(&options, Some(rx));
+
+    // Clean up state file
+    let _ = fs::remove_file(&state_path);
+
+    // Handle selection
+    if let Some(out) = output
+        && !out.is_abort
+        && let Some(selected) = out.selected_items.first()
+    {
+        // Get branch name or worktree path from selected item
+        // (output() returns the worktree path for existing worktrees, branch name otherwise)
+        let identifier = selected.output().to_string();
+
+        // Load config
+        let config = WorktrunkConfig::load().git_context("Failed to load config")?;
+
+        // Switch to the selected worktree
+        // handle_switch can handle both branch names and worktree paths
+        let (result, resolved_branch) =
+            handle_switch(&identifier, false, None, false, false, &config)?;
+
+        // Show success message (show shell integration hint if not configured)
+        handle_switch_output(&result, &resolved_branch, false)?;
+    }
+
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_preview_mode_from_u8() {
+        assert_eq!(PreviewMode::from_u8(1), PreviewMode::WorkingTree);
+        assert_eq!(PreviewMode::from_u8(2), PreviewMode::History);
+        assert_eq!(PreviewMode::from_u8(3), PreviewMode::BranchDiff);
+        // Invalid values default to WorkingTree
+        assert_eq!(PreviewMode::from_u8(0), PreviewMode::WorkingTree);
+        assert_eq!(PreviewMode::from_u8(99), PreviewMode::WorkingTree);
+    }
+
+    #[test]
+    fn test_preview_mode_state_file_read_default() {
+        // When state file doesn't exist or is invalid, default to WorkingTree
+        let state_path = PreviewMode::state_path();
+        // Clean up any existing state
+        let _ = fs::remove_file(&state_path);
+
+        assert_eq!(PreviewMode::read_from_state(), PreviewMode::WorkingTree);
+    }
+
+    #[test]
+    fn test_preview_mode_state_file_roundtrip() {
+        // Use a unique test file to avoid conflicts with concurrent tests
+        let test_state_path =
+            std::env::temp_dir().join(format!("wt-select-mode-test-{}", std::process::id()));
+
+        // Write mode 1 (WorkingTree)
+        fs::write(&test_state_path, "1").unwrap();
+        let mode = fs::read_to_string(&test_state_path)
+            .ok()
+            .and_then(|s| s.trim().parse::<u8>().ok())
+            .map(PreviewMode::from_u8)
+            .unwrap_or(PreviewMode::WorkingTree);
+        assert_eq!(mode, PreviewMode::WorkingTree);
+
+        // Write mode 2 (History)
+        fs::write(&test_state_path, "2").unwrap();
+        let mode = fs::read_to_string(&test_state_path)
+            .ok()
+            .and_then(|s| s.trim().parse::<u8>().ok())
+            .map(PreviewMode::from_u8)
+            .unwrap_or(PreviewMode::WorkingTree);
+        assert_eq!(mode, PreviewMode::History);
+
+        // Write mode 3 (BranchDiff)
+        fs::write(&test_state_path, "3").unwrap();
+        let mode = fs::read_to_string(&test_state_path)
+            .ok()
+            .and_then(|s| s.trim().parse::<u8>().ok())
+            .map(PreviewMode::from_u8)
+            .unwrap_or(PreviewMode::WorkingTree);
+        assert_eq!(mode, PreviewMode::BranchDiff);
+
+        // Cleanup
+        let _ = fs::remove_file(&test_state_path);
+    }
+}

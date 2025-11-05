@@ -16,7 +16,7 @@ info:
     LANG: C
     LC_ALL: C
     SOURCE_DATE_EPOCH: "1761609600"
-    WORKTRUNK_CONFIG_PATH: /var/folders/wf/s6ycxvvs4ln8qsdbfx40hnc40000gn/T/.tmpF1Pxjb/test-config.toml
+    WORKTRUNK_CONFIG_PATH: /var/folders/wf/s6ycxvvs4ln8qsdbfx40hnc40000gn/T/.tmptrPwrW/test-config.toml
 ---
 success: true
 exit_code: 0
@@ -89,6 +89,14 @@ if command -v wt >/dev/null 2>&1 || [[ -n "${WORKTRUNK_BIN:-}" ]]; then
                 # Commands that need --internal for directory change support
                 shift
                 _wt_exec --internal "$subcommand" "$@"
+                ;;
+            dev)
+                # Check if dev subcommand is select
+                if [[ "$2" == "select" ]]; then
+                    _wt_exec --internal "$@"
+                else
+                    command "$_WORKTRUNK_CMD" "$@"
+                fi
                 ;;
             *)
                 # All other commands pass through directly
@@ -304,6 +312,14 @@ _arguments "${_arguments_options[@]}" : \
 '--help[Print help]' \
 && ret=0
 ;;
+(select)
+_arguments "${_arguments_options[@]}" : \
+'-v[Enable verbose output (show git commands and debug info)]' \
+'--verbose[Enable verbose output (show git commands and debug info)]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
         esac
     ;;
 esac
@@ -457,6 +473,7 @@ _wt__dev_commands() {
 'push:Push changes to target branch' \
 'rebase:Rebase current branch onto target branch' \
 'ask-approvals:Approve commands in the project config (shows unapproved by default)' \
+'select:Interactive worktree selector' \
     )
     _describe -t commands 'wt dev commands' commands "$@"
 }
@@ -484,6 +501,11 @@ _wt__dev__rebase_commands() {
 _wt__dev__run-hook_commands() {
     local commands; commands=()
     _describe -t commands 'wt dev run-hook commands' commands "$@"
+}
+(( $+functions[_wt__dev__select_commands] )) ||
+_wt__dev__select_commands() {
+    local commands; commands=()
+    _describe -t commands 'wt dev select commands' commands "$@"
 }
 (( $+functions[_wt__dev__squash_commands] )) ||
 _wt__dev__squash_commands() {

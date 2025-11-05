@@ -95,6 +95,16 @@ if ((Get-Command wt -ErrorAction SilentlyContinue) -or $env:WORKTRUNK_BIN) {
                 $exitCode = _wt_exec -Command $cmd --internal $subcommand @restArgs
                 return $exitCode
             }
+            "dev" {
+                # Check if dev subcommand is select
+                if ($filteredArgs.Count -gt 1 -and $filteredArgs[1] -eq "select") {
+                    $exitCode = _wt_exec -Command $cmd --internal @filteredArgs
+                    return $exitCode
+                } else {
+                    & $cmd @filteredArgs
+                    return $LASTEXITCODE
+                }
+            }
             default {
                 # All other commands pass through directly
                 & $cmd @filteredArgs

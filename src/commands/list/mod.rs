@@ -1,7 +1,7 @@
 mod ci_status;
 mod columns;
 mod layout;
-mod model;
+pub mod model;
 mod render;
 
 #[cfg(test)]

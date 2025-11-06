@@ -155,6 +155,7 @@ fn test_config_list_outside_git_repo() {
             .arg("list")
             .env("HOME", temp_home.path())
             .env("XDG_CONFIG_HOME", temp_home.path().join(".config"))
+            .env("CLICOLOR_FORCE", "1")
             .current_dir(temp_dir.path());
 
         assert_cmd_snapshot!(cmd, @r#"

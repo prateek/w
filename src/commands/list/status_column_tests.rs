@@ -1,30 +1,25 @@
-//! Unit tests for Status column rendering behavior
+//! Unit tests for Status column git symbol rendering
 //!
-//! These tests define the expected rendering for various combinations of:
-//! - Git status symbols at different positions
-//! - User-defined status
-//! - Branch-only entries (no git symbols)
+//! These tests verify the grid-based rendering of git status symbols in `StatusSymbols.render_with_mask()`.
 //!
-//! ## Two Alignment Systems
+//! ## Grid-Based Rendering Model
 //!
-//! 1. **Position-based alignment** (git symbols only):
-//!    - Each symbol type has a fixed position (0a, 0b, 0c, 0d, 1, 2, 3)
-//!    - Only positions used by at least one row are included (position mask)
-//!    - Rendering creates a grid: first position in mask = column 0
-//!    - Each position maps to exactly one column
-//!    - **Multiple symbols from the same position** appear together in that column (e.g., "?!+" all at position 3)
-//!    - Symbols fill their position's column, empty positions get spaces
-//!    - Example: mask [0b, 3] creates 2-column grid:
-//!      - Row with ≡ at 0b: "≡ " (≡ at col 0, space at col 1)
-//!      - Row with ! at 3:  " !" (space at col 0, ! at col 1)
-//!      - Row with ≡!+ at 0b and 3: "≡!+" (≡ at col 0, !+ at col 1)
+//! - Each symbol type has a fixed position (0a, 0b, 0c, 0d, 1, 2, 3)
+//! - Only positions used by at least one row are included (position mask)
+//! - Rendering creates a grid: first position in mask = column 0
+//! - Each position maps to exactly one column
+//! - **Multiple symbols from the same position** appear together in that column (e.g., "?!+" all at position 3)
+//! - Symbols fill their position's column, empty positions get spaces
+//! - Example: mask [0b, 3] creates 2-column grid:
+//!   - Row with ≡ at 0b: "≡ " (≡ at col 0, space at col 1)
+//!   - Row with ! at 3:  " !" (space at col 0, ! at col 1)
+//!   - Row with ≡!+ at 0b and 3: "≡!+" (≡ at col 0, !+ at col 1)
 //!
-//! 2. **Column-based alignment** (user status):
-//!    - User status aligns at a fixed column position: max_git_symbols_width
-//!    - ALL rows with user status align at this column (worktrees AND branches)
-//!    - Worktrees pad git symbols to max width, then append user status
-//!    - Branches pad empty space to max width, then append user status
-//!    - Branches and worktrees are treated equivalently for user status alignment
+//! ## User Status Alignment
+//!
+//! User status rendering happens in the rendering layer (`render.rs`), not in `StatusSymbols`.
+//! User status aligns at column position `max_git_symbols_width` for both worktrees and branches.
+//! Integration tests verify user status behavior (see `with_user_status.snap`).
 //!
 //! Each test specifies the exact expected output to make the target behavior explicit.
 
@@ -215,80 +210,6 @@ mod status_column_rendering_tests {
         assert_eq!(row2.render_with_mask(&mask), "≡!");
     }
 
-    /// Test 7: Git symbols + user status (with user status)
-    //      Row 1: ! + 🤖
-    //      Expected: "!🤖"
-    #[test]
-    fn test_git_symbol_plus_user_status() {
-        // Symbols: [!]
-        // Max git width: 1
-        // User status: "🤖"
-        // Expected: "!🤖" (user status immediately after git symbols, no gap)
-        todo!("Implement: ! followed by 🤖 with no gap")
-    }
-
-    /// Test 8: Git symbols + user status alignment
-    //      Row 1: ≡? + 🤖 (git width 2, user status)
-    //      Row 2: ! (git width 1, no user status)
-    //      Expected:
-    //      Row 1: "≡?🤖"
-    //      Row 2: "!"
-    #[test]
-    fn test_user_status_alignment_mixed() {
-        // Row 1: git="≡?", user="🤖"
-        // Row 2: git="!", user=None
-        // Max git width: 2
-        // Expected:
-        //   Row 1: "≡?🤖" (no padding, user status right after)
-        //   Row 2: "!"    (no padding, no user status)
-        todo!("Implement: user status doesn't force padding when absent")
-    }
-
-    /// Test 9: Different git widths + all have user status
-    //      Row 1: ≡ + ⏸ (git width 1)
-    //      Row 2: ≡? + 🤖 (git width 2)
-    //      Expected:
-    //      Row 1: "≡ ⏸"  (padded to git width 2)
-    //      Row 2: "≡?🤖"
-    #[test]
-    fn test_user_status_alignment_all_have_status() {
-        // Row 1: git="≡", user="⏸"
-        // Row 2: git="≡?", user="🤖"
-        // Max git width: 2
-        // Expected:
-        //   Row 1: "≡ ⏸"  (≡ + space + ⏸ to align with row 2)
-        //   Row 2: "≡?🤖" (≡? + 🤖)
-        todo!("Implement: user status aligns when all rows have it")
-    }
-
-    /// Test 10: Branch-only entry (no git symbols)
-    //      Row 1: (branch) + 🏠
-    //      Expected: "🏠"
-    #[test]
-    fn test_branch_only_with_user_status() {
-        // Git symbols: None (branch-only)
-        // User status: "🏠"
-        // Expected: "🏠" (no padding, no leading spaces)
-        todo!("Implement: branch-only shows just user status")
-    }
-
-    /// Test 11: Mixed worktree and branch entries (user status aligns)
-    //      Row 1: (worktree) ≡? + 🤖 (git width 2)
-    //      Row 2: (branch) + 🏠 (no git symbols)
-    //      Expected:
-    //      Row 1: "≡?🤖"
-    //      Row 2: "  🏠" (padded to align user status at position 2)
-    #[test]
-    fn test_mixed_worktree_and_branch() {
-        // Row 1: git="≡?", user="🤖"
-        // Row 2: git=None (branch), user="🏠"
-        // Max git width: 2
-        // Expected:
-        //   Row 1: "≡?🤖" (git symbols + user status)
-        //   Row 2: "  🏠" (2 spaces to align user status at same position)
-        todo!("Implement: branch pads to align user status with worktrees")
-    }
-
     /// Test 12: Empty status (no symbols, no user status)
     //      Expected: ""
     #[test]
@@ -302,17 +223,6 @@ mod status_column_rendering_tests {
         let mask = PositionMask::from_symbols(&symbols);
 
         assert_eq!(symbols.render_with_mask(&mask), "");
-    }
-
-    /// Test 13: Only user status, no git symbols (worktree)
-    //      Row 1: (worktree) + ⏸ (no git symbols but has user status)
-    //      Expected: "⏸"
-    #[test]
-    fn test_worktree_user_status_only() {
-        // Git symbols: None (clean worktree)
-        // User status: "⏸"
-        // Expected: "⏸" (no padding, no leading spaces)
-        todo!("Implement: worktree with user status but no git symbols")
     }
 
     /// Test 14: Three positions create 3-column grid
@@ -493,22 +403,6 @@ mod status_column_rendering_tests {
             ..Default::default()
         };
         assert_eq!(row2.render_with_mask(&mask), " !");
-    }
-
-    /// Test 19: User status alignment with varying git widths
-    //      Row 1: ≡ + 🤖 (git width 1)
-    //      Row 2: ≡?! + ⏸ (git width 3)
-    //      Row 3: (branch) + 🏠 (git width 0, branch-only)
-    //      Expected:
-    //      Row 1: "≡  🤖" (≡ + 2 spaces + 🤖 to align at position 3)
-    //      Row 2: "≡?!⏸" (all git symbols + user status)
-    //      Row 3: "   🏠" (3 spaces + 🏠 to align at position 3)
-    #[test]
-    fn test_user_status_varying_git_widths() {
-        // Max git width: 3
-        // All have user status with different git symbol counts
-        // Expected: user status aligns at position 3 for ALL rows (worktrees AND branches)
-        todo!("Implement: user status alignment with varying git symbol counts")
     }
 
     /// Test 20: Position mask creates minimal grid

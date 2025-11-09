@@ -134,7 +134,7 @@ pub const HEADER_WORKING_DIFF: &str = "HEAD±";
 pub const HEADER_AHEAD_BEHIND: &str = "main↕";
 pub const HEADER_BRANCH_DIFF: &str = "main…±";
 pub const HEADER_PATH: &str = "Path";
-pub const HEADER_UPSTREAM: &str = "Remote↕";
+pub const HEADER_UPSTREAM: &str = "Remote⇅";
 pub const HEADER_AGE: &str = "Age";
 pub const HEADER_CI: &str = "CI";
 pub const HEADER_COMMIT: &str = "Commit";
@@ -778,10 +778,10 @@ mod tests {
         assert_eq!(widths.branch_diff.added_digits, 3, "200 has 3 digits");
         assert_eq!(widths.branch_diff.deleted_digits, 2, "30 has 2 digits");
 
-        // Upstream: "↑4 ↓0" = "↑" (1) + "4" (1) + " " (1) + "↓" (1) + "0" (1) = 5, but header "Remote↕" = 7
+        // Upstream: "↑4 ↓0" = "↑" (1) + "4" (1) + " " (1) + "↓" (1) + "0" (1) = 5, but header "Remote⇅" = 7
         assert_eq!(
             widths.upstream.total, 7,
-            "Upstream column should fit header 'Remote↕' (width 7)"
+            "Upstream column should fit header 'Remote⇅' (width 7)"
         );
         assert_eq!(widths.upstream.added_digits, 1, "4 has 1 digit");
         assert_eq!(widths.upstream.deleted_digits, 1, "0 has 1 digit");

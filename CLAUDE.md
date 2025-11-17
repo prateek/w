@@ -30,9 +30,7 @@ When the project reaches v1.0 or gains users, we'll adopt stability commitments.
 
 ### User Message Principles
 
-**Core Principle: Acknowledge user-supplied arguments in output messages.**
-
-When users provide explicit arguments (flags, options, values), the output should recognize and reflect those choices. This confirms the program understood their intent and used their input correctly.
+Output messages should acknowledge user-supplied arguments (flags, options, values) by reflecting those choices in the message text. This confirms the program understood their intent and used their input correctly.
 
 **Examples:**
 
@@ -72,8 +70,6 @@ Parenthesized text should add new information, not restate what's already said. 
 "Worktree preserved (--no-remove)"
 ```
 
-When reviewing messages, ask: "Does the parenthesized text add information, or just reword what's already clear?"
-
 ### The anstyle Ecosystem
 
 All styling uses the **anstyle ecosystem** for composable, auto-detecting terminal output:
@@ -95,7 +91,7 @@ Six canonical message patterns with their emojis:
    - **NOT dimmed**: Primary status messages that answer the user's question
    - **Dimmed**: Supplementary metadata and contextual information
 
-**Core Principle: Every user-facing message must have EITHER an emoji OR a gutter** for consistent visual separation.
+Every user-facing message requires either an emoji or a gutter for consistent visual separation.
 
 ```rust
 // ✅ GOOD - standalone message with emoji
@@ -113,15 +109,15 @@ println!("{dim}Operation declined{dim:#}");
 
 ### stdout vs stderr: Separation by Mode
 
-**Core Principle: Different separation in interactive vs directive mode.**
+Output separation differs between interactive and directive modes.
 
-**Interactive mode:**
-- **stdout**: All worktrunk output (messages, errors, warnings, progress)
-- **stderr**: Child process output (git, npm, user commands) + interactive prompts
+Interactive mode:
+- stdout: All worktrunk output (messages, errors, warnings, progress)
+- stderr: Child process output (git, npm, user commands) + interactive prompts
 
-**Directive mode (--internal flag for shell integration):**
-- **stdout**: Only directives (`__WORKTRUNK_CD__`, `__WORKTRUNK_EXEC__`) - NUL-terminated
-- **stderr**: All user-facing messages + child process output - streams in real-time
+Directive mode (--internal flag for shell integration):
+- stdout: Only directives (`__WORKTRUNK_CD__`, `__WORKTRUNK_EXEC__`) - NUL-terminated
+- stderr: All user-facing messages + child process output - streams in real-time
 
 Use the output system (`output::success()`, `output::progress()`, etc.) to handle both modes automatically. Never write directly to stdout/stderr in command code.
 
@@ -135,14 +131,14 @@ println!("Branch created");
 writeln!(io::stderr(), "Progress...")?;
 ```
 
-**Interactive prompts:** Flush stderr before blocking on stdin to prevent interleaving:
+Interactive prompts flush stderr before blocking on stdin to prevent interleaving:
 ```rust
 eprint!("💡 Allow and remember? [y/N] ");
 stderr().flush()?;  // Ensures prompt is visible before blocking
 io::stdin().read_line(&mut response)?;
 ```
 
-**Child processes:** Redirect stdout to stderr for deterministic ordering:
+Child processes redirect stdout to stderr for deterministic ordering:
 ```rust
 let wrapped = format!("{{ {}; }} 1>&2", command);
 Command::new("sh").arg("-c").arg(&wrapped).status()?;
@@ -150,13 +146,11 @@ Command::new("sh").arg("-c").arg(&wrapped).status()?;
 
 ### Temporal Locality: Output Should Be Close to Operations
 
-**Core Principle: Output should appear immediately adjacent to the operations they describe.**
+Output should appear immediately adjacent to the operations it describes. Output that appears far from its triggering operation breaks the user's mental model.
 
-Output that appears far from its triggering operation breaks the user's mental model.
+Progress messages apply only to slow operations (>400ms): git operations, network requests, builds. Fast operations like file checks or config reads should not show progress.
 
-**Progress messages only for slow operations (>400ms):** Git operations, network requests, builds. Not for file checks or config reads.
-
-**Pattern for sequential operations:**
+Sequential operations should show immediate feedback:
 ```rust
 for item in items {
     output::progress(format!("🔄 Removing {item}..."))?;
@@ -165,7 +159,7 @@ for item in items {
 }
 ```
 
-**Bad - output decoupled from operations:**
+Output decoupled from operations creates confusion:
 ```
 🔄 Removing worktree for feature...
 🔄 Removing worktree for bugfix...
@@ -174,19 +168,11 @@ Removed worktree for feature        ← All output at the end
 Removed worktree for bugfix
 ```
 
-**Red flags:**
-- Collecting messages in a buffer
-- Single success message for batch operations
-- No progress before slow operations
-- Progress without matching success
+Signs of poor temporal locality: collecting messages in a buffer, single success message for batch operations, no progress before slow operations, progress without matching success.
 
 ### Information Display: Show Once, Not Twice
 
-**Core Principle: Show detailed context in progress messages, minimal confirmation in success messages.**
-
-When operations have both progress and success messages:
-- **Progress message**: Include ALL relevant details - what's being done, counts, stats, context
-- **Success message**: MINIMAL - just confirm completion with reference info (hash, path)
+Progress messages should include all relevant details (what's being done, counts, stats, context). Success messages should be minimal, confirming completion with reference info (hash, path).
 
 ```rust
 // ✅ GOOD - detailed progress, minimal success
@@ -202,21 +188,21 @@ output::success("✅ Squashed 3 commits into 1 @ a1b2c3d")?;  // Redundant
 
 ### Semantic Style Constants
 
-**Style constants defined in `src/styling.rs`:**
+Style constants defined in `src/styling.rs`:
 
-- **`ERROR`**: Red (errors, conflicts)
-- **`WARNING`**: Yellow (warnings)
-- **`HINT`**: Dimmed (hints, secondary information)
-- **`CURRENT`**: Magenta + bold (current worktree)
-- **`ADDITION`**: Green (diffs, additions)
-- **`DELETION`**: Red (diffs, deletions)
+- `ERROR`: Red (errors, conflicts)
+- `WARNING`: Yellow (warnings)
+- `HINT`: Dimmed (hints, secondary information)
+- `CURRENT`: Magenta + bold (current worktree)
+- `ADDITION`: Green (diffs, additions)
+- `DELETION`: Red (diffs, deletions)
 
-**Emoji constants:**
+Emoji constants:
 
-- **`ERROR_EMOJI`**: ❌ (use with ERROR style)
-- **`WARNING_EMOJI`**: 🟡 (use with WARNING style)
-- **`HINT_EMOJI`**: 💡 (use with HINT style)
-- **`INFO_EMOJI`**: ⚪ (use with dimmed style)
+- `ERROR_EMOJI`: ❌ (use with ERROR style)
+- `WARNING_EMOJI`: 🟡 (use with WARNING style)
+- `HINT_EMOJI`: 💡 (use with HINT style)
+- `INFO_EMOJI`: ⚪ (use with dimmed style)
 
 ### Inline Formatting Pattern
 
@@ -246,7 +232,7 @@ println!("{HINT_EMOJI} {HINT}Use 'wt list' to see all worktrees{HINT:#}");
 
 ### Composing Styles
 
-Compose styles using anstyle methods (`.bold()`, `.fg_color()`, etc.). **In messages (not tables), always bold branch names:**
+Compose styles using anstyle methods (`.bold()`, `.fg_color()`, etc.). Branch names in messages (not tables) should be bolded:
 
 ```rust
 use worktrunk::styling::{println, AnstyleStyle, ERROR};
@@ -262,7 +248,7 @@ println!("Switched to worktree: {bold}{branch}{bold:#}");
 
 Tables (`wt list`) use conditional styling for branch names to indicate worktree state (current/primary/other), not bold.
 
-**Avoid nested style resets** - Compose all attributes into a single style object:
+Nested style resets leak color. Compose all attributes into a single style object instead:
 
 ```rust
 // ❌ BAD - nested reset leaks color
@@ -273,7 +259,7 @@ let warning_bold = WARNING.bold();
 "{WARNING}Text with {warning_bold}composed{warning_bold:#} styles{WARNING:#}"
 ```
 
-**Reset all styles** with `anstyle::Reset`, not `{:#}` on empty `Style`:
+Resetting all styles requires `anstyle::Reset`, not `{:#}` on empty `Style`:
 
 ```rust
 // ❌ BAD - produces empty string
@@ -285,9 +271,9 @@ output.push_str(&format!("{}", anstyle::Reset));
 
 ### Information Hierarchy & Styling
 
-**Principle: Bold what answers the user's question, dim what provides context.**
+Bold elements that answer the user's question; dim elements that provide context.
 
-Styled elements must maintain their surrounding color - compose the color with the style using `.bold()` or `.dimmed()`. Applying a style without color creates a leak.
+Styled elements must maintain their surrounding color. Compose the color with the style using `.bold()` or `.dimmed()` to avoid leaking color.
 
 ```rust
 // ❌ WRONG - styled element loses surrounding color
@@ -312,7 +298,7 @@ No manual indentation - styling provides hierarchy. For quoted content, use `for
 
 Colors automatically adjust based on environment (NO_COLOR, CLICOLOR_FORCE, TTY detection) via `anstream` macros.
 
-**Always use styled print macros** - Import from `worktrunk::styling`, not stdlib:
+Styled print macros must be imported from `worktrunk::styling`, not stdlib:
 
 ```rust
 // ❌ BAD - uses standard library macro, bypasses anstream
@@ -376,32 +362,31 @@ super::gutter(format_with_gutter(&error.to_string(), "", None))?;  // Adds ❌ e
 print!("{}", format_with_gutter(&command));
 ```
 
-**Linebreaks with gutter content:** Use a single newline (`\n`) between messages and gutter content, never double newlines (`\n\n`). The gutter's visual structure (background color, indentation) provides sufficient separation - blank lines are redundant.
+**Linebreaks with gutter content:** Gutter content requires a single newline before it, never double newlines. The gutter's visual structure (background color, indentation) provides sufficient separation.
 
-**Critical Rule**: Never include trailing `\n` in messages passed to `output::*()` functions - they use `println!()` which automatically adds the newline.
+Output functions (`progress()`, `success()`, etc.) use `println!()` internally, adding a trailing newline. Messages passed to these functions should not include `\n`, as this creates a blank line.
 
 ```rust
 // ✅ GOOD - output function adds newline automatically
 output::progress(format!("{CYAN}Merging commits...{CYAN:#}"))?;
 output::gutter(format_with_gutter(&log_output, "", None))?;
 
-// ❌ BAD - trailing \n creates blank line (output::progress uses println!)
+// ❌ BAD - trailing \n creates double newline (blank line)
 output::progress(format!("{CYAN}Merging commits...{CYAN:#}\n"))?;
 output::gutter(format_with_gutter(&log_output, "", None))?;
 
 // ✅ GOOD - single newline in direct format!()
 format!("{header}\n{}", format_with_gutter(error, "", None))
 
-// ❌ BAD - double newline creates unnecessary blank line
+// ❌ BAD - double newline creates blank line
 format!("{header}\n\n{}", format_with_gutter(error, "", None))
 ```
 
 
 ### Snapshot Testing Requirement
 
-Every command output must have a snapshot test (`tests/integration_tests/`).
+Every command output must have a snapshot test (`tests/integration_tests/`). Use this pattern:
 
-**Pattern:**
 ```rust
 use crate::common::{make_snapshot_cmd, setup_snapshot_settings, TestRepo};
 use insta_cmd::assert_cmd_snapshot;
@@ -503,7 +488,7 @@ The output module (`src/output/global.rs`) provides these functions:
 - `execute(command)` - Execute command (interactive) or emit directive (directive mode)
 - `flush()` - Flush output buffers
 
-**When to use each function:**
+Function usage:
 - `success()` - Successful completion (e.g., "✅ Committed changes")
 - `progress()` - Operations in progress (e.g., "🔄 Squashing commits...")
 - `info()` - Neutral status/metadata (e.g., "⚪ No changes detected")
@@ -635,7 +620,7 @@ These fields contain ANSI-formatted strings for human-readable output:
   - Branches: user status or "·"
 - `working_diff_display` (worktrees only, optional)
 
-**Note**: Display fields are omitted when empty/null.
+Note: Display fields are omitted when empty/null.
 
 ### Query Examples
 

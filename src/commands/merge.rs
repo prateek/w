@@ -60,7 +60,7 @@ impl<'a> MergeCommandCollector<'a> {
 
 pub fn handle_merge(
     target: Option<&str>,
-    squash_enabled: bool,
+    no_squash: bool,
     no_commit: bool,
     no_remove: bool,
     no_verify: bool,
@@ -85,7 +85,7 @@ pub fn handle_merge(
     }
 
     // --no-commit implies --no-squash (validation above ensures --no-remove is already set)
-    let squash_enabled = if no_commit { false } else { squash_enabled };
+    let squash_enabled = !no_squash && !no_commit;
 
     // Get target branch (default to default branch if not provided)
     let target_branch = repo.resolve_target_branch(target)?;

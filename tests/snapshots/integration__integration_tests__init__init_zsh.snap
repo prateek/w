@@ -16,7 +16,7 @@ info:
     LANG: C
     LC_ALL: C
     SOURCE_DATE_EPOCH: "1761609600"
-    WORKTRUNK_CONFIG_PATH: /var/folders/wf/s6ycxvvs4ln8qsdbfx40hnc40000gn/T/.tmpeaTQjA/test-config.toml
+    WORKTRUNK_CONFIG_PATH: /var/folders/wf/s6ycxvvs4ln8qsdbfx40hnc40000gn/T/.tmp2UKDFi/test-config.toml
 ---
 success: true
 exit_code: 0
@@ -176,7 +176,7 @@ _wt() {
         case $line[1] in
             (init)
 _arguments "${_arguments_options[@]}" : \
-'--command-name=[Command name (default\: '\''wt'\'')]:COMMAND_NAME:_default' \
+'--command-name=[Command name]:COMMAND_NAME:_default' \
 '-C+[Change working directory]:path:_files' \
 '-v[Show git commands and debug info]' \
 '--verbose[Show git commands and debug info]' \
@@ -232,7 +232,7 @@ _arguments "${_arguments_options[@]}" : \
 (shell)
 _arguments "${_arguments_options[@]}" : \
 '--shell=[Shell to configure]:SHELL:(bash fish zsh)' \
-'--command-name=[Command name (default\: '\''wt'\'')]:COMMAND_NAME:_default' \
+'--command-name=[Command name]:COMMAND_NAME:_default' \
 '-C+[Change working directory]:path:_files' \
 '-f[Skip confirmation prompt]' \
 '--force[Skip confirmation prompt]' \
@@ -360,7 +360,7 @@ esac
 (list)
 _arguments "${_arguments_options[@]}" : \
 '--format=[Output format]:FORMAT:((table\:"Human-readable table format"
-json\:"Machine-readable JSON with display fields (includes styled unicode for rendering)"))' \
+json\:"JSON output"))' \
 '-C+[Change working directory]:path:_files' \
 '--branches[Include branches without worktrees]' \
 '--full[Show CI, conflicts, and full diffs]' \
@@ -403,10 +403,10 @@ _arguments "${_arguments_options[@]}" : \
 (merge)
 _arguments "${_arguments_options[@]}" : \
 '-C+[Change working directory]:path:_files' \
-'--no-squash[Don'\''t squash commits]' \
-'--no-commit[Push without transformations]' \
+'--no-squash[Skip commit squashing]' \
+'--no-commit[Skip commit, squash, and rebase]' \
 '--no-remove[Keep worktree after merge]' \
-'--no-verify[Skip pre-merge hooks]' \
+'--no-verify[Skip project hooks]' \
 '-f[Skip approval prompts]' \
 '--force[Skip approval prompts]' \
 '--tracked-only[Stage tracked files only]' \

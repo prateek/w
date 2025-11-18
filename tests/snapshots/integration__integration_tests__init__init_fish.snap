@@ -16,7 +16,7 @@ info:
     LANG: C
     LC_ALL: C
     SOURCE_DATE_EPOCH: "1761609600"
-    WORKTRUNK_CONFIG_PATH: /var/folders/wf/s6ycxvvs4ln8qsdbfx40hnc40000gn/T/.tmpjMnKcX/test-config.toml
+    WORKTRUNK_CONFIG_PATH: /var/folders/wf/s6ycxvvs4ln8qsdbfx40hnc40000gn/T/.tmp7bMDFm/test-config.toml
 ---
 success: true
 exit_code: 0
@@ -194,7 +194,7 @@ complete -c wt -n "__fish_wt_needs_command" -f -a "list" -d 'List worktrees and 
 complete -c wt -n "__fish_wt_needs_command" -f -a "switch" -d 'Switch to a worktree'
 complete -c wt -n "__fish_wt_needs_command" -f -a "remove" -d 'Finish current worktree, returning to primary if current'
 complete -c wt -n "__fish_wt_needs_command" -f -a "merge" -d 'Merge worktree into target branch'
-complete -c wt -n "__fish_wt_using_subcommand init" -l command-name -d 'Command name (default: \'wt\')' -r
+complete -c wt -n "__fish_wt_using_subcommand init" -l command-name -d 'Command name' -r
 complete -c wt -n "__fish_wt_using_subcommand init" -s C -d 'Change working directory' -r -F
 complete -c wt -n "__fish_wt_using_subcommand init" -s v -l verbose -d 'Show git commands and debug info'
 complete -c wt -n "__fish_wt_using_subcommand init" -s h -l help -d 'Print help'
@@ -217,7 +217,7 @@ complete -c wt -n "__fish_wt_using_subcommand config; and __fish_seen_subcommand
 complete -c wt -n "__fish_wt_using_subcommand config; and __fish_seen_subcommand_from shell" -l shell -d 'Shell to configure' -r -f -a "bash\t''
 fish\t''
 zsh\t''"
-complete -c wt -n "__fish_wt_using_subcommand config; and __fish_seen_subcommand_from shell" -l command-name -d 'Command name (default: \'wt\')' -r
+complete -c wt -n "__fish_wt_using_subcommand config; and __fish_seen_subcommand_from shell" -l command-name -d 'Command name' -r
 complete -c wt -n "__fish_wt_using_subcommand config; and __fish_seen_subcommand_from shell" -s C -d 'Change working directory' -r -F
 complete -c wt -n "__fish_wt_using_subcommand config; and __fish_seen_subcommand_from shell" -s f -l force -d 'Skip confirmation prompt'
 complete -c wt -n "__fish_wt_using_subcommand config; and __fish_seen_subcommand_from shell" -s v -l verbose -d 'Show git commands and debug info'
@@ -267,7 +267,7 @@ complete -c wt -n "__fish_wt_using_subcommand beta; and __fish_seen_subcommand_f
 complete -c wt -n "__fish_wt_using_subcommand beta; and __fish_seen_subcommand_from select" -s v -l verbose -d 'Show git commands and debug info'
 complete -c wt -n "__fish_wt_using_subcommand beta; and __fish_seen_subcommand_from select" -s h -l help -d 'Print help (see more with \'--help\')'
 complete -c wt -n "__fish_wt_using_subcommand list" -l format -d 'Output format' -r -f -a "table\t'Human-readable table format'
-json\t'Machine-readable JSON with display fields (includes styled unicode for rendering)'"
+json\t'JSON output'"
 complete -c wt -n "__fish_wt_using_subcommand list" -s C -d 'Change working directory' -r -F
 complete -c wt -n "__fish_wt_using_subcommand list" -l branches -d 'Include branches without worktrees'
 complete -c wt -n "__fish_wt_using_subcommand list" -l full -d 'Show CI, conflicts, and full diffs'
@@ -286,10 +286,10 @@ complete -c wt -n "__fish_wt_using_subcommand remove" -l no-delete-branch -d 'Ke
 complete -c wt -n "__fish_wt_using_subcommand remove" -s v -l verbose -d 'Show git commands and debug info'
 complete -c wt -n "__fish_wt_using_subcommand remove" -s h -l help -d 'Print help'
 complete -c wt -n "__fish_wt_using_subcommand merge" -s C -d 'Change working directory' -r -F
-complete -c wt -n "__fish_wt_using_subcommand merge" -l no-squash -d 'Don\'t squash commits'
-complete -c wt -n "__fish_wt_using_subcommand merge" -l no-commit -d 'Push without transformations'
+complete -c wt -n "__fish_wt_using_subcommand merge" -l no-squash -d 'Skip commit squashing'
+complete -c wt -n "__fish_wt_using_subcommand merge" -l no-commit -d 'Skip commit, squash, and rebase'
 complete -c wt -n "__fish_wt_using_subcommand merge" -l no-remove -d 'Keep worktree after merge'
-complete -c wt -n "__fish_wt_using_subcommand merge" -l no-verify -d 'Skip pre-merge hooks'
+complete -c wt -n "__fish_wt_using_subcommand merge" -l no-verify -d 'Skip project hooks'
 complete -c wt -n "__fish_wt_using_subcommand merge" -s f -l force -d 'Skip approval prompts'
 complete -c wt -n "__fish_wt_using_subcommand merge" -l tracked-only -d 'Stage tracked files only'
 complete -c wt -n "__fish_wt_using_subcommand merge" -s v -l verbose -d 'Show git commands and debug info'

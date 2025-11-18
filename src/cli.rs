@@ -1,4 +1,4 @@
-use clap::{ArgAction, Parser, Subcommand};
+use clap::{Parser, Subcommand};
 use std::sync::OnceLock;
 use worktrunk::HookType;
 
@@ -25,7 +25,7 @@ fn version_str() -> &'static str {
 pub enum OutputFormat {
     /// Human-readable table format
     Table,
-    /// Machine-readable JSON with display fields (includes styled unicode for rendering)
+    /// JSON output
     Json,
 }
 
@@ -107,7 +107,7 @@ Oil Shell (~/.config/oil/oshrc):
         #[arg(short, long)]
         force: bool,
 
-        /// Command name (default: 'wt')
+        /// Command name
         #[arg(long, default_value = DEFAULT_COMMAND_NAME)]
         command_name: String,
     },
@@ -209,7 +209,7 @@ pub enum Commands {
         /// Shell to generate code for
         shell: Shell,
 
-        /// Command name (default: 'wt')
+        /// Command name
         #[arg(long, default_value = DEFAULT_COMMAND_NAME)]
         command_name: String,
     },
@@ -519,11 +519,11 @@ Skip pre-merge commands:
         #[arg(add = crate::completion::branch_value_completer())]
         target: Option<String>,
 
-        /// Don't squash commits
-        #[arg(long = "no-squash", action = ArgAction::SetFalse, default_value_t = true)]
-        squash_enabled: bool,
+        /// Skip commit squashing
+        #[arg(long = "no-squash")]
+        no_squash: bool,
 
-        /// Push without transformations
+        /// Skip commit, squash, and rebase
         #[arg(long)]
         no_commit: bool,
 
@@ -531,7 +531,7 @@ Skip pre-merge commands:
         #[arg(long = "no-remove")]
         no_remove: bool,
 
-        /// Skip pre-merge hooks
+        /// Skip project hooks
         #[arg(long)]
         no_verify: bool,
 

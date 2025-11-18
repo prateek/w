@@ -310,7 +310,7 @@ fn main() {
         }
         Commands::Merge {
             target,
-            squash_enabled,
+            no_squash,
             no_commit,
             no_remove,
             no_verify,
@@ -318,7 +318,7 @@ fn main() {
             tracked_only,
         } => handle_merge(
             target.as_deref(),
-            squash_enabled,
+            no_squash,
             no_commit,
             no_remove,
             no_verify,

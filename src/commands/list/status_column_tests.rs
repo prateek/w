@@ -23,9 +23,21 @@
 
 #[cfg(test)]
 mod status_column_rendering_tests {
+    use worktrunk::styling::strip_ansi_codes;
+
+    /// Helper to check visual output (strips ANSI codes for comparison)
+    fn assert_visual_eq(actual: &str, expected_visual: &str) {
+        let actual_visual = strip_ansi_codes(actual);
+        assert_eq!(
+            actual_visual, expected_visual,
+            "Visual output mismatch:\n  actual (with ANSI):   {:?}\n  actual (visual):     {:?}\n  expected (visual):   {:?}",
+            actual, actual_visual, expected_visual
+        );
+    }
+
     /// Test 1: Single symbol at position 0b (branch state)
     //      Row 1: ≡ (synced with remote)
-    //      Expected: "≡"
+    //      Expected: "≡" (dimmed)
     #[test]
     fn test_single_symbol_position_0b() {
         use super::super::model::{BranchState, StatusSymbols};
@@ -33,7 +45,7 @@ mod status_column_rendering_tests {
         // Symbols: [≡]
         // Max git width: 1
         // User status: None
-        // Expected: "≡" (no padding, no user status)
+        // Expected: dimmed "≡" (no padding, no user status)
         let symbols = StatusSymbols {
             branch_state: BranchState::MatchesMain,
             ..Default::default()
@@ -42,12 +54,13 @@ mod status_column_rendering_tests {
         let mask = symbols.position_mask();
         let result = symbols.render_with_mask(&mask);
 
-        assert_eq!(result, "≡");
+        // Check visual output (symbols should be styled, but we compare visual content)
+        assert_visual_eq(&result, "≡");
     }
 
     /// Test 2: Single symbol at position 3 (working tree)
     //      Row 1: ! (uncommitted changes)
-    //      Expected: "!"
+    //      Expected: "!" (cyan)
     #[test]
     fn test_single_symbol_position_3() {
         use super::super::model::StatusSymbols;
@@ -55,7 +68,7 @@ mod status_column_rendering_tests {
         // Symbols: [!]
         // Max git width: 1
         // User status: None
-        // Expected: "!" (no padding, no user status)
+        // Expected: cyan "!" (no padding, no user status)
         let symbols = StatusSymbols {
             working_tree: "!".to_string(),
             ..Default::default()
@@ -64,7 +77,8 @@ mod status_column_rendering_tests {
         let mask = symbols.position_mask();
         let result = symbols.render_with_mask(&mask);
 
-        assert_eq!(result, "!");
+        // Check visual output (symbols should be styled, but we compare visual content)
+        assert_visual_eq(&result, "!");
     }
 
     /// Test 3: Two symbols at different positions create alignment grid
@@ -97,14 +111,14 @@ mod status_column_rendering_tests {
             branch_state: BranchState::MatchesMain,
             ..Default::default()
         };
-        assert_eq!(row1.render_with_mask(&mask), " ≡");
+        assert_visual_eq(&row1.render_with_mask(&mask), " ≡");
 
         // Row 2: only position 0 (working tree)
         let row2 = StatusSymbols {
             working_tree: "!".to_string(),
             ..Default::default()
         };
-        assert_eq!(row2.render_with_mask(&mask), "! ");
+        assert_visual_eq(&row2.render_with_mask(&mask), "! ");
     }
 
     /// Test 4: Same position symbols - single column grid
@@ -134,14 +148,14 @@ mod status_column_rendering_tests {
             working_tree: "!".to_string(),
             ..Default::default()
         };
-        assert_eq!(row1.render_with_mask(&mask), "!");
+        assert_visual_eq(&row1.render_with_mask(&mask), "!");
 
         // Row 2: ? at position 3
         let row2 = StatusSymbols {
             working_tree: "?".to_string(),
             ..Default::default()
         };
-        assert_eq!(row2.render_with_mask(&mask), "?");
+        assert_visual_eq(&row2.render_with_mask(&mask), "?");
     }
 
     /// Test 5: Multiple symbols in one row fill multiple columns
@@ -164,7 +178,7 @@ mod status_column_rendering_tests {
         };
 
         let mask = row.position_mask();
-        assert_eq!(row.render_with_mask(&mask), "?≡");
+        assert_visual_eq(&row.render_with_mask(&mask), "?≡");
     }
 
     /// Test 6: Grid with some columns empty
@@ -197,7 +211,7 @@ mod status_column_rendering_tests {
             branch_state: BranchState::MatchesMain,
             ..Default::default()
         };
-        assert_eq!(row1.render_with_mask(&mask), " ≡");
+        assert_visual_eq(&row1.render_with_mask(&mask), " ≡");
 
         // Row 2: both positions
         let row2 = StatusSymbols {
@@ -205,7 +219,7 @@ mod status_column_rendering_tests {
             working_tree: "!".to_string(),
             ..Default::default()
         };
-        assert_eq!(row2.render_with_mask(&mask), "!≡");
+        assert_visual_eq(&row2.render_with_mask(&mask), "!≡");
     }
 
     /// Test 12: Empty status (no symbols, no user status)
@@ -220,7 +234,7 @@ mod status_column_rendering_tests {
         let symbols = StatusSymbols::default();
         let mask = symbols.position_mask();
 
-        assert_eq!(symbols.render_with_mask(&mask), "");
+        assert_visual_eq(&symbols.render_with_mask(&mask), "");
     }
 
     /// Test 14: Three positions create 3-column grid
@@ -254,21 +268,21 @@ mod status_column_rendering_tests {
             branch_state: BranchState::MatchesMain,
             ..Default::default()
         };
-        assert_eq!(row1.render_with_mask(&mask), "  ≡");
+        assert_visual_eq(&row1.render_with_mask(&mask), "  ≡");
 
         // Row 2: only position 3 (main divergence)
         let row2 = StatusSymbols {
             main_divergence: MainDivergence::Behind,
             ..Default::default()
         };
-        assert_eq!(row2.render_with_mask(&mask), " ↓ ");
+        assert_visual_eq(&row2.render_with_mask(&mask), " ↓ ");
 
         // Row 3: only position 0 (working tree)
         let row3 = StatusSymbols {
             working_tree: "!".to_string(),
             ..Default::default()
         };
-        assert_eq!(row3.render_with_mask(&mask), "!  ");
+        assert_visual_eq(&row3.render_with_mask(&mask), "!  ");
     }
 
     /// Test 15: Adjacent positions (2 git_operation and 5 branch_state)
@@ -288,7 +302,7 @@ mod status_column_rendering_tests {
         };
 
         let mask = row.position_mask();
-        assert_eq!(row.render_with_mask(&mask), "↻≡");
+        assert_visual_eq(&row.render_with_mask(&mask), "↻≡");
     }
 
     /// Test 16: Non-adjacent positions with all filled
@@ -308,7 +322,7 @@ mod status_column_rendering_tests {
         };
 
         let mask = row.position_mask();
-        assert_eq!(row.render_with_mask(&mask), "!+≡");
+        assert_visual_eq(&row.render_with_mask(&mask), "!+≡");
     }
 
     /// Test 17: Real-world complex case 1
@@ -347,14 +361,14 @@ mod status_column_rendering_tests {
             working_tree: "?".to_string(),
             ..Default::default()
         };
-        assert_eq!(row1.render_with_mask(&mask), "?  ≡");
+        assert_visual_eq(&row1.render_with_mask(&mask), "?  ≡");
 
         // Row 2: only position 0 (working tree)
         let row2 = StatusSymbols {
             working_tree: "!".to_string(),
             ..Default::default()
         };
-        assert_eq!(row2.render_with_mask(&mask), "!   ");
+        assert_visual_eq(&row2.render_with_mask(&mask), "!   ");
 
         // Row 3: position 0 (working tree) and 3 (main divergence)
         let row3 = StatusSymbols {
@@ -362,7 +376,7 @@ mod status_column_rendering_tests {
             working_tree: "!+".to_string(),
             ..Default::default()
         };
-        assert_eq!(row3.render_with_mask(&mask), "!+↓ ");
+        assert_visual_eq(&row3.render_with_mask(&mask), "!+↓ ");
     }
 
     /// Test 18: THE FAILING TEST - 2-column grid with partial fills
@@ -397,14 +411,14 @@ mod status_column_rendering_tests {
             working_tree: "?".to_string(),
             ..Default::default()
         };
-        assert_eq!(row1.render_with_mask(&mask), "?≡");
+        assert_visual_eq(&row1.render_with_mask(&mask), "?≡");
 
         // Row 2: only position 0 (working tree) (col 0 filled, col 1 empty→space)
         let row2 = StatusSymbols {
             working_tree: "!".to_string(),
             ..Default::default()
         };
-        assert_eq!(row2.render_with_mask(&mask), "! ");
+        assert_visual_eq(&row2.render_with_mask(&mask), "! ");
     }
 
     /// Test 20: Position mask creates minimal grid
@@ -442,8 +456,7 @@ mod status_column_rendering_tests {
             ..Default::default()
         };
         let result1 = row1.render_with_mask(&mask);
-        assert_eq!(result1, " ≡");
-        assert_eq!(result1.chars().count(), 2); // 2 chars, not 8
+        assert_visual_eq(&result1, " ≡");
 
         // Row 2: only position 0 (working tree)
         let row2 = StatusSymbols {
@@ -451,7 +464,6 @@ mod status_column_rendering_tests {
             ..Default::default()
         };
         let result2 = row2.render_with_mask(&mask);
-        assert_eq!(result2, "! ");
-        assert_eq!(result2.chars().count(), 2); // 2 chars, not 8
+        assert_visual_eq(&result2, "! ");
     }
 }

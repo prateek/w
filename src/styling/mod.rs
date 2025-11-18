@@ -26,7 +26,7 @@ pub use anstyle::Style as AnstyleStyle;
 
 // Re-export our public types
 pub use constants::*;
-pub use format::{GUTTER_OVERHEAD, format_bash_with_gutter, format_with_gutter};
+pub use format::{GUTTER_OVERHEAD, format_bash_with_gutter, format_with_gutter, strip_ansi_codes};
 pub use highlighting::format_toml;
 pub use line::{StyledLine, StyledString};
 

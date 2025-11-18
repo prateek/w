@@ -572,16 +572,15 @@ pub fn calculate_column_widths(items: &[ListItem], fetch_ci: bool) -> LayoutMeta
 
     // Calculate Status column width: maximum rendered width across all items
     // Now that user_status is Position 4 in the grid, render_with_mask() includes it
+    // Note: render_with_mask() returns styled strings with ANSI codes, so we need to
+    // strip them before calculating visual width
     let status_data_width = items
         .iter()
         .filter_map(|item| {
             if let Some(info) = item.worktree_info() {
                 // Worktrees: render all symbols including user_status
-                Some(
-                    info.status_symbols
-                        .render_with_mask(&status_position_mask)
-                        .width(),
-                )
+                let rendered = info.status_symbols.render_with_mask(&status_position_mask);
+                Some(worktrunk::styling::strip_ansi_codes(&rendered).width())
             } else if let ListItem::Branch(branch_info) = item {
                 // Branches: create minimal StatusSymbols with just user_status
                 branch_info.user_status.as_ref().map(|user_status| {
@@ -590,9 +589,8 @@ pub fn calculate_column_widths(items: &[ListItem], fetch_ci: bool) -> LayoutMeta
                         user_status: Some(user_status.clone()),
                         ..Default::default()
                     };
-                    branch_symbols
-                        .render_with_mask(&status_position_mask)
-                        .width()
+                    let rendered = branch_symbols.render_with_mask(&status_position_mask);
+                    worktrunk::styling::strip_ansi_codes(&rendered).width()
                 })
             } else {
                 None

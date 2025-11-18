@@ -667,6 +667,8 @@ impl StatusSymbols {
     /// This ensures vertical scannability - each symbol type appears at the same
     /// column position across all rows, while minimizing wasted space.
     pub fn render_with_mask(&self, mask: &PositionMask) -> String {
+        use worktrunk::styling::{CYAN, ERROR, HINT, WARNING};
+
         let mut result = String::with_capacity(12);
 
         if self.is_empty() {
@@ -675,56 +677,89 @@ impl StatusSymbols {
 
         // Build list of (position_index, content, has_data) tuples
         // Ordered by importance/actionability
+        // Apply colors based on semantic meaning:
+        // - Red (ERROR): Conflicts (blocking problems)
+        // - Yellow (WARNING): Git operations, locked/prunable (active/stuck states)
+        // - Cyan: Working tree changes (activity)
+        // - Dimmed (HINT): Branch state symbols that indicate removability
         let conflicts_str = if self.has_conflicts {
-            "=".to_string()
+            format!("{ERROR}={ERROR:#}")
         } else {
             String::new()
         };
-        let git_operation_str = self.git_operation.to_string();
+        let git_operation_str = if self.git_operation != GitOperation::None {
+            format!("{WARNING}{}{WARNING:#}", self.git_operation)
+        } else {
+            String::new()
+        };
         let main_divergence_str = self.main_divergence.to_string();
         let upstream_divergence_str = self.upstream_divergence.to_string();
-        let branch_state_str = self.branch_state.to_string();
+        let branch_state_str = if self.branch_state != BranchState::None {
+            format!("{HINT}{}{HINT:#}", self.branch_state)
+        } else {
+            String::new()
+        };
+        let working_tree_str = if !self.working_tree.is_empty() {
+            format!("{CYAN}{}{CYAN:#}", self.working_tree)
+        } else {
+            String::new()
+        };
+        let worktree_attrs_str = if !self.worktree_attrs.is_empty() {
+            format!("{WARNING}{}{WARNING:#}", self.worktree_attrs)
+        } else {
+            String::new()
+        };
         let user_status_str = self.user_status.as_deref().unwrap_or("").to_string();
 
-        let positions_data = [
+        // Track (position, styled_content, visual_width, has_data)
+        // visual_width is the actual display width without ANSI codes
+        let positions_data: [(usize, &str, usize, bool); 8] = [
             (
                 PositionMask::POS_3_WORKING_TREE,
-                &self.working_tree,
+                working_tree_str.as_str(),
+                self.working_tree.width(),
                 !self.working_tree.is_empty(),
             ),
             (
                 PositionMask::POS_0A_CONFLICTS,
-                &conflicts_str,
+                conflicts_str.as_str(),
+                if self.has_conflicts { 1 } else { 0 },
                 self.has_conflicts,
             ),
             (
                 PositionMask::POS_0C_GIT_OPERATION,
-                &git_operation_str,
+                git_operation_str.as_str(),
+                self.git_operation.to_string().width(),
                 self.git_operation != GitOperation::None,
             ),
             (
                 PositionMask::POS_1_MAIN_DIVERGENCE,
-                &main_divergence_str,
+                main_divergence_str.as_str(),
+                self.main_divergence.to_string().width(),
                 self.main_divergence != MainDivergence::None,
             ),
             (
                 PositionMask::POS_2_UPSTREAM_DIVERGENCE,
-                &upstream_divergence_str,
+                upstream_divergence_str.as_str(),
+                self.upstream_divergence.to_string().width(),
                 self.upstream_divergence != UpstreamDivergence::None,
             ),
             (
                 PositionMask::POS_0B_BRANCH_STATE,
-                &branch_state_str,
+                branch_state_str.as_str(),
+                self.branch_state.to_string().width(),
                 self.branch_state != BranchState::None,
             ),
             (
                 PositionMask::POS_0D_WORKTREE_ATTRS,
-                &self.worktree_attrs,
+                worktree_attrs_str.as_str(),
+                self.worktree_attrs.width(),
                 !self.worktree_attrs.is_empty(),
             ),
             (
                 PositionMask::POS_4_USER_STATUS,
-                &user_status_str,
+                user_status_str.as_str(),
+                self.user_status.as_ref().map(|s| s.width()).unwrap_or(0),
                 self.user_status.is_some(),
             ),
         ];
@@ -734,7 +769,7 @@ impl StatusSymbols {
         // - If row has no content at position: fill with spaces to allocated width
         use unicode_width::UnicodeWidthStr;
 
-        for (pos, content, has_data) in positions_data.iter() {
+        for (pos, styled_content, visual_width, has_data) in positions_data.iter() {
             if !mask.includes(*pos) {
                 continue; // Skip positions not in mask
             }
@@ -742,10 +777,10 @@ impl StatusSymbols {
             let allocated_width = mask.width(*pos);
 
             if *has_data {
-                result.push_str(content);
+                result.push_str(styled_content);
                 // Pad to allocated width (use saturating_sub to handle edge cases)
-                let content_width = content.width();
-                let padding = allocated_width.saturating_sub(content_width);
+                // Use visual_width (without ANSI codes) for padding calculation
+                let padding = allocated_width.saturating_sub(*visual_width);
                 for _ in 0..padding {
                     result.push(' ');
                 }

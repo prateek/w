@@ -24,7 +24,7 @@ const DEFAULT_TERMINAL_WIDTH: usize = 80;
 pub const GUTTER_OVERHEAD: usize = 3;
 
 /// Strip ANSI escape codes from a string using strip-ansi-escapes
-fn strip_ansi_codes(s: &str) -> String {
+pub fn strip_ansi_codes(s: &str) -> String {
     strip_ansi_escapes::strip_str(s)
 }
 

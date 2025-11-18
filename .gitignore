@@ -2,3 +2,4 @@
 
 # Lychee link checker cache
 .lycheecache
+test-concurrent.sh

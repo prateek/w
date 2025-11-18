@@ -1,6 +1,61 @@
 use super::{TestRepo, wt_command};
+use fs2::FileExt;
 use insta_cmd::get_cargo_bin;
+use std::fs::OpenOptions;
+use std::path::PathBuf;
 use std::process::Command;
+
+/// Get path to dev-detach binary, building it once if needed.
+/// Uses file locking to ensure only one concurrent build across test processes.
+fn get_dev_detach_bin() -> PathBuf {
+    let manifest_dir = std::env::current_dir().expect("Failed to get current directory");
+    let bin_path = manifest_dir.join("target/debug/dev-detach");
+
+    // Lock file ensures only one process builds at a time
+    let lock_path = manifest_dir.join("target/.dev-detach.lock");
+    let lock_file = OpenOptions::new()
+        .create(true)
+        .truncate(false)
+        .write(true)
+        .open(&lock_path)
+        .expect("Failed to create lock file");
+
+    // Acquire exclusive lock (blocks if another process is building)
+    lock_file.lock_exclusive().expect("Failed to acquire lock");
+
+    // While holding lock: build if binary doesn't exist
+    if !bin_path.exists() {
+        let status = Command::new("cargo")
+            .args(["build", "-p", "dev-detach", "--quiet"])
+            .status()
+            .expect("Failed to execute cargo build");
+
+        if !status.success() {
+            panic!("Failed to build dev-detach binary");
+        }
+    }
+
+    // Lock is automatically released when lock_file is dropped
+    drop(lock_file);
+
+    bin_path
+}
+
+/// Convert signal number to human-readable name
+#[cfg(unix)]
+fn signal_name(sig: i32) -> &'static str {
+    match sig {
+        1 => "SIGHUP",
+        2 => "SIGINT",
+        3 => "SIGQUIT",
+        6 => "SIGABRT",
+        9 => "SIGKILL",
+        11 => "SIGSEGV",
+        13 => "SIGPIPE",
+        15 => "SIGTERM",
+        _ => "UNKNOWN",
+    }
+}
 
 /// Map shell display names to actual binaries.
 pub fn get_shell_binary(shell: &str) -> &str {
@@ -13,18 +68,10 @@ pub fn get_shell_binary(shell: &str) -> &str {
 }
 
 /// Build a command to execute a shell script via dev-detach.
-/// Uses `cargo run --manifest-path <workspace>/Cargo.toml -p dev-detach` so cargo can
-/// find the workspace manifest while the shell executes in the test repo directory.
+/// Uses pre-built binary to avoid cargo lock contention during concurrent test execution.
 fn build_shell_command(repo: &TestRepo, shell: &str, script: &str) -> Command {
-    // Get absolute path to workspace Cargo.toml (tests run from workspace root)
-    let manifest = std::env::current_dir()
-        .expect("Failed to get current directory")
-        .join("Cargo.toml");
-
-    let mut cmd = Command::new("cargo");
-    cmd.args(["run", "--manifest-path"])
-        .arg(&manifest)
-        .args(["-p", "dev-detach", "--"]);
+    // Use pre-built dev-detach binary (no cargo invocation)
+    let mut cmd = Command::new(get_dev_detach_bin());
     repo.clean_cli_env(&mut cmd);
 
     // Prevent user shell config from leaking into tests
@@ -78,10 +125,23 @@ pub fn execute_shell_script(repo: &TestRepo, shell: &str, script: &str) -> Strin
     if !output.status.success() {
         let exit_info = match output.status.code() {
             Some(code) => format!("exit code {}", code),
-            None => "killed by signal".to_string(),
+            None => {
+                #[cfg(unix)]
+                {
+                    use std::os::unix::process::ExitStatusExt;
+                    match output.status.signal() {
+                        Some(sig) => format!("killed by signal {} ({})", sig, signal_name(sig)),
+                        None => "killed by signal (unknown)".to_string(),
+                    }
+                }
+                #[cfg(not(unix))]
+                {
+                    "killed by signal".to_string()
+                }
+            }
         };
         panic!(
-            "Shell script failed ({}):\nCommand: cargo run --manifest-path <workspace>/Cargo.toml -p dev-detach -- {} [shell-flags...] -c <script>\nstdout: {}\nstderr: {}",
+            "Shell script failed ({}):\nCommand: dev-detach {} [shell-flags...] -c <script>\nstdout: {}\nstderr: {}",
             exit_info,
             shell,
             String::from_utf8_lossy(&output.stdout),

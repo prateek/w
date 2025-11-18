@@ -33,11 +33,6 @@ fn get_dev_detach_bin() -> std::path::PathBuf {
             if !status.success() {
                 panic!("Failed to build dev-detach");
             }
-
-            // Give the filesystem time to fully write and flush the binary
-            // before other processes try to execute it. macOS can be slow to
-            // make newly-written executables available for exec.
-            std::thread::sleep(std::time::Duration::from_millis(50));
         }
     });
 
@@ -83,16 +78,13 @@ pub fn get_shell_binary(shell: &str) -> &str {
     }
 }
 
-/// Execute a script in the given shell with the repo's isolated environment.
-pub fn execute_shell_script(repo: &TestRepo, shell: &str, script: &str) -> String {
-    // Use dev-detach wrapper to fully isolate shell from controlling terminals.
-    // The dev-detach binary calls setsid() before exec'ing the shell, preventing
-    // PTY-related hangs in nextest environments (unbuffer, script, terminal emulators).
+/// Build a command to execute a shell script via dev-detach.
+fn build_shell_command(repo: &TestRepo, shell: &str, script: &str) -> Command {
     let detach = get_dev_detach_bin();
     let mut cmd = Command::new(detach);
     repo.clean_cli_env(&mut cmd);
 
-    // Prevent user shell config from leaking into tests.
+    // Prevent user shell config from leaking into tests
     cmd.env_remove("BASH_ENV");
     cmd.env_remove("ENV");
     cmd.env_remove("ZDOTDIR");
@@ -100,94 +92,43 @@ pub fn execute_shell_script(repo: &TestRepo, shell: &str, script: &str) -> Strin
     cmd.env_remove("XDG_CONFIG_HOME");
 
     // Build argument list: dev-detach <shell> [shell-flags...] -c <script>
-    let binary = get_shell_binary(shell);
-    cmd.arg(binary);
+    cmd.arg(get_shell_binary(shell));
 
     // Add shell-specific no-config flags
     match shell {
-        "bash" => {
-            cmd.arg("--noprofile").arg("--norc");
-        }
-        "zsh" => {
-            cmd.arg("--no-globalrcs").arg("-f");
-        }
-        "fish" => {
-            cmd.arg("--no-config");
-        }
-        "powershell" | "pwsh" => {
-            cmd.arg("-NoProfile");
-        }
-        "xonsh" => {
-            cmd.arg("--no-rc");
-        }
-        "nushell" | "nu" => {
-            cmd.arg("--no-config-file");
-        }
-        _ => {}
-    }
+        "bash" => cmd.arg("--noprofile").arg("--norc"),
+        "zsh" => cmd.arg("--no-globalrcs").arg("-f"),
+        "fish" => cmd.arg("--no-config"),
+        "powershell" | "pwsh" => cmd.arg("-NoProfile"),
+        "xonsh" => cmd.arg("--no-rc"),
+        "nushell" | "nu" => cmd.arg("--no-config-file"),
+        _ => &mut cmd,
+    };
 
     cmd.arg("-c").arg(script);
-
-    // Null stdin, piped stdout/stderr for full TTY isolation.
-    // Combined with setsid() from dev-detach, this guarantees no controlling terminal.
     cmd.stdin(std::process::Stdio::null());
     cmd.stdout(std::process::Stdio::piped());
     cmd.stderr(std::process::Stdio::piped());
+    cmd
+}
 
-    // Execute with retry logic to handle race conditions where cargo temporarily
-    // replaces the dev-detach binary during parallel test execution
+/// Execute a script in the given shell with the repo's isolated environment.
+pub fn execute_shell_script(repo: &TestRepo, shell: &str, script: &str) -> String {
+    let mut cmd = build_shell_command(repo, shell, script);
+
     let output = match cmd.current_dir(repo.root_path()).output() {
         Ok(output) => output,
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-            // Binary temporarily unavailable - wait and retry once
             eprintln!("dev-detach spawn failed: {} - retrying after 100ms", e);
             std::thread::sleep(std::time::Duration::from_millis(100));
-
-            // Rebuild the command for retry
-            let detach = get_dev_detach_bin();
-            let mut cmd = Command::new(detach);
-            repo.clean_cli_env(&mut cmd);
-            cmd.env_remove("BASH_ENV");
-            cmd.env_remove("ENV");
-            cmd.env_remove("ZDOTDIR");
-            cmd.env_remove("XONSHRC");
-            cmd.env_remove("XDG_CONFIG_HOME");
-            cmd.arg(get_shell_binary(shell));
-            match shell {
-                "bash" => {
-                    cmd.arg("--noprofile").arg("--norc");
-                }
-                "zsh" => {
-                    cmd.arg("--no-globalrcs").arg("-f");
-                }
-                "fish" => {
-                    cmd.arg("--no-config");
-                }
-                "powershell" | "pwsh" => {
-                    cmd.arg("-NoProfile");
-                }
-                "xonsh" => {
-                    cmd.arg("--no-rc");
-                }
-                "nushell" | "nu" => {
-                    cmd.arg("--no-config-file");
-                }
-                _ => {}
-            }
-            cmd.arg("-c").arg(script);
-            cmd.stdin(std::process::Stdio::null());
-            cmd.stdout(std::process::Stdio::piped());
-            cmd.stderr(std::process::Stdio::piped());
-
-            cmd.current_dir(repo.root_path())
+            build_shell_command(repo, shell, script)
+                .current_dir(repo.root_path())
                 .output()
                 .unwrap_or_else(|e2| {
                     panic!("Failed to execute {} script after retry: {}", shell, e2)
                 })
         }
-        Err(e) => {
-            panic!("Failed to execute {} script: {}", shell, e);
-        }
+        Err(e) => panic!("Failed to execute {} script: {}", shell, e),
     };
 
     let stderr = String::from_utf8_lossy(&output.stderr);
@@ -202,14 +143,7 @@ pub fn execute_shell_script(repo: &TestRepo, shell: &str, script: &str) -> Strin
     }
 
     if !output.status.success() {
-        // Distinguish between normal exit and signal termination
-        let exit_info = match output.status.code() {
-            Some(code) => format!("exit code {}", code),
-            None => "killed by signal".to_string(),
-        };
-
-        // If killed by signal with no output, this could be a transient process
-        // creation failure under high parallel load on macOS. Retry once.
+        // If killed by signal with no output, retry once (handles transient failures)
         if output.status.code().is_none() && output.stdout.is_empty() && output.stderr.is_empty() {
             eprintln!(
                 "{} script killed by signal with no output - retrying after 150ms",
@@ -217,67 +151,33 @@ pub fn execute_shell_script(repo: &TestRepo, shell: &str, script: &str) -> Strin
             );
             std::thread::sleep(std::time::Duration::from_millis(150));
 
-            // Retry the command
-            let detach = get_dev_detach_bin();
-            let mut cmd = Command::new(detach);
-            repo.clean_cli_env(&mut cmd);
-            cmd.env_remove("BASH_ENV");
-            cmd.env_remove("ENV");
-            cmd.env_remove("ZDOTDIR");
-            cmd.env_remove("XONSHRC");
-            cmd.env_remove("XDG_CONFIG_HOME");
-            cmd.arg(get_shell_binary(shell));
-            match shell {
-                "bash" => {
-                    cmd.arg("--noprofile").arg("--norc");
-                }
-                "zsh" => {
-                    cmd.arg("--no-globalrcs").arg("-f");
-                }
-                "fish" => {
-                    cmd.arg("--no-config");
-                }
-                "powershell" | "pwsh" => {
-                    cmd.arg("-NoProfile");
-                }
-                "xonsh" => {
-                    cmd.arg("--no-rc");
-                }
-                "nushell" | "nu" => {
-                    cmd.arg("--no-config-file");
-                }
-                _ => {}
-            }
-            cmd.arg("-c").arg(script);
-            cmd.stdin(std::process::Stdio::null());
-            cmd.stdout(std::process::Stdio::piped());
-            cmd.stderr(std::process::Stdio::piped());
-
-            let retry_output = cmd
+            let retry_output = build_shell_command(repo, shell, script)
                 .current_dir(repo.root_path())
                 .output()
                 .unwrap_or_else(|e| panic!("Failed to execute {} script on retry: {}", shell, e));
 
-            let retry_stderr = String::from_utf8_lossy(&retry_output.stderr);
             if !retry_output.status.success() {
-                let retry_exit_info = match retry_output.status.code() {
+                let exit_info = match retry_output.status.code() {
                     Some(code) => format!("exit code {}", code),
                     None => "killed by signal".to_string(),
                 };
                 panic!(
                     "Shell script failed on retry ({}):\nCommand: dev-detach {} [shell-flags...] -c <script>\nstdout: {}\nstderr: {}",
-                    retry_exit_info,
+                    exit_info,
                     shell,
                     String::from_utf8_lossy(&retry_output.stdout),
-                    retry_stderr
+                    String::from_utf8_lossy(&retry_output.stderr)
                 );
             }
 
-            // Retry succeeded, return the retry output
             return String::from_utf8_lossy(&retry_output.stdout).to_string()
                 + &String::from_utf8_lossy(&retry_output.stderr);
         }
 
+        let exit_info = match output.status.code() {
+            Some(code) => format!("exit code {}", code),
+            None => "killed by signal".to_string(),
+        };
         panic!(
             "Shell script failed ({}):\nCommand: dev-detach {} [shell-flags...] -c <script>\nstdout: {}\nstderr: {}",
             exit_info,

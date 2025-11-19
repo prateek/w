@@ -217,16 +217,16 @@ impl DiffColumnConfig {
         let mut segment = StyledLine::new();
 
         // Check for overflow
-        let positive_overflow = Self::exceeds_width(positive, self.digits.added);
-        let negative_overflow = Self::exceeds_width(negative, self.digits.deleted);
+        let positive_overflow = Self::exceeds_width(positive, self.added_digits);
+        let negative_overflow = Self::exceeds_width(negative, self.deleted_digits);
 
         if positive == 0 && negative == 0 && !self.display.always_show_zeros {
             segment.push_raw(" ".repeat(self.total_width));
             return segment;
         }
 
-        let positive_width = 1 + self.digits.added;
-        let negative_width = 1 + self.digits.deleted;
+        let positive_width = 1 + self.added_digits;
+        let negative_width = 1 + self.deleted_digits;
 
         // Fixed content width ensures vertical alignment of subcolumns
         let content_width = positive_width + 1 + negative_width;
@@ -662,7 +662,7 @@ impl ColumnLayout {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::commands::list::layout::{DiffDigits, DiffDisplayConfig};
+    use crate::commands::list::layout::DiffDisplayConfig;
     use worktrunk::styling::{ADDITION, DELETION, StyledLine};
 
     fn format_diff_like_column(
@@ -678,16 +678,13 @@ mod tests {
         use super::super::columns::DiffVariant;
 
         // Case 1: Single-digit diffs with total=6 (to fit "WT +/-" header)
-        let digits = DiffDigits {
-            added: 1,
-            deleted: 1,
-        };
         let total = 6;
         let result = format_diff_like_column(
             1,
             1,
             DiffColumnConfig {
-                digits,
+                added_digits: 1,
+                deleted_digits: 1,
                 total_width: total,
                 display: DiffDisplayConfig {
                     variant: DiffVariant::Signs,
@@ -704,16 +701,13 @@ mod tests {
         );
 
         // Case 2: Two-digit diffs with total=8
-        let digits = DiffDigits {
-            added: 2,
-            deleted: 2,
-        };
         let total = 8;
         let result = format_diff_like_column(
             10,
             50,
             DiffColumnConfig {
-                digits,
+                added_digits: 2,
+                deleted_digits: 2,
                 total_width: total,
                 display: DiffDisplayConfig {
                     variant: DiffVariant::Signs,
@@ -730,16 +724,13 @@ mod tests {
         );
 
         // Case 3: Asymmetric digit counts with total=9
-        let digits = DiffDigits {
-            added: 3,
-            deleted: 2,
-        };
         let total = 9;
         let result = format_diff_like_column(
             100,
             50,
             DiffColumnConfig {
-                digits,
+                added_digits: 3,
+                deleted_digits: 2,
                 total_width: total,
                 display: DiffDisplayConfig {
                     variant: DiffVariant::Signs,
@@ -756,16 +747,13 @@ mod tests {
         );
 
         // Case 4: Zero diff should also pad to total width
-        let digits = DiffDigits {
-            added: 1,
-            deleted: 1,
-        };
         let total = 6;
         let result = format_diff_like_column(
             0,
             0,
             DiffColumnConfig {
-                digits,
+                added_digits: 1,
+                deleted_digits: 1,
                 total_width: total,
                 display: DiffDisplayConfig {
                     variant: DiffVariant::Signs,
@@ -783,17 +771,14 @@ mod tests {
         // Test that diff values are right-aligned within the total width
         use super::super::columns::DiffVariant;
 
-        let digits = DiffDigits {
-            added: 1,
-            deleted: 1,
-        };
         let total = 6;
 
         let result = format_diff_like_column(
             1,
             1,
             DiffColumnConfig {
-                digits,
+                added_digits: 1,
+                deleted_digits: 1,
                 total_width: total,
                 display: DiffDisplayConfig {
                     variant: DiffVariant::Signs,
@@ -925,10 +910,6 @@ mod tests {
         use super::super::columns::DiffVariant;
         use worktrunk::styling::{ADDITION, DELETION};
 
-        let digits = DiffDigits {
-            added: 2,
-            deleted: 2,
-        };
         let total = 7;
 
         let dim_deletion = DELETION.dimmed();
@@ -939,7 +920,8 @@ mod tests {
                 ahead,
                 behind,
                 DiffColumnConfig {
-                    digits,
+                    added_digits: 2,
+                    deleted_digits: 2,
                     total_width: total,
                     display: DiffDisplayConfig {
                         variant: DiffVariant::Arrows,
@@ -958,10 +940,6 @@ mod tests {
         use super::super::columns::DiffVariant;
         use worktrunk::styling::{ADDITION, DELETION};
 
-        let digits = DiffDigits {
-            added: 0,
-            deleted: 2,
-        };
         let total = 7;
 
         let dim_deletion = DELETION.dimmed();
@@ -970,7 +948,8 @@ mod tests {
             0,
             0,
             DiffColumnConfig {
-                digits,
+                added_digits: 0,
+                deleted_digits: 2,
                 total_width: total,
                 display: DiffDisplayConfig {
                     variant: DiffVariant::Arrows,
@@ -986,7 +965,8 @@ mod tests {
             0,
             50,
             DiffColumnConfig {
-                digits,
+                added_digits: 0,
+                deleted_digits: 2,
                 total_width: total,
                 display: DiffDisplayConfig {
                     variant: DiffVariant::Arrows,
@@ -1004,10 +984,6 @@ mod tests {
         use super::super::columns::DiffVariant;
         use worktrunk::styling::{ADDITION, DELETION};
 
-        let digits = DiffDigits {
-            added: 1,
-            deleted: 1,
-        };
         let total = 7;
 
         let dim_deletion = DELETION.dimmed();
@@ -1017,7 +993,8 @@ mod tests {
             0,
             0,
             DiffColumnConfig {
-                digits,
+                added_digits: 1,
+                deleted_digits: 1,
                 total_width: total,
                 display: DiffDisplayConfig {
                     variant: DiffVariant::Arrows,
@@ -1037,7 +1014,8 @@ mod tests {
             0,
             0,
             DiffColumnConfig {
-                digits,
+                added_digits: 1,
+                deleted_digits: 1,
                 total_width: total,
                 display: DiffDisplayConfig {
                     variant: DiffVariant::Arrows,
@@ -1123,10 +1101,6 @@ mod tests {
 
         // Test that numbers are right-aligned on the ones column
         // When we have 2-digit allocation but use 1-digit values, they should have leading space
-        let digits = DiffDigits {
-            added: 2, // Allocates 3 chars: "+NN"
-            deleted: 2,
-        };
         let total = 8; // 3 (added) + 1 (separator) + 3 (deleted) + 1 (leading padding)
 
         // Test case 1: (53, 7) - large added, small deleted
@@ -1134,7 +1108,8 @@ mod tests {
             53,
             7,
             DiffColumnConfig {
-                digits,
+                added_digits: 2, // Allocates 3 chars: "+NN"
+                deleted_digits: 2,
                 total_width: total,
                 display: DiffDisplayConfig {
                     variant: DiffVariant::Signs,
@@ -1153,7 +1128,8 @@ mod tests {
             33,
             23,
             DiffColumnConfig {
-                digits,
+                added_digits: 2,
+                deleted_digits: 2,
                 total_width: total,
                 display: DiffDisplayConfig {
                     variant: DiffVariant::Signs,
@@ -1172,7 +1148,8 @@ mod tests {
             2,
             2,
             DiffColumnConfig {
-                digits,
+                added_digits: 2,
+                deleted_digits: 2,
                 total_width: total,
                 display: DiffDisplayConfig {
                     variant: DiffVariant::Signs,
@@ -1216,10 +1193,6 @@ mod tests {
         // Test overflow with Signs variant (+ and -)
         // Allocated: 3 digits for added, 3 digits for deleted (total width 9)
         // Max value: 999
-        let digits = DiffDigits {
-            added: 3,
-            deleted: 3,
-        };
         let total = 9;
 
         // Case 1: Value just within limit (should render normally)
@@ -1227,7 +1200,8 @@ mod tests {
             999,
             999,
             DiffColumnConfig {
-                digits,
+                added_digits: 3,
+                deleted_digits: 3,
                 total_width: total,
                 display: DiffDisplayConfig {
                     variant: DiffVariant::Signs,
@@ -1246,7 +1220,8 @@ mod tests {
             1000,
             500,
             DiffColumnConfig {
-                digits,
+                added_digits: 3,
+                deleted_digits: 3,
                 total_width: total,
                 display: DiffDisplayConfig {
                     variant: DiffVariant::Signs,
@@ -1275,7 +1250,8 @@ mod tests {
             500,
             1000,
             DiffColumnConfig {
-                digits,
+                added_digits: 3,
+                deleted_digits: 3,
                 total_width: total,
                 display: DiffDisplayConfig {
                     variant: DiffVariant::Signs,
@@ -1303,7 +1279,8 @@ mod tests {
             100_000,
             200_000,
             DiffColumnConfig {
-                digits,
+                added_digits: 3,
+                deleted_digits: 3,
                 total_width: total,
                 display: DiffDisplayConfig {
                     variant: DiffVariant::Signs,
@@ -1331,10 +1308,6 @@ mod tests {
         );
 
         // Test overflow with Arrows variant (↑ and ↓)
-        let arrow_digits = DiffDigits {
-            added: 2,
-            deleted: 2,
-        };
         let arrow_total = 7;
 
         // Case 5: Arrow positive overflow (100 exceeds 2 digits, max is 99)
@@ -1343,7 +1316,8 @@ mod tests {
             1000, // Use larger value to show K suffix
             50,
             DiffColumnConfig {
-                digits: arrow_digits,
+                added_digits: 2,
+                deleted_digits: 2,
                 total_width: arrow_total,
                 display: DiffDisplayConfig {
                     variant: DiffVariant::Arrows,
@@ -1372,7 +1346,8 @@ mod tests {
             50,
             1000, // Use larger value to show K suffix
             DiffColumnConfig {
-                digits: arrow_digits,
+                added_digits: 2,
+                deleted_digits: 2,
                 total_width: arrow_total,
                 display: DiffDisplayConfig {
                     variant: DiffVariant::Arrows,

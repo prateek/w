@@ -197,6 +197,17 @@ pub const HEADER_CI: &str = "CI";
 pub const HEADER_COMMIT: &str = "Commit";
 pub const HEADER_MESSAGE: &str = "Message";
 
+/// Get safe terminal width for list rendering.
+///
+/// Reserves 2 columns as a safety margin to prevent line wrapping:
+/// - Off-by-one terminal behavior
+/// - Emoji width safety margin
+///
+/// This matches the clamping logic in progressive mode (collect.rs).
+pub fn get_safe_list_width() -> usize {
+    get_terminal_width().saturating_sub(2)
+}
+
 /// Calculate maximum display width for a value using compact notation.
 /// Returns the character width (including suffix) when the value is formatted.
 ///
@@ -320,21 +331,6 @@ pub struct LayoutMetadata {
 const EMPTY_PENALTY: u8 = 10;
 
 #[derive(Clone, Copy, Debug)]
-pub struct DiffDigits {
-    pub added: usize,
-    pub deleted: usize,
-}
-
-impl From<DiffWidths> for DiffDigits {
-    fn from(widths: DiffWidths) -> Self {
-        Self {
-            added: widths.added_digits,
-            deleted: widths.deleted_digits,
-        }
-    }
-}
-
-#[derive(Clone, Copy, Debug)]
 pub struct DiffDisplayConfig {
     pub variant: DiffVariant,
     pub positive_style: Style,
@@ -392,7 +388,8 @@ pub enum ColumnFormat {
 
 #[derive(Clone, Copy, Debug)]
 pub struct DiffColumnConfig {
-    pub digits: DiffDigits,
+    pub added_digits: usize,
+    pub deleted_digits: usize,
     pub total_width: usize,
     pub display: DiffDisplayConfig,
 }
@@ -442,7 +439,8 @@ impl ColumnIdeal {
         Some(Self {
             width: widths.total,
             format: ColumnFormat::Diff(DiffColumnConfig {
-                digits: widths.into(),
+                added_digits: widths.added_digits,
+                deleted_digits: widths.deleted_digits,
                 total_width: widths.total,
                 display,
             }),
@@ -787,7 +785,7 @@ pub fn calculate_responsive_layout(
     show_full: bool,
     fetch_ci: bool,
 ) -> LayoutConfig {
-    let terminal_width = get_terminal_width();
+    let terminal_width = get_safe_list_width();
     let paths: Vec<&Path> = items
         .iter()
         .filter_map(|item| item.worktree_path().map(|path| path.as_path()))
@@ -847,7 +845,7 @@ pub fn calculate_layout_from_basics(
     show_full: bool,
     fetch_ci: bool,
 ) -> LayoutConfig {
-    let terminal_width = get_terminal_width();
+    let terminal_width = get_safe_list_width();
 
     // Calculate common prefix from paths
     let paths: Vec<&Path> = worktrees.iter().map(|wt| wt.path.as_path()).collect();

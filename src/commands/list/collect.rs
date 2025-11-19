@@ -250,19 +250,6 @@ fn compute_item_status_symbols(
     }
 }
 
-fn compute_all_status_symbols(
-    all_items: &mut [ListItem],
-    sorted_worktrees: &[Worktree],
-    primary: &Worktree,
-) {
-    let mut worktree_idx = 0;
-    for item in all_items.iter_mut() {
-        if compute_item_status_symbols(item, sorted_worktrees, primary, worktree_idx) {
-            worktree_idx += 1;
-        }
-    }
-}
-
 /// Drain cell updates from the channel and apply them to worktree_items.
 ///
 /// This is the shared logic between progressive and buffered collection modes.
@@ -417,11 +404,9 @@ pub fn collect(
         fetch_ci,
     );
 
-    // Single-line invariant: compute width from the draw target (stderr) with right guard
-    // to prevent line wrapping (which breaks indicatif's line-based cursor math).
-    // Keep 2 columns free: off-by-one terminal behavior + emoji width safety margin.
-    let (_, term_cols) = console::Term::stderr().size();
-    let max_width = term_cols.saturating_sub(2) as usize;
+    // Single-line invariant: use safe width to prevent line wrapping
+    // (which breaks indicatif's line-based cursor math).
+    let max_width = super::layout::get_safe_list_width();
 
     let clamp = |s: &str| -> String {
         if console::measure_text_width(s) > max_width {
@@ -736,24 +721,30 @@ pub fn collect(
 
     // Compute status_symbols for any items that didn't get computed during progressive loading
     // (fallback for buffered mode or if progressive computation was skipped for some reason)
-    compute_all_status_symbols(&mut all_items, &sorted_worktrees, &primary);
-
-    // Buffered mode: compute display fields (progressive mode doesn't need this as rendering uses raw data)
-    if !show_progress {
-        for info in &mut all_items {
-            info.display = super::model::DisplayFields::from_common_fields(
-                &info.counts,
-                &info.branch_diff,
-                &info.upstream,
-                &info.pr_status,
-            );
-
-            if let super::model::ItemKind::Worktree(ref mut wt_data) = info.kind
-                && let Some(ref working_tree_diff) = wt_data.working_tree_diff
-            {
-                wt_data.working_diff_display = super::columns::ColumnKind::WorkingDiff
-                    .format_diff_plain(working_tree_diff.added, working_tree_diff.deleted);
+    {
+        let mut worktree_idx = 0;
+        for item in all_items.iter_mut() {
+            if compute_item_status_symbols(item, &sorted_worktrees, &primary, worktree_idx) {
+                worktree_idx += 1;
             }
+        }
+    }
+
+    // Compute display fields for all items (used by JSON output and buffered mode)
+    // Progressive mode renders from raw data during collection but still populates these for consistency
+    for info in &mut all_items {
+        info.display = super::model::DisplayFields::from_common_fields(
+            &info.counts,
+            &info.branch_diff,
+            &info.upstream,
+            &info.pr_status,
+        );
+
+        if let super::model::ItemKind::Worktree(ref mut wt_data) = info.kind
+            && let Some(ref working_tree_diff) = wt_data.working_tree_diff
+        {
+            wt_data.working_diff_display = super::columns::ColumnKind::WorkingDiff
+                .format_diff_plain(working_tree_diff.added, working_tree_diff.deleted);
         }
     }
 

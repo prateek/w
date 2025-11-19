@@ -132,13 +132,8 @@ pub fn handle_list(
 
     match format {
         crate::OutputFormat::Json => {
-            // Enrich with formatted display fields for JSON output
-            let enriched_items: Vec<_> = items
-                .into_iter()
-                .map(ListItem::with_display_fields)
-                .collect();
-
-            let json = serde_json::to_string_pretty(&enriched_items).map_err(|e| {
+            // Display fields are already computed in collect()
+            let json = serde_json::to_string_pretty(&items).map_err(|e| {
                 GitError::CommandFailed(format!("Failed to serialize to JSON: {}", e))
             })?;
             crate::output::raw(json)?;
@@ -287,34 +282,5 @@ impl LayoutConfig {
         crate::output::raw_terminal("")?;
         crate::output::raw_terminal(format!("{INFO_EMOJI} {dim}Showing {summary}{dim:#}"))?;
         Ok(())
-    }
-}
-
-impl ListItem {
-    /// Enrich a ListItem with formatted display fields for JSON output.
-    ///
-    /// This converts the progressive display format (None = use actual data)
-    /// into fully formatted ANSI strings for all fields.
-    fn with_display_fields(mut self) -> Self {
-        // Create formatted display fields from common fields
-        let mut display = model::DisplayFields::from_common_fields(
-            &self.counts,
-            &self.branch_diff,
-            &self.upstream,
-            &self.pr_status,
-        );
-
-        // Preserve status_display (git symbols + user status)
-        display.status_display = self.display.status_display.clone();
-
-        // Handle worktree-specific field
-        if let model::ItemKind::Worktree(data) = &mut self.kind {
-            data.working_diff_display = data.working_tree_diff.as_ref().and_then(|diff| {
-                columns::ColumnKind::WorkingDiff.format_diff_plain(diff.added, diff.deleted)
-            });
-        }
-
-        self.display = display;
-        self
     }
 }

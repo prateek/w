@@ -264,8 +264,9 @@ fn main() {
         Commands::Remove {
             worktrees,
             no_delete_branch,
-            background,
+            no_background,
         } => (|| -> Result<(), GitError> {
+            let background = !no_background;
             let repo = Repository::current();
 
             if worktrees.is_empty() {

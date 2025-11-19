@@ -498,11 +498,13 @@ CLEANUP:
 When removing a worktree (by default):
   1. Validates worktree has no uncommitted changes
   2. Changes directory (if removing current worktree)
-  3. Deletes worktree directory
-  4. Removes git worktree metadata
-  5. Deletes associated branch (uses git branch -d, safe delete)
-     - If branch has unmerged commits, shows warning but continues
-     - Use --no-delete-branch to skip branch deletion
+  3. Spawns background removal process (non-blocking)
+     - Directory deletion happens in background
+     - Git worktree metadata removed in background
+     - Branch deletion in background (uses git branch -d, safe delete)
+     - Logs: .git/wt-logs/{branch}-remove.log
+  4. Returns immediately so you can continue working
+     - Use --no-background for foreground removal (blocking)
 
 EXAMPLES:
 
@@ -518,6 +520,9 @@ Remove worktree but keep branch:
 Remove multiple worktrees:
   wt remove old-feature another-branch
 
+Remove in foreground (blocking):
+  wt remove --no-background feature-branch
+
 Switch to default in primary:
   wt remove  # (when already in primary worktree)"#)]
     Remove {
@@ -529,9 +534,9 @@ Switch to default in primary:
         #[arg(long = "no-delete-branch")]
         no_delete_branch: bool,
 
-        /// Run removal in background
-        #[arg(long)]
-        background: bool,
+        /// Run removal in foreground
+        #[arg(long = "no-background")]
+        no_background: bool,
     },
 
     /// Merge worktree into target branch

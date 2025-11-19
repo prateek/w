@@ -243,19 +243,19 @@ fn test_remove_branch_not_fully_merged() {
 }
 
 #[test]
-fn test_remove_background() {
+fn test_remove_foreground() {
     let mut repo = TestRepo::new();
     repo.commit("Initial commit");
     repo.setup_remote("main");
 
     // Create a worktree
-    let _worktree_path = repo.add_worktree("feature-bg", "feature-bg");
+    let _worktree_path = repo.add_worktree("feature-fg", "feature-fg");
 
-    // Remove it with --background flag from main repo
+    // Remove it with --no-background flag from main repo
     snapshot_remove(
-        "remove_background",
+        "remove_foreground",
         &repo,
-        &["--background", "feature-bg"],
+        &["--no-background", "feature-fg"],
         None,
     );
 }

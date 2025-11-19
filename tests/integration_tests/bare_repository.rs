@@ -322,7 +322,7 @@ fn test_bare_repo_remove_worktree() {
     // Remove feature worktree from main worktree
     let mut cmd = wt_command();
     test.configure_wt_cmd(&mut cmd);
-    cmd.args(["remove", "feature", "--internal"])
+    cmd.args(["remove", "feature", "--no-background", "--internal"])
         .current_dir(&main_worktree);
 
     let output = cmd.output().expect("Failed to run wt remove");
@@ -574,7 +574,7 @@ fn test_bare_repo_background_logs_location() {
     // Run remove in background to test log file location
     let mut cmd = wt_command();
     test.configure_wt_cmd(&mut cmd);
-    cmd.args(["remove", "feature", "--background", "--internal"])
+    cmd.args(["remove", "feature", "--internal"])
         .current_dir(&main_worktree);
 
     let output = cmd.output().expect("Failed to run wt remove");

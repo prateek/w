@@ -1104,6 +1104,23 @@ approved-commands = ["echo 'test command executed'"]
     }
 
     #[test]
+    fn test_readme_example_simple_switch() {
+        let mut repo = TestRepo::new();
+        repo.commit("Initial commit");
+        repo.setup_remote("main");
+
+        // Create worktree through shell wrapper (suppresses hint)
+        let output = exec_through_wrapper("bash", &repo, "switch", &["--create", "fix-auth"]);
+
+        assert!(
+            !output.combined.contains("To enable automatic cd"),
+            "Shell integration hint should be suppressed"
+        );
+
+        assert_snapshot!(output.normalized());
+    }
+
+    #[test]
     fn test_wrapper_preserves_progress_messages() {
         let repo = TestRepo::new();
         repo.commit("Initial commit");

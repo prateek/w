@@ -22,7 +22,7 @@ Worktrunk offers transparency and automation for this lifecycle.
 
 **Create a worktree:**
 
-<!-- Output from: tests/snapshots/integration__integration_tests__merge__readme_example_simple_switch.snap -->
+<!-- Output from: tests/integration_tests/snapshots/integration__integration_tests__shell_wrapper__tests__readme_example_simple_switch.snap -->
 
 ```bash
 $ wt switch --create fix-auth
@@ -42,7 +42,7 @@ $ wt merge
     1 file changed, 13 insertions(+)
 ✅ Merged to main (1 commit, 1 file, +13)
 🔄 Removing worktree & branch...
-✅ Removed worktree & branch for fix-auth, returned to primary at ../repo/
+✅ Removed worktree & branch for fix-auth, changed directory to ../repo/
 # Shell back in main
 ```
 
@@ -52,10 +52,12 @@ $ wt merge
 
 ```bash
 $ wt list
-Branch     Status  HEAD±    main↕  Path
-main                               ./myapp/
-feature-x  ↑!      +5 -2    ↑3     ./myapp.feature-x/
-bugfix-y   ↑       +0 -0    ↑1     ./myapp.bugfix-y/
+Branch     Status  HEAD±  main↕  Path         Remote⇅  Commit    Age            Message
+main                             ./test-repo  ↑0 ↓0    b834638e  10 months ago  Initial commit
+bugfix-y   ↑              ↑1     ./bugfix-y            412a27c8  10 months ago  Fix bug
+feature-x  +       ↑      +5 ↑3  ./feature-x           7fd821aa  10 months ago  Add file 3
+
+⚪ Showing 3 worktrees, 1 with changes, 2 ahead
 ```
 
 ## Installation
@@ -85,16 +87,17 @@ Then `wt merge` will generate commit messages automatically:
 
 ```bash
 $ wt merge
+🔄 Squashing 3 commits into 1 (3 files, +33)...
 🔄 Generating squash commit message...
-   feat(auth): Implement JWT authentication system
+  feat(auth): Implement JWT authentication system
 
-   Add comprehensive JWT token handling including validation, refresh logic,
-   and authentication tests. This establishes the foundation for secure
-   API authentication.
+  Add comprehensive JWT token handling including validation, refresh logic,
+  and authentication tests. This establishes the foundation for secure
+  API authentication.
 
-   - Implement token refresh mechanism with expiry handling
-   - Add JWT encoding/decoding with signature verification
-   - Create test suite covering all authentication flows
+  - Implement token refresh mechanism with expiry handling
+  - Add JWT encoding/decoding with signature verification
+  - Create test suite covering all authentication flows
 ✅ Squashed @ a1b2c3d
 ```
 
@@ -140,18 +143,14 @@ Automate common tasks by creating `.config/wt.toml` in the repository root. Inst
 
 ```bash
 $ wt switch --create feature-x
-🔄 Creating worktree for feature-x...
-✅ Created worktree, changed directory to ../repo.feature-x/
 🔄 Running post-create install:
   uv sync
+✅ Created new worktree for feature-x from main at ../repo.feature-x/
+🔄 Running post-start dev:
+  uv run dev
 
   Resolved 24 packages in 145ms
   Installed 24 packages in 1.2s
-
-🔄 Running post-start dev (background):
-  uv run dev
-
-  Starting dev server on http://localhost:3000...
 ```
 
 **Example: Merging with pre-merge hooks:**
@@ -171,14 +170,13 @@ $ wt merge
   uv run pytest
 
   ============================= test session starts ==============================
-  collected 18 items
+  collected 3 items
 
-  tests/test_auth.py::test_login_success PASSED                            [ 11%]
-  tests/test_auth.py::test_login_invalid_password PASSED                   [ 22%]
-  tests/test_auth.py::test_token_refresh PASSED                            [ 33%]
-  tests/test_auth.py::test_token_validation PASSED                         [ 44%]
+  tests/test_auth.py::test_login_success PASSED                            [ 33%]
+  tests/test_auth.py::test_login_invalid_password PASSED                   [ 66%]
+  tests/test_auth.py::test_token_validation PASSED                         [100%]
 
-  ============================== 18 passed in 0.8s ===============================
+  ============================== 3 passed in 0.8s ===============================
 
 🔄 Running pre-merge lint:
   uv run ruff check
@@ -186,16 +184,13 @@ $ wt merge
   All checks passed!
 
 🔄 Merging 1 commit to main @ a1b2c3d (no rebase needed)
-
   * a1b2c3d (HEAD -> feature-auth) feat(api): Add user authentication endpoints
-
-   api/auth.py  | 32 ++++++++++++++++++++++++++++++++
-   tests/test_auth.py | 13 +++++++++++++
+   api/auth.py        | 31 +++++++++++++++++++++++++++++++
+   tests/test_auth.py | 14 ++++++++++++++
    2 files changed, 45 insertions(+)
-
 ✅ Merged to main (1 commit, 2 files, +45)
 🔄 Removing worktree & branch...
-✅ Removed worktree & branch for feature-auth, returned to primary at ../repo/
+✅ Removed worktree & branch for feature-auth, changed directory to ../repo/
 ```
 
 <details>
@@ -433,9 +428,14 @@ When using Claude:
 
 ```bash
 $ wt list
-Branch              Status  HEAD±  main↕  Path
-main                                      ./myapp/
-dirty-with-status   ≡?🤖                  ./myapp.dirty-with-status/
+Branch             Status  HEAD±  main↕  Path                 Remote⇅  Commit    Age            Message
+main                                     ./test-repo                   b834638e  10 months ago  Initial commit
+clean-no-status    ≡                     ./clean-no-status             b834638e  10 months ago  Initial commit
+clean-with-status  ≡ 💬                  ./clean-with-status           b834638e  10 months ago  Initial commit
+dirty-no-status     !      +1 -1         ./dirty-no-status             b834638e  10 months ago  Initial commit
+dirty-with-status  ≡?🤖                  ./dirty-with-status           b834638e  10 months ago  Initial commit
+
+⚪ Showing 5 worktrees, 1 with changes
 ```
 
 **How it works:**
@@ -524,9 +524,19 @@ Commands from project hooks and LLM configuration require approval on first run.
 
 **Example approval prompt:**
 
+<!-- Output from: tests/integration_tests/snapshots/integration__integration_tests__approval_pty__approval_prompt_named_commands.snap -->
+
 ```
-💡 Permission required: post-create install
-  uv sync
+🟡 test-repo needs approval to execute 3 commands:
+
+🔄 post-create install:
+  echo 'Installing dependencies...'
+
+🔄 post-create build:
+  echo 'Building project...'
+
+🔄 post-create test:
+  echo 'Running tests...'
 
 💡 Allow and remember? [y/N]
 ```

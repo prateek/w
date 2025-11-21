@@ -76,6 +76,7 @@ mod tests {
             worktree_path: "{{ main_worktree }}.{{ branch }}".to_string(),
             commit_generation: CommitGenerationConfig::default(),
             projects: std::collections::BTreeMap::new(),
+            list: None,
         };
         assert_eq!(
             config.format_path("myproject", "feature-x").unwrap(),
@@ -89,6 +90,7 @@ mod tests {
             worktree_path: "{{ main_worktree }}-{{ branch }}".to_string(),
             commit_generation: CommitGenerationConfig::default(),
             projects: std::collections::BTreeMap::new(),
+            list: None,
         };
         assert_eq!(
             config.format_path("myproject", "feature-x").unwrap(),
@@ -102,6 +104,7 @@ mod tests {
             worktree_path: ".worktrees/{{ main_worktree }}/{{ branch }}".to_string(),
             commit_generation: CommitGenerationConfig::default(),
             projects: std::collections::BTreeMap::new(),
+            list: None,
         };
         assert_eq!(
             config.format_path("myproject", "feature-x").unwrap(),
@@ -116,6 +119,7 @@ mod tests {
             worktree_path: "{{ main_worktree }}.{{ branch }}".to_string(),
             commit_generation: CommitGenerationConfig::default(),
             projects: std::collections::BTreeMap::new(),
+            list: None,
         };
         assert_eq!(
             config.format_path("myproject", "feature/foo").unwrap(),
@@ -129,6 +133,7 @@ mod tests {
             worktree_path: ".worktrees/{{ main_worktree }}/{{ branch }}".to_string(),
             commit_generation: CommitGenerationConfig::default(),
             projects: std::collections::BTreeMap::new(),
+            list: None,
         };
         assert_eq!(
             config.format_path("myproject", "feature/sub/task").unwrap(),
@@ -143,6 +148,7 @@ mod tests {
             worktree_path: ".worktrees/{{ main_worktree }}/{{ branch }}".to_string(),
             commit_generation: CommitGenerationConfig::default(),
             projects: std::collections::BTreeMap::new(),
+            list: None,
         };
         assert_eq!(
             config.format_path("myproject", "feature\\foo").unwrap(),
@@ -405,15 +411,12 @@ task2 = "echo 'Task 2 running' > task2.txt"
     fn test_user_project_config_equality() {
         let config1 = UserProjectConfig {
             approved_commands: vec!["npm install".to_string()],
-            list: None,
         };
         let config2 = UserProjectConfig {
             approved_commands: vec!["npm install".to_string()],
-            list: None,
         };
         let config3 = UserProjectConfig {
             approved_commands: vec!["npm test".to_string()],
-            list: None,
         };
         assert_eq!(config1, config2);
         assert_ne!(config1, config3);
@@ -426,7 +429,6 @@ task2 = "echo 'Task 2 running' > task2.txt"
             "github.com/user/repo".to_string(),
             UserProjectConfig {
                 approved_commands: vec!["npm install".to_string()],
-                list: None,
             },
         );
 

@@ -62,6 +62,10 @@ pub struct WorktrunkConfig {
     /// Uses BTreeMap for deterministic serialization order and better diff readability
     #[serde(default)]
     pub projects: std::collections::BTreeMap<String, UserProjectConfig>,
+
+    /// Configuration for the `wt list` command
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub list: Option<ListConfig>,
 }
 
 /// Configuration for commit message generation
@@ -115,10 +119,6 @@ impl CommitGenerationConfig {
 /// ```toml
 /// [projects."github.com/user/repo"]
 /// approved-commands = ["npm install", "npm test"]
-///
-/// [projects."github.com/user/repo".list]
-/// full = true
-/// branches = false
 /// ```
 ///
 /// # Future Extensibility
@@ -135,10 +135,6 @@ pub struct UserProjectConfig {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub approved_commands: Vec<String>,
-
-    /// Configuration for the `wt list` command
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub list: Option<ListConfig>,
 }
 
 /// Configuration for the `wt list` command
@@ -159,6 +155,7 @@ impl Default for WorktrunkConfig {
             worktree_path: "../{{ main_worktree }}.{{ branch }}".to_string(),
             commit_generation: CommitGenerationConfig::default(),
             projects: std::collections::BTreeMap::new(),
+            list: None,
         }
     }
 }

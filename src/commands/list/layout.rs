@@ -181,6 +181,7 @@ const COMMIT_HASH_WIDTH: usize = 8;
 
 /// Column header labels - single source of truth for all column headers.
 /// Both layout calculations and rendering use these constants.
+pub const HEADER_GUTTER: &str = ""; // No header for gutter (type indicator column)
 pub const HEADER_BRANCH: &str = "Branch";
 pub const HEADER_STATUS: &str = "Status";
 pub const HEADER_WORKING_DIFF: &str = "HEAD±";
@@ -323,6 +324,7 @@ impl ColumnKind {
 
     pub fn has_data(self, flags: &ColumnDataFlags) -> bool {
         match self {
+            ColumnKind::Gutter => true, // Always present (shows @ ^ + or space)
             ColumnKind::Branch => true,
             ColumnKind::Status => flags.status,
             ColumnKind::WorkingDiff => flags.working_diff,
@@ -426,6 +428,7 @@ fn ideal_for_column(
     commit_width: usize,
 ) -> Option<ColumnIdeal> {
     match spec.kind {
+        ColumnKind::Gutter => ColumnIdeal::text(2), // Fixed width: symbol (1 char) + space (1 char)
         ColumnKind::Branch => ColumnIdeal::text(widths.branch),
         ColumnKind::Status => ColumnIdeal::text(widths.status),
         ColumnKind::Path => ColumnIdeal::text(max_path_width),
@@ -628,7 +631,16 @@ fn allocate_columns_with_priority(
         let start = if columns.is_empty() {
             0
         } else {
-            position + gap
+            // No gap after gutter column - its content includes the spacing
+            let prev_was_gutter = columns
+                .last()
+                .map(|c: &ColumnLayout| c.kind == ColumnKind::Gutter)
+                .unwrap_or(false);
+            if prev_was_gutter {
+                position
+            } else {
+                position + gap
+            }
         };
         position = start + col.width;
 
@@ -839,7 +851,7 @@ mod tests {
                 working_tree_diff: Some(LineDiff::from((100, 50))),
                 working_tree_diff_with_main: Some(Some(LineDiff::default())),
                 worktree_state: None,
-                is_primary: false,
+                is_main: false,
                 working_tree_symbols: Some(String::new()),
                 is_dirty: Some(false),
                 has_conflicts: Some(false),
@@ -856,22 +868,30 @@ mod tests {
         );
 
         let mut columns_iter = layout.columns.iter();
-        let first = columns_iter.next().expect("branch column should exist");
+        let first = columns_iter.next().expect("gutter column should exist");
         assert_eq!(
             first.kind,
-            ColumnKind::Branch,
-            "Branch column should be first"
+            ColumnKind::Gutter,
+            "Gutter column should be first"
         );
-        assert_eq!(first.start, 0, "Branch should begin at position 0");
+        assert_eq!(first.start, 0, "Gutter should begin at position 0");
 
         let mut previous_end = first.start + first.width;
+        let mut prev_kind = first.kind;
         for column in columns_iter {
+            // No gap after gutter column - its content includes the spacing
+            let expected_gap = if prev_kind == ColumnKind::Gutter {
+                0
+            } else {
+                2
+            };
             assert_eq!(
                 column.start,
-                previous_end + 2,
-                "Columns should be separated by a 2-space gap"
+                previous_end + expected_gap,
+                "Columns should be separated by expected gap (0 after gutter, 2 otherwise)"
             );
             previous_end = column.start + column.width;
+            prev_kind = column.kind;
         }
 
         let path_column = layout
@@ -917,7 +937,7 @@ mod tests {
                 working_tree_diff: Some(LineDiff::default()),
                 working_tree_diff_with_main: Some(Some(LineDiff::default())),
                 worktree_state: None,
-                is_primary: true, // Primary worktree: no ahead/behind shown
+                is_main: true, // Primary worktree: no ahead/behind shown
                 working_tree_symbols: Some(String::new()),
                 is_dirty: Some(false),
                 has_conflicts: Some(false),
@@ -932,9 +952,9 @@ mod tests {
             layout
                 .columns
                 .first()
-                .map(|col| col.kind == ColumnKind::Branch && col.start == 0)
+                .map(|col| col.kind == ColumnKind::Gutter && col.start == 0)
                 .unwrap_or(false),
-            "Branch column should start at position 0"
+            "Gutter column should start at position 0"
         );
 
         // Columns with data should always be visible (Branch, Path, Time, Commit, Message)

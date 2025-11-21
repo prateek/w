@@ -375,7 +375,7 @@ impl LayoutConfig {
         use unicode_width::UnicodeWidthStr;
 
         let branch = item.branch_name();
-        let is_primary = item.is_primary();
+        let is_main = item.is_main();
         let shortened_path = item
             .worktree_path()
             .map(|p| shorten_path(p, &self.common_prefix))
@@ -388,11 +388,27 @@ impl LayoutConfig {
             let mut cell = StyledLine::new();
 
             match col.kind {
+                ColumnKind::Gutter => {
+                    // Show actual gutter symbol even in skeleton
+                    let has_worktree = item.worktree_path().is_some();
+                    let symbol = if has_worktree {
+                        if is_current {
+                            "@ "
+                        } else if is_main {
+                            "^ "
+                        } else {
+                            "+ "
+                        }
+                    } else {
+                        "  "
+                    };
+                    cell.push_raw(symbol.to_string());
+                }
                 ColumnKind::Branch => {
                     // Show actual branch name
                     let style = if is_current {
                         CURRENT.bold()
-                    } else if is_primary {
+                    } else if is_main {
                         Style::new()
                             .fg_color(Some(Color::Ansi(AnsiColor::Cyan)))
                             .bold()
@@ -410,7 +426,7 @@ impl LayoutConfig {
                     // Show actual path
                     let style = if is_current {
                         CURRENT.bold()
-                    } else if is_primary {
+                    } else if is_main {
                         Style::new()
                             .fg_color(Some(Color::Ansi(AnsiColor::Cyan)))
                             .bold()
@@ -455,6 +471,7 @@ struct ListRowContext<'a> {
     commit: CommitDetails,
     head: &'a str,
     text_style: Option<Style>,
+    is_current: bool,
 }
 
 impl<'a> ListRowContext<'a> {
@@ -466,6 +483,10 @@ impl<'a> ListRowContext<'a> {
         let upstream = item.upstream();
         let head = item.head();
 
+        let is_current = worktree_info
+            .and_then(|info| current_worktree_path.map(|p| p == &info.path))
+            .unwrap_or(false);
+
         let mut ctx = Self {
             item,
             worktree_info,
@@ -475,6 +496,7 @@ impl<'a> ListRowContext<'a> {
             commit,
             head,
             text_style: None,
+            is_current,
         };
 
         ctx.text_style = ctx.compute_text_style(current_worktree_path);
@@ -493,7 +515,7 @@ impl<'a> ListRowContext<'a> {
             let is_current = current_worktree_path
                 .map(|p| p == &info.path)
                 .unwrap_or(false);
-            match (is_current, info.is_primary) {
+            match (is_current, info.is_main) {
                 (true, _) => Some(CURRENT),
                 (_, true) => Some(Style::new().fg_color(Some(Color::Ansi(AnsiColor::Cyan)))),
                 _ => None,
@@ -527,6 +549,23 @@ impl ColumnLayout {
         max_message_len: usize,
     ) -> StyledLine {
         match self.kind {
+            ColumnKind::Gutter => {
+                let mut cell = StyledLine::new();
+                let symbol = if let Some(info) = ctx.worktree_info {
+                    // Worktree: priority is current > primary > regular
+                    if ctx.is_current {
+                        "@ " // Current worktree
+                    } else if info.is_main {
+                        "^ " // Primary worktree
+                    } else {
+                        "+ " // Regular worktree
+                    }
+                } else {
+                    "  " // Branch without worktree (two spaces to match width)
+                };
+                cell.push_raw(symbol.to_string());
+                cell
+            }
             ColumnKind::Branch => {
                 let mut cell = StyledLine::new();
                 let text = ctx.item.branch.as_deref().unwrap_or("(detached)");
@@ -566,7 +605,7 @@ impl ColumnLayout {
                 self.render_diff_cell(diff.added, diff.deleted)
             }
             ColumnKind::AheadBehind => {
-                if ctx.item.is_primary() {
+                if ctx.item.is_main() {
                     return StyledLine::new();
                 }
                 let ahead = ctx.counts.ahead;
@@ -577,7 +616,7 @@ impl ColumnLayout {
                 self.render_diff_cell(ahead, behind)
             }
             ColumnKind::BranchDiff => {
-                if ctx.item.is_primary() {
+                if ctx.item.is_main() {
                     return StyledLine::new();
                 }
                 self.render_diff_cell(ctx.branch_diff.added, ctx.branch_diff.deleted)

@@ -1,0 +1,125 @@
+---
+source: tests/integration_tests/help.rs
+info:
+  program: wt
+  args:
+    - merge
+    - "--help"
+  env:
+    CLICOLOR_FORCE: "1"
+    COLUMNS: "150"
+    GIT_CONFIG_GLOBAL: ""
+---
+success: true
+exit_code: 0
+----- stdout -----
+wt-merge - Merge worktree into target branch
+
+[38;5;10mOPERATION[39m
+
+The merge operation follows a strict order designed for fail-fast execution:
+
+1. Validate branches
+   Verifies current branch exists (not detached HEAD) and determines target 
+branch
+   (defaults to repository's default branch).
+
+2. Auto-commit uncommitted changes
+   If working tree has uncommitted changes, stages changes and commits with 
+LLM-generated
+   message. By default stages all changes (git add -A). Use --tracked-only to 
+stage only
+   tracked files (git add -u).
+
+3. Squash commits (default)
+   By default, counts commits since merge base with target branch. When multiple
+   commits exist, squashes them into one with LLM-generated message. Skip 
+squashing
+   with --no-squash.
+
+   A safety backup is created before squashing if there are working tree 
+changes.
+   Recover with: git reflog show refs/wt-backup/<branch>
+
+4. Rebase onto target
+   Rebases current branch onto target branch. Detects conflicts and aborts if 
+found.
+   This fails fast before running expensive checks.
+
+5. Run pre-merge commands
+   Runs commands from project config's [pre-merge-command] after rebase 
+completes.
+   These receive {{ target }} placeholder for the target branch. Commands run 
+sequentially
+   and any failure aborts the merge immediately. Skip with --no-verify.
+
+6. Push to target
+   Fast-forward pushes to target branch. Rejects non-fast-forward pushes 
+(ensures
+   linear history). Temporarily stashes non-conflicting local edits in the 
+target
+   worktree so they don't block the push, then restores them after success.
+
+7. Clean up worktree and branch
+   Removes current worktree, deletes the branch, and switches main worktree to 
+target
+   branch if needed. Skip removal with --no-remove.
+
+8. Run post-merge commands
+   Runs commands from project config's [post-merge-command] in the destination 
+worktree
+   after cleanup. These receive {{ target }} placeholder. Commands run 
+sequentially,
+   failures are logged but don't abort. Skip with --no-verify.
+
+[38;5;10mHOOKS[39m
+
+The --no-verify flag skips all project hooks:
+- Pre-commit hooks (before committing working tree changes)
+- Pre-merge hooks (after rebase, before push)
+- Post-merge hooks (after cleanup)
+
+[38;5;10mEXAMPLES[39m
+
+Basic merge to main:
+wt merge
+
+Merge without squashing:
+wt merge --no-squash
+
+Keep worktree after merging:
+wt merge --no-remove
+
+Skip all hooks:
+wt merge --no-verify
+Usage: wt merge [OPTIONS] [TARGET]
+
+Options:
+  -C <path>
+      Change working directory
+
+  --no-squash              
+      Skip commit squashing
+
+  --no-commit                        
+      Skip commit, squash, and rebase
+
+  -v, --verbose
+      Show commands and debug info
+
+  --no-remove                  
+      Keep worktree after merge
+
+  --no-verify               
+      Skip all project hooks
+
+  -f, --force
+      Skip approval prompts
+
+  --tracked-only              
+      Stage tracked files only
+
+  -h, --help
+      Print help (see a summary with '-h')
+
+----- stderr -----

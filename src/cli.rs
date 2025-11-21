@@ -1,5 +1,5 @@
 use clap::builder::styling::{AnsiColor, Color, Styles};
-use clap::{Parser, Subcommand};
+use clap::{Command, CommandFactory, Parser, Subcommand};
 use std::sync::OnceLock;
 use worktrunk::HookType;
 
@@ -43,6 +43,28 @@ fn help_styles() -> Styles {
 
 /// Default command name for worktrunk
 const DEFAULT_COMMAND_NAME: &str = "wt";
+const HELP_TEMPLATE: &str = "\
+{before-help}{name} - {about-with-newline}\
+Usage: {usage}
+
+Options:
+{options}{after-help}";
+
+/// Build a clap Command for Cli with the shared help template applied recursively.
+pub fn build_command() -> Command {
+    let cmd = Cli::command();
+    apply_help_template_recursive(cmd)
+}
+
+fn apply_help_template_recursive(mut cmd: Command) -> Command {
+    cmd = cmd.help_template(HELP_TEMPLATE);
+    for sub in cmd.get_subcommands_mut() {
+        let sub_cmd = std::mem::take(sub);
+        let sub_cmd = apply_help_template_recursive(sub_cmd);
+        *sub = sub_cmd;
+    }
+    cmd
+}
 
 fn version_str() -> &'static str {
     static VERSION: OnceLock<String> = OnceLock::new();
@@ -439,23 +461,21 @@ Use `--format=json` for structured data. Each object contains two status maps:
         #[arg(long)]
         branches: bool,
 
-        /// Show CI, conflicts, and full diffs
+        /// Show CI, conflicts, diffs
         ///
-        /// Adds columns: CI (pipeline status), main…± (line diffs).
-        /// Enables conflict detection (shows "=" symbol in Status column).
-        /// Requires network requests and git merge-tree operations.
+        /// Adds CI column, main…± diffs, and conflict detection (merge-tree + network).
         #[arg(long, verbatim_doc_comment)]
         full: bool,
 
-        /// Enable progressive rendering (show rows as data arrives)
+        /// Progressive rendering
         ///
-        /// When enabled, worktree names appear immediately and details fill in
-        /// progressively. Default: auto (enabled for TTY, disabled for pipes).
-        #[arg(long, verbatim_doc_comment, conflicts_with = "no_progressive")]
+        /// Use --progressive or --no-progressive to force rendering mode.
+        /// Default: auto (enabled for TTY, disabled for pipes).
+        #[arg(long, overrides_with = "no_progressive", verbatim_doc_comment)]
         progressive: bool,
 
-        /// Disable progressive rendering (collect all data before displaying)
-        #[arg(long)]
+        /// Force buffered rendering
+        #[arg(long = "no-progressive", overrides_with = "progressive", hide = true)]
         no_progressive: bool,
     },
 

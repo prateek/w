@@ -1,0 +1,159 @@
+---
+source: tests/integration_tests/help.rs
+info:
+  program: wt
+  args:
+    - list
+    - "--help"
+  env:
+    CLICOLOR_FORCE: "1"
+    COLUMNS: "150"
+    GIT_EDITOR: ""
+---
+success: true
+exit_code: 0
+----- stdout -----
+wt-list - List worktrees and optionally branches
+Usage: wt list [OPTIONS]
+
+Options:
+  -C <path>
+      Change working directory
+
+  --format <FORMAT>
+      Output format
+
+      Possible values:                    
+      - table: Human-readable table format
+      - json:  JSON output                
+                                          
+      [default: table]                    
+
+  --branches                            
+      Include branches without worktrees
+
+  -v, --verbose
+      Show commands and debug info
+
+  --full                                                                          
+      Show CI, conflicts, diffs                                                   
+                                                                                  
+      Adds CI column, main…± diffs, and conflict detection (merge-tree +          
+network).                                                                         
+
+  --progressive                                                     
+      Progressive rendering                                         
+                                                                    
+      Use --progressive or --no-progressive to force rendering mode.
+      Default: auto (enabled for TTY, disabled for pipes).          
+
+  -h, --help
+      Print help (see a summary with '-h')
+
+[38;5;10mOPERATION[39m
+
+Displays worktrees in a table format with status information, commit details, 
+and optional branch listings.
+
+- By default: Shows only worktrees
+- With --branches: Includes branches without worktrees
+- With --full: Adds CI status, conflict detection, and detailed diffs
+- With --format=json: Outputs structured JSON for scripting
+
+[38;5;10mCOLUMNS[39m
+
+- Branch: Branch name
+- Status: Quick status symbols (see STATUS SYMBOLS below)
+- HEAD±: Uncommitted changes vs HEAD (+added -deleted lines, staged + unstaged)
+- main↕: Commit count ahead↑/behind↓ relative to main (commits in HEAD vs main)
+- main…± (--full): Line diffs in commits ahead of main (+added -deleted)
+- Path: Worktree directory location
+- Remote⇅: Commits ahead↑/behind↓ relative to tracking branch (e.g. 
+origin/branch)
+- CI (--full): CI pipeline status (tries PR/MR checks first, falls back to 
+branch workflows)
+  - [32m●[0m passed (green) - All checks passed
+  - [34m●[0m running (blue) - Checks in progress
+  - [31m●[0m failed (red) - Checks failed
+  - [33m●[0m conflicts (yellow) - Merge conflicts with base
+  - [90m●[0m no-ci (gray) - PR/MR or workflow found but no checks configured
+  - (blank) - No PR/MR or workflow found, or gh/glab CLI unavailable
+  - (dimmed) - Stale: unpushed local changes differ from PR/MR head
+- Commit: Short commit hash (8 chars)
+- Age: Time since last commit (relative)
+- Message: Last commit message (truncated)
+
+[38;5;10mSTATUS SYMBOLS[39m
+
+Order: =≠ ≡∅ ↻⋈ ⎇⌫⊠ ↑↓ ⇡⇣ ?!+»✘
+
+- [2m·[0m Branch without worktree (no working directory to check)
+- [31m=[0m Merge conflicts (unmerged paths in working tree)
+- [33m≠[0m Potential conflicts with main (--full only, detected via git merge-tree)
+- [2m≡[0m Working tree matches main (identical contents, regardless of commit history)
+- [2m∅[0m No commits (no commits ahead AND no uncommitted changes)
+- [33m↻[0m Rebase in progress
+- [33m⋈[0m Merge in progress
+- ⎇ Branch indicator (shown for branches without worktrees)
+- ⌫ Prunable worktree (directory missing, can be pruned)
+- [33m⊠[0m Locked worktree (protected from auto-removal)
+- ↑ Ahead of main branch
+- ↓ Behind main branch
+- ⇡ Ahead of remote tracking branch
+- ⇣ Behind remote tracking branch
+- [36m?[0m Untracked files present
+- [36m![0m Modified files (unstaged changes)
+- [36m+[0m Staged files (ready to commit)
+- [36m»[0m Renamed files
+- [36m✘[0m Deleted files
+
+Rows are dimmed when no unique work (≡ matches main OR ∅ no commits).
+
+[38;5;10mJSON OUTPUT[39m
+
+Use --format=json for structured data. Each object contains two status maps:
+
+status (variant names for querying):
+- branch_state: "" | "Conflicts" | "PotentialConflicts" | "MatchesMain" | 
+"NoCommits"
+- git_operation: "" | "Rebase" | "Merge"
+- worktree_attrs: object (worktrees only) with:
+  - locked: null | "reason string"
+  - prunable: null | "reason string"
+- main_divergence: "" | "Ahead" | "Behind" | "Diverged"
+- upstream_divergence: "" | "Ahead" | "Behind" | "Diverged"
+- working_tree: object with booleans
+  - untracked: boolean - untracked files present
+  - modified: boolean - unstaged changes
+  - staged: boolean - staged changes
+  - renamed: boolean - renamed files
+  - deleted: boolean - deleted files
+- user_status: string (optional) - custom status from git config
+
+status_symbols (display symbols for rendering):
+- branch_state: "" | "=" | "≠" | "≡" | "∅"
+- git_operation: "" | "↻" | "⋈"
+- worktree_attrs: "⎇" (branch) | "⌫" (prunable) | "⊠" (locked) | ""
+- main_divergence: "" | "↑" | "↓" | "↕"
+- upstream_divergence: "" | "⇡" | "⇣" | "⇅"
+- working_tree: string - combination of "?!+»✘"
+- user_status: string (optional) - same as status.user_status
+
+Query examples:
+
+  # Find worktrees with conflicts
+  jq '.[] | select(.status.branch_state == "Conflicts")'
+
+  # Find locked worktrees
+  jq '.[] | select(.status.worktree_attrs.locked != null)'
+
+  # Find worktrees with untracked files
+  jq '.[] | select(.status.working_tree.untracked == true)'
+
+  # Find worktrees in rebase or merge
+  jq '.[] | select(.status.git_operation != "")'
+
+  # Get branches ahead of main
+  jq '.[] | select(.status.main_divergence == "Ahead")'
+
+----- stderr -----

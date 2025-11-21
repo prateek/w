@@ -10,13 +10,16 @@ info:
     COLUMNS: "150"
     GIT_AUTHOR_DATE: "2025-01-01T00:00:00Z"
     GIT_COMMITTER_DATE: "2025-01-01T00:00:00Z"
+    GIT_CONFIG_COUNT: "1"
     GIT_CONFIG_GLOBAL: /dev/null
+    GIT_CONFIG_KEY_0: advice.mergeConflict
     GIT_CONFIG_SYSTEM: /dev/null
+    GIT_CONFIG_VALUE_0: "false"
     GIT_EDITOR: ""
     LANG: C
     LC_ALL: C
     SOURCE_DATE_EPOCH: "1761609600"
-    WORKTRUNK_CONFIG_PATH: "[TEST_CONFIG]"
+    WORKTRUNK_CONFIG_PATH: /var/folders/wf/s6ycxvvs4ln8qsdbfx40hnc40000gn/T/.tmpOSL0P3/test-config.toml
 ---
 success: true
 exit_code: 0
@@ -414,9 +417,9 @@ _arguments "${_arguments_options[@]}" : \
 json\:"JSON output"))' \
 '-C+[Change working directory]:path:_files' \
 '--branches[Include branches without worktrees]' \
-'--full[Show CI, conflicts, and full diffs]' \
-'(--no-progressive)--progressive[Enable progressive rendering (show rows as data arrives)]' \
-'--no-progressive[Disable progressive rendering (collect all data before displaying)]' \
+'--full[Show CI, conflicts, diffs]' \
+'--progressive[Progressive rendering]' \
+'--no-progressive[Force buffered rendering]' \
 '-v[Show commands and debug info]' \
 '--verbose[Show commands and debug info]' \
 '-h[Print help (see more with '\''--help'\'')]' \

@@ -1,11 +1,11 @@
 use std::cell::RefCell;
 use std::ffi::{OsStr, OsString};
 
-use clap::{Command, CommandFactory};
+use clap::Command;
 use clap_complete::engine::{ArgValueCompleter, CompletionCandidate, ValueCompleter};
 use clap_complete::env::CompleteEnv;
 
-use crate::cli::Cli;
+use crate::cli;
 use worktrunk::git::Repository;
 
 /// Handle shell-initiated completion requests via `COMPLETE=$SHELL wt`
@@ -99,7 +99,7 @@ thread_local! {
 }
 
 fn completion_command() -> Command {
-    adjust_completion_command(Cli::command())
+    adjust_completion_command(cli::build_command())
 }
 
 // Mark positional args as `.last(true)` to allow them after all flags.

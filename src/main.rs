@@ -1,5 +1,5 @@
 use anstyle::Style;
-use clap::{CommandFactory, Parser};
+use clap::FromArgMatches;
 use std::process;
 use worktrunk::config::WorktrunkConfig;
 use worktrunk::git::{GitError, GitResultExt, Repository, set_base_path};
@@ -38,7 +38,7 @@ fn maybe_handle_help_with_pager() -> bool {
     use clap::ColorChoice;
     use clap::error::ErrorKind;
 
-    let mut cmd = Cli::command();
+    let mut cmd = cli::build_command();
     cmd = cmd.color(ColorChoice::Always); // Force clap to always emit ANSI codes
 
     // DON'T render markdown yet - let clap generate help first
@@ -94,7 +94,9 @@ fn main() {
     // Clap doesn't support this natively yet - see https://github.com/clap-rs/clap/issues/3320
     // When available, use built-in setting. Until then, could use try_parse() to intercept
     // MissingRequiredArgument errors and print custom messages with ValueEnum::value_variants().
-    let cli = Cli::parse();
+    let cmd = cli::build_command();
+    let matches = cmd.get_matches();
+    let cli = Cli::from_arg_matches(&matches).unwrap_or_else(|e| e.exit());
 
     // Initialize base path from -C flag if provided
     if let Some(path) = cli.directory {
@@ -170,7 +172,7 @@ fn main() {
             shell,
             command_name,
         } => {
-            let mut cli_cmd = Cli::command();
+            let mut cli_cmd = cli::build_command();
             handle_init(shell, command_name, &mut cli_cmd).git_err()
         }
         Commands::Config { action } => match action {
@@ -270,7 +272,13 @@ fn main() {
             no_progressive,
         } => {
             use commands::list::progressive::RenderMode;
-            let render_mode = RenderMode::detect(progressive, no_progressive, cli.internal);
+            // Convert two bools to Option<bool>: Some(true), Some(false), or None
+            let progressive_opt = match (progressive, no_progressive) {
+                (true, _) => Some(true),
+                (_, true) => Some(false),
+                _ => None,
+            };
+            let render_mode = RenderMode::detect(progressive_opt, cli.internal);
             handle_list(format, branches, full, render_mode)
         }
         Commands::Switch {

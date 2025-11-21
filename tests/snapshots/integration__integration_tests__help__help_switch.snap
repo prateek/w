@@ -1,0 +1,104 @@
+---
+source: tests/integration_tests/help.rs
+info:
+  program: wt
+  args:
+    - switch
+    - "--help"
+  env:
+    CLICOLOR_FORCE: "1"
+    COLUMNS: "150"
+    GIT_CONFIG_GLOBAL: ""
+---
+success: true
+exit_code: 0
+----- stdout -----
+wt-switch - Switch to a worktree
+Usage: wt switch [OPTIONS] <BRANCH>
+
+Options:
+  -c, --create
+      Create a new branch
+
+  -C <path>
+      Change working directory
+
+  -b, --base <BASE>
+      Base branch (defaults to default branch)
+
+  -v, --verbose
+      Show commands and debug info
+
+  -x, --execute <EXECUTE>
+      Execute command after switching
+
+  -f, --force
+      Skip approval prompts
+
+  --no-verify               
+      Skip all project hooks
+
+  -h, --help
+      Print help (see a summary with '-h')
+
+[38;5;10mOPERATION[39m
+
+Switching to Existing Worktree:
+- If worktree exists for branch, changes directory via shell integration
+- No hooks run
+- No branch creation
+
+Creating New Worktree (--create):
+1. Creates new branch (defaults to current default branch as base)
+2. Creates worktree in configured location (default: 
+../{{ main_worktree }}.{{ branch }})
+3. Runs post-create hooks sequentially (blocking)
+4. Shows success message
+5. Spawns post-start hooks in background (non-blocking)
+6. Changes directory to new worktree via shell integration
+
+[38;5;10mHOOKS[39m
+
+post-create (sequential, blocking):
+- Run after worktree creation, before success message
+- Typically: npm install, cargo build, setup tasks
+- Failures block the operation
+- Skip with --no-verify
+
+post-start (parallel, background):
+- Spawned after success message shown
+- Typically: dev servers, file watchers, editors
+- Run in background, failures logged but don't block
+- Logs: .git/wt-logs/{branch}-post-start-{name}.log
+- Skip with --no-verify
+
+[38;5;10mEXAMPLES[39m
+
+Switch to existing worktree:
+wt switch feature-branch
+
+Create new worktree from main:
+wt switch --create new-feature
+
+Switch to previous worktree:
+wt switch -
+
+Create from specific base:
+wt switch --create hotfix --base production
+
+Create and run command:
+wt switch --create docs --execute "code ."
+
+Skip hooks during creation:
+wt switch --create temp --no-verify
+
+[38;5;10mSHORTCUTS[39m
+
+Use @ for current HEAD, - for previous, ^ for main:
+wt switch @                              # Switch to current branch's worktree
+wt switch -                              # Switch to previous worktree        
+wt switch --create new-feature --base=^  # Branch from main (default)         
+wt switch --create bugfix --base=@       # Branch from current HEAD           
+wt remove @                              # Remove current worktree            
+
+----- stderr -----

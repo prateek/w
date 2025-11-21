@@ -10,13 +10,16 @@ info:
     COLUMNS: "150"
     GIT_AUTHOR_DATE: "2025-01-01T00:00:00Z"
     GIT_COMMITTER_DATE: "2025-01-01T00:00:00Z"
+    GIT_CONFIG_COUNT: "1"
     GIT_CONFIG_GLOBAL: /dev/null
+    GIT_CONFIG_KEY_0: advice.mergeConflict
     GIT_CONFIG_SYSTEM: /dev/null
+    GIT_CONFIG_VALUE_0: "false"
     GIT_EDITOR: ""
     LANG: C
     LC_ALL: C
     SOURCE_DATE_EPOCH: "1761609600"
-    WORKTRUNK_CONFIG_PATH: "[TEST_CONFIG]"
+    WORKTRUNK_CONFIG_PATH: /var/folders/wf/s6ycxvvs4ln8qsdbfx40hnc40000gn/T/.tmpFcnCHf/test-config.toml
 ---
 success: true
 exit_code: 0
@@ -277,9 +280,9 @@ complete -c wt -n "__fish_wt_using_subcommand list" -l format -d 'Output format'
 json\t'JSON output'"
 complete -c wt -n "__fish_wt_using_subcommand list" -s C -d 'Change working directory' -r -F
 complete -c wt -n "__fish_wt_using_subcommand list" -l branches -d 'Include branches without worktrees'
-complete -c wt -n "__fish_wt_using_subcommand list" -l full -d 'Show CI, conflicts, and full diffs'
-complete -c wt -n "__fish_wt_using_subcommand list" -l progressive -d 'Enable progressive rendering (show rows as data arrives)'
-complete -c wt -n "__fish_wt_using_subcommand list" -l no-progressive -d 'Disable progressive rendering (collect all data before displaying)'
+complete -c wt -n "__fish_wt_using_subcommand list" -l full -d 'Show CI, conflicts, diffs'
+complete -c wt -n "__fish_wt_using_subcommand list" -l progressive -d 'Progressive rendering'
+complete -c wt -n "__fish_wt_using_subcommand list" -l no-progressive -d 'Force buffered rendering'
 complete -c wt -n "__fish_wt_using_subcommand list" -s v -l verbose -d 'Show commands and debug info'
 complete -c wt -n "__fish_wt_using_subcommand list" -s h -l help -d 'Print help (see more with \'--help\')'
 complete -c wt -n "__fish_wt_using_subcommand switch" -s b -l base -f -d 'Base branch (defaults to default branch)' -r

@@ -98,6 +98,92 @@ fn run_snapshot(settings: Settings, test_name: &str, mut cmd: Command) {
     });
 }
 
+/// Creates worktrees with specific timestamps for ordering tests.
+/// Returns the path to feature-current (the worktree to run tests from).
+///
+/// Expected order: main (00:00), feature-current (01:00), feature-newest (03:00),
+/// feature-middle (02:00), feature-oldest (00:30)
+fn setup_timestamped_worktrees(repo: &mut TestRepo) -> std::path::PathBuf {
+    // Create main with earliest timestamp (00:00)
+    repo.commit("Initial commit on main");
+
+    // Helper to create a commit with a specific timestamp
+    fn commit_at_time(
+        repo: &TestRepo,
+        path: &std::path::Path,
+        filename: &str,
+        time: &str,
+        time_short: &str,
+    ) {
+        let file_path = path.join(filename);
+        std::fs::write(
+            &file_path,
+            format!("{} content", filename.trim_end_matches(".txt")),
+        )
+        .expect("Failed to write file");
+
+        let mut cmd = Command::new("git");
+        repo.configure_git_cmd(&mut cmd);
+        cmd.env("GIT_AUTHOR_DATE", time);
+        cmd.env("GIT_COMMITTER_DATE", time);
+        cmd.args(["add", "."])
+            .current_dir(path)
+            .output()
+            .expect("Failed to git add");
+
+        let mut cmd = Command::new("git");
+        repo.configure_git_cmd(&mut cmd);
+        cmd.env("GIT_AUTHOR_DATE", time);
+        cmd.env("GIT_COMMITTER_DATE", time);
+        cmd.args(["commit", "-m", &format!("Commit at {}", time_short)])
+            .current_dir(path)
+            .output()
+            .expect("Failed to git commit");
+    }
+
+    // 1. Create feature-current (01:00) - we'll run test from here
+    let current_path = repo.add_worktree("feature-current", "feature-current");
+    commit_at_time(
+        repo,
+        &current_path,
+        "current.txt",
+        "2025-01-01T01:00:00Z",
+        "01:00",
+    );
+
+    // 2. Create feature-newest (03:00) - most recent, should be 3rd
+    let newest_path = repo.add_worktree("feature-newest", "feature-newest");
+    commit_at_time(
+        repo,
+        &newest_path,
+        "newest.txt",
+        "2025-01-01T03:00:00Z",
+        "03:00",
+    );
+
+    // 3. Create feature-middle (02:00) - should be 4th
+    let middle_path = repo.add_worktree("feature-middle", "feature-middle");
+    commit_at_time(
+        repo,
+        &middle_path,
+        "middle.txt",
+        "2025-01-01T02:00:00Z",
+        "02:00",
+    );
+
+    // 4. Create feature-oldest (00:30) - should be 5th
+    let oldest_path = repo.add_worktree("feature-oldest", "feature-oldest");
+    commit_at_time(
+        repo,
+        &oldest_path,
+        "oldest.txt",
+        "2025-01-01T00:30:00Z",
+        "00:30",
+    );
+
+    current_path
+}
+
 /// Helper to create a branch without a worktree
 fn create_branch(repo: &TestRepo, branch_name: &str) {
     let mut cmd = Command::new("git");
@@ -417,112 +503,7 @@ fn test_list_json_with_display_fields() {
 #[test]
 fn test_list_ordering_rules() {
     let mut repo = TestRepo::new();
-
-    // Create main with earliest timestamp (00:00)
-    repo.commit("Initial commit on main");
-
-    // Create worktrees in non-chronological order to prove we sort by timestamp
-
-    // 1. Create feature-current (01:00) - we'll run test from here
-    let current_path = repo.add_worktree("feature-current", "feature-current");
-    {
-        // Create commit with timestamp 01:00
-        let file_path = current_path.join("current.txt");
-        std::fs::write(&file_path, "current content").expect("Failed to write file");
-
-        let mut cmd = Command::new("git");
-        repo.configure_git_cmd(&mut cmd);
-        cmd.env("GIT_AUTHOR_DATE", "2025-01-01T01:00:00Z");
-        cmd.env("GIT_COMMITTER_DATE", "2025-01-01T01:00:00Z");
-        cmd.args(["add", "."])
-            .current_dir(&current_path)
-            .output()
-            .expect("Failed to git add");
-
-        let mut cmd = Command::new("git");
-        repo.configure_git_cmd(&mut cmd);
-        cmd.env("GIT_AUTHOR_DATE", "2025-01-01T01:00:00Z");
-        cmd.env("GIT_COMMITTER_DATE", "2025-01-01T01:00:00Z");
-        cmd.args(["commit", "-m", "Commit at 01:00"])
-            .current_dir(&current_path)
-            .output()
-            .expect("Failed to git commit");
-    }
-
-    // 2. Create feature-newest (03:00) - most recent, should be 3rd
-    let newest_path = repo.add_worktree("feature-newest", "feature-newest");
-    {
-        let file_path = newest_path.join("newest.txt");
-        std::fs::write(&file_path, "newest content").expect("Failed to write file");
-
-        let mut cmd = Command::new("git");
-        repo.configure_git_cmd(&mut cmd);
-        cmd.env("GIT_AUTHOR_DATE", "2025-01-01T03:00:00Z");
-        cmd.env("GIT_COMMITTER_DATE", "2025-01-01T03:00:00Z");
-        cmd.args(["add", "."])
-            .current_dir(&newest_path)
-            .output()
-            .expect("Failed to git add");
-
-        let mut cmd = Command::new("git");
-        repo.configure_git_cmd(&mut cmd);
-        cmd.env("GIT_AUTHOR_DATE", "2025-01-01T03:00:00Z");
-        cmd.env("GIT_COMMITTER_DATE", "2025-01-01T03:00:00Z");
-        cmd.args(["commit", "-m", "Commit at 03:00"])
-            .current_dir(&newest_path)
-            .output()
-            .expect("Failed to git commit");
-    }
-
-    // 3. Create feature-middle (02:00) - should be 4th
-    let middle_path = repo.add_worktree("feature-middle", "feature-middle");
-    {
-        let file_path = middle_path.join("middle.txt");
-        std::fs::write(&file_path, "middle content").expect("Failed to write file");
-
-        let mut cmd = Command::new("git");
-        repo.configure_git_cmd(&mut cmd);
-        cmd.env("GIT_AUTHOR_DATE", "2025-01-01T02:00:00Z");
-        cmd.env("GIT_COMMITTER_DATE", "2025-01-01T02:00:00Z");
-        cmd.args(["add", "."])
-            .current_dir(&middle_path)
-            .output()
-            .expect("Failed to git add");
-
-        let mut cmd = Command::new("git");
-        repo.configure_git_cmd(&mut cmd);
-        cmd.env("GIT_AUTHOR_DATE", "2025-01-01T02:00:00Z");
-        cmd.env("GIT_COMMITTER_DATE", "2025-01-01T02:00:00Z");
-        cmd.args(["commit", "-m", "Commit at 02:00"])
-            .current_dir(&middle_path)
-            .output()
-            .expect("Failed to git commit");
-    }
-
-    // 4. Create feature-oldest (00:30) - should be 5th
-    let oldest_path = repo.add_worktree("feature-oldest", "feature-oldest");
-    {
-        let file_path = oldest_path.join("oldest.txt");
-        std::fs::write(&file_path, "oldest content").expect("Failed to write file");
-
-        let mut cmd = Command::new("git");
-        repo.configure_git_cmd(&mut cmd);
-        cmd.env("GIT_AUTHOR_DATE", "2025-01-01T00:30:00Z");
-        cmd.env("GIT_COMMITTER_DATE", "2025-01-01T00:30:00Z");
-        cmd.args(["add", "."])
-            .current_dir(&oldest_path)
-            .output()
-            .expect("Failed to git add");
-
-        let mut cmd = Command::new("git");
-        repo.configure_git_cmd(&mut cmd);
-        cmd.env("GIT_AUTHOR_DATE", "2025-01-01T00:30:00Z");
-        cmd.env("GIT_COMMITTER_DATE", "2025-01-01T00:30:00Z");
-        cmd.args(["commit", "-m", "Commit at 00:30"])
-            .current_dir(&oldest_path)
-            .output()
-            .expect("Failed to git commit");
-    }
+    let current_path = setup_timestamped_worktrees(&mut repo);
 
     // Run from feature-current worktree to test "current worktree" logic
     snapshot_list_from_dir("list_ordering_rules", &repo, &current_path);
@@ -1053,111 +1034,7 @@ fn test_list_task_dag_ordering_stability() {
     // Test that task_dag mode produces same ordering as buffered mode
     // Regression test for progressive rendering order instability
     let mut repo = TestRepo::new();
-
-    // Create main with earliest timestamp (00:00)
-    repo.commit("Initial commit on main");
-
-    // Create worktrees with specific timestamps (non-chronological creation order)
-
-    // 1. Create feature-current (01:00) - we'll run test from here
-    let current_path = repo.add_worktree("feature-current", "feature-current");
-    {
-        let file_path = current_path.join("current.txt");
-        std::fs::write(&file_path, "current content").expect("Failed to write file");
-
-        let mut cmd = Command::new("git");
-        repo.configure_git_cmd(&mut cmd);
-        cmd.env("GIT_AUTHOR_DATE", "2025-01-01T01:00:00Z");
-        cmd.env("GIT_COMMITTER_DATE", "2025-01-01T01:00:00Z");
-        cmd.args(["add", "."])
-            .current_dir(&current_path)
-            .output()
-            .expect("Failed to git add");
-
-        let mut cmd = Command::new("git");
-        repo.configure_git_cmd(&mut cmd);
-        cmd.env("GIT_AUTHOR_DATE", "2025-01-01T01:00:00Z");
-        cmd.env("GIT_COMMITTER_DATE", "2025-01-01T01:00:00Z");
-        cmd.args(["commit", "-m", "Commit at 01:00"])
-            .current_dir(&current_path)
-            .output()
-            .expect("Failed to git commit");
-    }
-
-    // 2. Create feature-newest (03:00) - most recent, should be 3rd
-    let newest_path = repo.add_worktree("feature-newest", "feature-newest");
-    {
-        let file_path = newest_path.join("newest.txt");
-        std::fs::write(&file_path, "newest content").expect("Failed to write file");
-
-        let mut cmd = Command::new("git");
-        repo.configure_git_cmd(&mut cmd);
-        cmd.env("GIT_AUTHOR_DATE", "2025-01-01T03:00:00Z");
-        cmd.env("GIT_COMMITTER_DATE", "2025-01-01T03:00:00Z");
-        cmd.args(["add", "."])
-            .current_dir(&newest_path)
-            .output()
-            .expect("Failed to git add");
-
-        let mut cmd = Command::new("git");
-        repo.configure_git_cmd(&mut cmd);
-        cmd.env("GIT_AUTHOR_DATE", "2025-01-01T03:00:00Z");
-        cmd.env("GIT_COMMITTER_DATE", "2025-01-01T03:00:00Z");
-        cmd.args(["commit", "-m", "Commit at 03:00"])
-            .current_dir(&newest_path)
-            .output()
-            .expect("Failed to git commit");
-    }
-
-    // 3. Create feature-middle (02:00) - should be 4th
-    let middle_path = repo.add_worktree("feature-middle", "feature-middle");
-    {
-        let file_path = middle_path.join("middle.txt");
-        std::fs::write(&file_path, "middle content").expect("Failed to write file");
-
-        let mut cmd = Command::new("git");
-        repo.configure_git_cmd(&mut cmd);
-        cmd.env("GIT_AUTHOR_DATE", "2025-01-01T02:00:00Z");
-        cmd.env("GIT_COMMITTER_DATE", "2025-01-01T02:00:00Z");
-        cmd.args(["add", "."])
-            .current_dir(&middle_path)
-            .output()
-            .expect("Failed to git add");
-
-        let mut cmd = Command::new("git");
-        repo.configure_git_cmd(&mut cmd);
-        cmd.env("GIT_AUTHOR_DATE", "2025-01-01T02:00:00Z");
-        cmd.env("GIT_COMMITTER_DATE", "2025-01-01T02:00:00Z");
-        cmd.args(["commit", "-m", "Commit at 02:00"])
-            .current_dir(&middle_path)
-            .output()
-            .expect("Failed to git commit");
-    }
-
-    // 4. Create feature-oldest (00:30) - should be 5th
-    let oldest_path = repo.add_worktree("feature-oldest", "feature-oldest");
-    {
-        let file_path = oldest_path.join("oldest.txt");
-        std::fs::write(&file_path, "oldest content").expect("Failed to write file");
-
-        let mut cmd = Command::new("git");
-        repo.configure_git_cmd(&mut cmd);
-        cmd.env("GIT_AUTHOR_DATE", "2025-01-01T00:30:00Z");
-        cmd.env("GIT_COMMITTER_DATE", "2025-01-01T00:30:00Z");
-        cmd.args(["add", "."])
-            .current_dir(&oldest_path)
-            .output()
-            .expect("Failed to git add");
-
-        let mut cmd = Command::new("git");
-        repo.configure_git_cmd(&mut cmd);
-        cmd.env("GIT_AUTHOR_DATE", "2025-01-01T00:30:00Z");
-        cmd.env("GIT_COMMITTER_DATE", "2025-01-01T00:30:00Z");
-        cmd.args(["commit", "-m", "Commit at 00:30"])
-            .current_dir(&oldest_path)
-            .output()
-            .expect("Failed to git commit");
-    }
+    let current_path = setup_timestamped_worktrees(&mut repo);
 
     // Run from feature-current worktree
     // Expected order: main, feature-current, feature-newest, feature-middle, feature-oldest

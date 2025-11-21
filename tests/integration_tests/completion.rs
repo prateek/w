@@ -866,28 +866,7 @@ fn test_complete_init_shell_partial_z() {
     assert!(!shells.contains(&"fish"));
 }
 
-#[test]
-fn test_complete_init_shell_all_with_source() {
-    let temp = TestRepo::new();
-    temp.commit("initial");
-
-    // Test completion for config shell init with --source flag
-    let output = temp
-        .completion_cmd(&["wt", "--source", "config", "shell", "init", ""])
-        .output()
-        .unwrap();
-
-    assert!(output.status.success());
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    let shells = value_suggestions(&stdout);
-
-    // Should show supported shells, same as without --source
-    assert!(shells.contains(&"bash"));
-    assert!(shells.contains(&"fish"));
-    assert!(shells.contains(&"zsh"));
-    assert!(!shells.contains(&"elvish"));
-    assert!(!shells.contains(&"nushell"));
-}
+// test_complete_init_shell_all_with_source removed - duplicate of test_complete_init_shell_with_source_flag
 
 #[test]
 fn test_complete_list_format_flag() {

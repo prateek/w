@@ -40,8 +40,9 @@ fn snapshot_merge_with_env(
     });
 }
 
-#[test]
-fn test_merge_fast_forward() {
+/// Standard merge test setup: creates repo with remote, main worktree, and feature worktree with one commit.
+/// Returns (repo, feature_wt_path).
+fn setup_merge_scenario() -> (TestRepo, std::path::PathBuf) {
     let mut repo = TestRepo::new();
     repo.commit("Initial commit");
     repo.setup_remote("main");
@@ -73,6 +74,13 @@ fn test_merge_fast_forward() {
         .current_dir(&feature_wt)
         .output()
         .expect("Failed to commit");
+
+    (repo, feature_wt)
+}
+
+#[test]
+fn test_merge_fast_forward() {
+    let (repo, feature_wt) = setup_merge_scenario();
 
     // Merge feature into main
     snapshot_merge("merge_fast_forward", &repo, &["main"], Some(&feature_wt));
@@ -119,37 +127,7 @@ fn test_merge_when_primary_not_on_default_but_default_has_worktree() {
 
 #[test]
 fn test_merge_with_no_remove_flag() {
-    let mut repo = TestRepo::new();
-    repo.commit("Initial commit");
-    repo.setup_remote("main");
-
-    // Create a worktree for main
-    let main_wt = repo.root_path().parent().unwrap().join("test-repo.main-wt");
-    let mut cmd = Command::new("git");
-    repo.configure_git_cmd(&mut cmd);
-    cmd.args(["worktree", "add", main_wt.to_str().unwrap(), "main"])
-        .current_dir(repo.root_path())
-        .output()
-        .expect("Failed to add worktree");
-
-    // Create a feature worktree and make a commit
-    let feature_wt = repo.add_worktree("feature", "feature");
-    std::fs::write(feature_wt.join("feature.txt"), "feature content")
-        .expect("Failed to write file");
-
-    let mut cmd = Command::new("git");
-    repo.configure_git_cmd(&mut cmd);
-    cmd.args(["add", "feature.txt"])
-        .current_dir(&feature_wt)
-        .output()
-        .expect("Failed to add file");
-
-    let mut cmd = Command::new("git");
-    repo.configure_git_cmd(&mut cmd);
-    cmd.args(["commit", "-m", "Add feature file"])
-        .current_dir(&feature_wt)
-        .output()
-        .expect("Failed to commit");
+    let (repo, feature_wt) = setup_merge_scenario();
 
     // Merge with --no-remove flag (should not finish worktree)
     snapshot_merge(
@@ -338,37 +316,7 @@ fn test_merge_rebase_conflict() {
 
 #[test]
 fn test_merge_to_default_branch() {
-    let mut repo = TestRepo::new();
-    repo.commit("Initial commit");
-    repo.setup_remote("main");
-
-    // Create a worktree for main
-    let main_wt = repo.root_path().parent().unwrap().join("test-repo.main-wt");
-    let mut cmd = Command::new("git");
-    repo.configure_git_cmd(&mut cmd);
-    cmd.args(["worktree", "add", main_wt.to_str().unwrap(), "main"])
-        .current_dir(repo.root_path())
-        .output()
-        .expect("Failed to add worktree");
-
-    // Create a feature worktree and make a commit
-    let feature_wt = repo.add_worktree("feature", "feature");
-    std::fs::write(feature_wt.join("feature.txt"), "feature content")
-        .expect("Failed to write file");
-
-    let mut cmd = Command::new("git");
-    repo.configure_git_cmd(&mut cmd);
-    cmd.args(["add", "feature.txt"])
-        .current_dir(&feature_wt)
-        .output()
-        .expect("Failed to add file");
-
-    let mut cmd = Command::new("git");
-    repo.configure_git_cmd(&mut cmd);
-    cmd.args(["commit", "-m", "Add feature file"])
-        .current_dir(&feature_wt)
-        .output()
-        .expect("Failed to commit");
+    let (repo, feature_wt) = setup_merge_scenario();
 
     // Merge without specifying target (should use default branch)
     snapshot_merge("merge_to_default", &repo, &[], Some(&feature_wt));

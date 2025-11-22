@@ -255,6 +255,41 @@ pub enum ConfigCommand {
     },
 
     /// Manage command approvals
+    #[command(after_long_help = r#"## HOW APPROVALS WORK
+
+Commands from project hooks (.config/wt.toml) and LLM configuration require
+approval on first run. This prevents untrusted projects from running arbitrary
+commands.
+
+**Approval flow:**
+1. Command is shown with expanded template variables
+2. User approves or denies
+3. Approved commands are saved to user config under `[projects."project-id"]`
+
+**When re-approval is required:**
+- Command template changes (not just variable values)
+- Project ID changes (repository moves)
+
+**Bypassing prompts:**
+- `--force` flag on individual commands (e.g., `wt merge --force`)
+- Useful for CI/automation where prompts aren't possible
+
+## EXAMPLES
+
+Pre-approve all commands for current project:
+```
+wt config approvals ask
+```
+
+Clear approvals for current project:
+```
+wt config approvals clear
+```
+
+Clear global approvals:
+```
+wt config approvals clear --global
+```"#)]
     Approvals {
         #[command(subcommand)]
         action: ApprovalsCommand,
@@ -601,6 +636,12 @@ Note: `locked` and `prunable` are top-level fields on worktree objects, not in s
 - Logs: `.git/wt-logs/{branch}-post-start-{name}.log`
 - Skip with `--no-verify`
 
+**Template variables:** `{{ repo }}`, `{{ branch }}`, `{{ worktree }}`, `{{ repo_root }}`
+
+**Security:** Commands from project hooks require approval on first run.
+Approvals are saved to user config. Use `--force` to bypass prompts.
+See `wt config approvals --help`.
+
 ## Examples
 
 Switch to existing worktree:
@@ -776,6 +817,12 @@ Fast-forward push to local target branch. Non-fast-forward pushes are rejected.
 ### Cleanup
 
 Worktree and branch are removed. Skip with `--no-remove`.
+
+**Template variables:** `{{ repo }}`, `{{ branch }}`, `{{ worktree }}`, `{{ repo_root }}`, `{{ target }}`
+
+**Security:** Commands from project hooks require approval on first run.
+Approvals are saved to user config. Use `--force` to bypass prompts.
+See `wt config approvals --help`.
 
 ## Examples
 

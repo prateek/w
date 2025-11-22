@@ -347,8 +347,8 @@ _arguments "${_arguments_options[@]}" : \
 '--config=[User config file path]:path:_files' \
 '-v[Show commands and debug info]' \
 '--verbose[Show commands and debug info]' \
-'-h[Print help]' \
-'--help[Print help]' \
+'-h[Print help (see more with '\''--help'\'')]' \
+'--help[Print help (see more with '\''--help'\'')]' \
 ":: :_wt__config__approvals_commands" \
 "*::: :->approvals" \
 && ret=0

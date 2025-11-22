@@ -235,7 +235,7 @@ complete -c wt -n "__fish_wt_using_subcommand config; and __fish_seen_subcommand
 complete -c wt -n "__fish_wt_using_subcommand config; and __fish_seen_subcommand_from approvals" -s C -d 'Change working directory' -r -F
 complete -c wt -n "__fish_wt_using_subcommand config; and __fish_seen_subcommand_from approvals" -l config -d 'User config file path' -r -F
 complete -c wt -n "__fish_wt_using_subcommand config; and __fish_seen_subcommand_from approvals" -s v -l verbose -d 'Show commands and debug info'
-complete -c wt -n "__fish_wt_using_subcommand config; and __fish_seen_subcommand_from approvals" -s h -l help -d 'Print help'
+complete -c wt -n "__fish_wt_using_subcommand config; and __fish_seen_subcommand_from approvals" -s h -l help -d 'Print help (see more with \'--help\')'
 complete -c wt -n "__fish_wt_using_subcommand config; and __fish_seen_subcommand_from approvals" -f -a "ask" -d 'Store approvals in config'
 complete -c wt -n "__fish_wt_using_subcommand config; and __fish_seen_subcommand_from approvals" -f -a "clear" -d 'Clear approved commands from config'
 complete -c wt -n "__fish_wt_using_subcommand step; and not __fish_seen_subcommand_from commit squash push rebase post-create post-start pre-commit pre-merge post-merge" -s C -d 'Change working directory' -r -F

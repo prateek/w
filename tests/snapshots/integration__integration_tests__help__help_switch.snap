@@ -85,6 +85,12 @@ post-start (parallel, background)
 - Logs: .git/wt-logs/{branch}-post-start-{name}.log
 - Skip with --no-verify
 
+Template variables: {{ repo }}, {{ branch }}, {{ worktree }}, {{ repo_root }}
+
+Security: Commands from project hooks require approval on first run.
+Approvals are saved to user config. Use --force to bypass prompts.
+See wt config approvals --help.
+
 [38;5;10mExamples[39m
 
 Switch to existing worktree:

@@ -142,15 +142,11 @@ To set up integration: run `wt config --help` to see the setup guide, or `wt con
 <details>
 <summary>Advanced: Custom Prompt Templates</summary>
 
-Worktrunk uses [minijinja
-templates](https://docs.rs/minijinja/latest/minijinja/syntax/index.html) for
-commit message prompts. Customize the prompts by setting `template` (inline) or
-`template-file` (external file) in the `[commit-generation]` section. Use
-`squash-template` / `squash-template-file` for squash commits.
+Customize commit message prompts using [minijinja
+templates](https://docs.rs/minijinja/latest/minijinja/syntax/index.html).
 
-See [`config.example.toml`](dev/config.example.toml) for complete template examples
-with all available variables (`git_diff`, `branch`, `recent_commits`, `commits`,
-`target_branch`, `repo`).
+See [`config.example.toml`](dev/config.example.toml) for template examples with all
+available variables.
 
 </details>
 
@@ -239,11 +235,9 @@ $ wt merge
 | **pre-merge-command**   | After rebase completes during `wt merge` (validates rebased state before push) | Sequential, blocking, fail-fast               | Terminates merge immediately |
 | **post-merge-command**  | After successful merge and push to target branch, before cleanup               | Sequential, blocking                          | Logs warning, continues      |
 
-**Template variables:** `{{ repo }}`, `{{ branch }}`, `{{ worktree }}`, `{{ repo_root }}`, `{{ target }}`
-
 **Skipping hooks:** `wt switch --no-verify` or `wt merge --no-verify`
 
-**Security:** Commands require approval on first run. Use `--force` to bypass.
+See `wt switch --help` and `wt merge --help` for template variables and security details.
 
 </details>
 
@@ -766,16 +760,21 @@ Docs: https://llm.datasette.io/ | https://github.com/sigoden/aichat
 </details>
 
 <details>
-<summary><strong>Beta commands</strong> - Experimental commands for advanced workflows</summary>
+<summary><strong>Step commands</strong> - Building blocks for workflows</summary>
 
-These commands are subject to change:
+Primitive operations that can be composed into custom workflows:
 
-- `wt beta run-hook <hook-type>` - Run a project hook for testing
-- `wt beta commit` - Commit changes with LLM message
-- `wt beta squash [target]` - Squash commits with LLM message
-- `wt beta push [target]` - Push changes to local target branch
-- `wt beta rebase [target]` - Rebase onto target
-- `wt beta select` - Interactive worktree selector (WIP)
+- `wt step commit` - Commit changes with LLM message
+- `wt step squash [target]` - Squash commits with LLM message
+- `wt step push [target]` - Push changes to local target branch
+- `wt step rebase [target]` - Rebase onto target
+- `wt step post-create` - Run post-create hook
+- `wt step post-start` - Run post-start hook
+- `wt step pre-commit` - Run pre-commit hook
+- `wt step pre-merge` - Run pre-merge hook
+- `wt step post-merge` - Run post-merge hook
+
+See `wt step --help` for details.
 
 </details>
 
@@ -790,8 +789,11 @@ wt config --help  # Show LLM setup guide
 <details>
 <summary>Configuration details</summary>
 
-**Global config** (`~/.config/worktrunk/config.toml`):
+**Global config** (loaded in order of precedence):
+1. `WORKTRUNK_CONFIG_PATH` environment variable
+2. `~/.config/worktrunk/config.toml` (Linux/macOS) or `%APPDATA%\worktrunk\config.toml` (Windows)
 
+Contents:
 - `worktree-path` - Path template for new worktrees
 - `[list]` - Default display options for `wt list` (full, branches, remotes)
 - `[commit-generation]` - LLM command and prompt templates

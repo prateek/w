@@ -325,6 +325,21 @@ impl serde::Serialize for MainDivergence {
     }
 }
 
+impl MainDivergence {
+    /// Compute divergence state from ahead/behind counts.
+    ///
+    /// Note: This cannot produce `IsMain` - that variant is set explicitly
+    /// when the worktree is on the main branch.
+    pub fn from_counts(ahead: usize, behind: usize) -> Self {
+        match (ahead, behind) {
+            (0, 0) => Self::None,
+            (_, 0) => Self::Ahead,
+            (0, _) => Self::Behind,
+            _ => Self::Diverged,
+        }
+    }
+}
+
 /// Upstream/remote divergence state
 ///
 /// Represents relationship to the remote tracking branch.
@@ -359,6 +374,18 @@ impl serde::Serialize for UpstreamDivergence {
     {
         // Serialize as empty string for None, or the character for other variants
         serializer.serialize_str(&self.to_string())
+    }
+}
+
+impl UpstreamDivergence {
+    /// Compute divergence state from ahead/behind counts.
+    pub fn from_counts(ahead: usize, behind: usize) -> Self {
+        match (ahead, behind) {
+            (0, 0) => Self::None,
+            (_, 0) => Self::Ahead,
+            (0, _) => Self::Behind,
+            _ => Self::Diverged,
+        }
     }
 }
 

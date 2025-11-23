@@ -123,34 +123,14 @@ pub(super) fn detect_worktree_state(repo: &Repository) -> Option<String> {
     }
 }
 
-/// Compute main branch divergence state from ahead/behind counts.
-fn compute_main_divergence(ahead: usize, behind: usize) -> MainDivergence {
-    match (ahead, behind) {
-        (0, 0) => MainDivergence::None,
-        (_, 0) => MainDivergence::Ahead,
-        (0, _) => MainDivergence::Behind,
-        _ => MainDivergence::Diverged,
-    }
-}
-
-/// Compute upstream divergence state from ahead/behind counts.
-fn compute_upstream_divergence(ahead: usize, behind: usize) -> UpstreamDivergence {
-    match (ahead, behind) {
-        (0, 0) => UpstreamDivergence::None,
-        (_, 0) => UpstreamDivergence::Ahead,
-        (0, _) => UpstreamDivergence::Behind,
-        _ => UpstreamDivergence::Diverged,
-    }
-}
-
 fn compute_divergences(
     counts: &AheadBehind,
     upstream: &UpstreamStatus,
 ) -> (MainDivergence, UpstreamDivergence) {
-    let main_divergence = compute_main_divergence(counts.ahead, counts.behind);
+    let main_divergence = MainDivergence::from_counts(counts.ahead, counts.behind);
     let (upstream_ahead, upstream_behind) =
         upstream.active().map(|(_, a, b)| (a, b)).unwrap_or((0, 0));
-    let upstream_divergence = compute_upstream_divergence(upstream_ahead, upstream_behind);
+    let upstream_divergence = UpstreamDivergence::from_counts(upstream_ahead, upstream_behind);
 
     (main_divergence, upstream_divergence)
 }

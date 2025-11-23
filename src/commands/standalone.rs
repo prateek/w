@@ -255,9 +255,16 @@ pub fn handle_squash(
     Ok(true)
 }
 
+/// Result of a rebase operation
+pub enum RebaseResult {
+    /// Rebase occurred (either true rebase or fast-forward)
+    Rebased,
+    /// Already up-to-date with target branch
+    UpToDate(String),
+}
+
 /// Handle shared rebase workflow (used by `wt step rebase` and `wt merge`)
-/// Returns true if rebasing occurred, false if already up-to-date
-pub fn handle_rebase(target: Option<&str>) -> anyhow::Result<bool> {
+pub fn handle_rebase(target: Option<&str>) -> anyhow::Result<RebaseResult> {
     let repo = Repository::current();
 
     // Get target branch (default to default branch if not provided)
@@ -272,7 +279,7 @@ pub fn handle_rebase(target: Option<&str>) -> anyhow::Result<bool> {
 
     if merge_base == target_sha {
         // Already up-to-date, no rebase needed
-        return Ok(false);
+        return Ok(RebaseResult::UpToDate(target_branch));
     }
 
     // Check if this is a fast-forward or true rebase
@@ -322,7 +329,7 @@ pub fn handle_rebase(target: Option<&str>) -> anyhow::Result<bool> {
         ))?;
     }
 
-    Ok(true)
+    Ok(RebaseResult::Rebased)
 }
 
 /// Handle `wt config approvals ask` command - approve all commands in the project

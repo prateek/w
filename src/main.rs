@@ -24,11 +24,11 @@ use commands::command_executor::CommandContext;
 use commands::handle_select;
 use commands::worktree::{SwitchResult, handle_push};
 use commands::{
-    ConfigAction, handle_config_create, handle_config_list, handle_config_refresh_cache,
-    handle_config_status_set, handle_config_status_unset, handle_configure_shell, handle_init,
-    handle_list, handle_merge, handle_rebase, handle_remove, handle_squash,
-    handle_standalone_ask_approvals, handle_standalone_clear_approvals, handle_standalone_commit,
-    handle_standalone_run_hook, handle_switch,
+    ConfigAction, RebaseResult, handle_config_create, handle_config_list,
+    handle_config_refresh_cache, handle_config_status_set, handle_config_status_unset,
+    handle_configure_shell, handle_init, handle_list, handle_merge, handle_rebase, handle_remove,
+    handle_squash, handle_standalone_ask_approvals, handle_standalone_clear_approvals,
+    handle_standalone_commit, handle_standalone_run_hook, handle_switch,
 };
 use output::{execute_user_command, handle_remove_output, handle_switch_output};
 
@@ -316,13 +316,26 @@ fn main() {
                     let stage_final = stage
                         .or_else(|| config.commit.and_then(|c| c.stage))
                         .unwrap_or_default();
-                    handle_squash(target.as_deref(), force, !verify, false, stage_final).map(|_| ())
+                    let did_work =
+                        handle_squash(target.as_deref(), force, !verify, false, stage_final)?;
+                    if !did_work {
+                        crate::output::info("Nothing to squash")?;
+                    }
+                    Ok(())
                 }),
             StepCommand::Push {
                 target,
                 allow_merge_commits,
             } => handle_push(target.as_deref(), allow_merge_commits, "Pushed to", None),
-            StepCommand::Rebase { target } => handle_rebase(target.as_deref()).map(|_| ()),
+            StepCommand::Rebase { target } => {
+                handle_rebase(target.as_deref()).and_then(|result| match result {
+                    RebaseResult::Rebased => Ok(()),
+                    RebaseResult::UpToDate(branch) => {
+                        crate::output::info(format!("Already up-to-date with {branch}"))?;
+                        Ok(())
+                    }
+                })
+            }
             StepCommand::PostCreate { force } => {
                 handle_standalone_run_hook(HookType::PostCreate, force)
             }

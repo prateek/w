@@ -4,6 +4,7 @@ use std::io::{self, Write};
 use std::path::Path;
 use worktrunk::styling::{println, stderr, stdout};
 
+#[cfg(not(unix))]
 use super::handlers::execute_streaming;
 use super::traits::OutputHandler;
 
@@ -52,23 +53,34 @@ impl OutputHandler for InteractiveOutput {
         Ok(())
     }
 
+    #[cfg(unix)]
     fn execute(&mut self, command: String) -> anyhow::Result<()> {
-        // Execute command in the target directory with streaming output
+        use std::os::unix::process::CommandExt;
+        use std::process::{Command, Stdio};
+
         let exec_dir = self.target_dir.as_deref().unwrap_or_else(|| Path::new("."));
 
-        // TODO: Consider using exec() to replace wt process with the command
-        // Currently: wt spawns command as child, waits, then exits
-        // Alternative: use std::os::unix::process::CommandExt::exec() to replace wt entirely
-        // Trade-offs:
-        // - Pro: Removes wt from process tree (cleaner `ps` output)
-        // - Pro: Command becomes direct child of shell (more natural process hierarchy)
-        // - Con: Can't show wt's success messages before exec (they'd be lost)
-        // - Con: Unix-only (no Windows equivalent)
-        // - Con: More complex error handling (exec only returns on error)
+        // Use exec() to replace wt process with the command.
+        // This gives the command full TTY access (stdin, stdout, stderr all inherited),
+        // enabling interactive programs like `claude` to work properly.
+        let err = Command::new("sh")
+            .arg("-c")
+            .arg(&command)
+            .current_dir(exec_dir)
+            .stdin(Stdio::inherit())
+            .stdout(Stdio::inherit())
+            .stderr(Stdio::inherit())
+            .exec();
 
-        // Use shared streaming execution (no stdout->stderr redirect for --execute)
+        // exec() only returns on error
+        Err(anyhow::anyhow!("Failed to exec '{}': {}", command, err))
+    }
+
+    #[cfg(not(unix))]
+    fn execute(&mut self, command: String) -> anyhow::Result<()> {
+        // On non-Unix platforms, fall back to spawn-and-wait
+        let exec_dir = self.target_dir.as_deref().unwrap_or_else(|| Path::new("."));
         execute_streaming(&command, exec_dir, false)?;
-
         Ok(())
     }
 

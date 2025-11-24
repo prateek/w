@@ -134,7 +134,7 @@ fn normalize_output(output: &str) -> String {
 fn test_approval_prompt_accept() {
     let repo = TestRepo::new();
     repo.commit("Initial commit");
-    repo.write_project_config(r#"post-create-command = "echo 'test command'""#);
+    repo.write_project_config(r#"post-create = "echo 'test command'""#);
     repo.commit("Add config");
 
     let env_vars = repo.test_env_vars();
@@ -155,7 +155,7 @@ fn test_approval_prompt_accept() {
 fn test_approval_prompt_decline() {
     let repo = TestRepo::new();
     repo.commit("Initial commit");
-    repo.write_project_config(r#"post-create-command = "echo 'test command'""#);
+    repo.write_project_config(r#"post-create = "echo 'test command'""#);
     repo.commit("Add config");
 
     let env_vars = repo.test_env_vars();
@@ -177,7 +177,7 @@ fn test_approval_prompt_multiple_commands() {
     let repo = TestRepo::new();
     repo.commit("Initial commit");
     repo.write_project_config(
-        r#"post-create-command = [
+        r#"post-create = [
     "echo 'First command'",
     "echo 'Second command'",
     "echo 'Third command'"
@@ -205,7 +205,7 @@ fn test_approval_prompt_multiple_commands() {
 fn test_approval_prompt_permission_error() {
     let repo = TestRepo::new();
     repo.commit("Initial commit");
-    repo.write_project_config(r#"post-create-command = "echo 'test command'""#);
+    repo.write_project_config(r#"post-create = "echo 'test command'""#);
     repo.commit("Add config");
 
     // Create config file and make it read-only to trigger permission error when saving approval
@@ -268,7 +268,7 @@ fn test_approval_prompt_named_commands() {
     let repo = TestRepo::new();
     repo.commit("Initial commit");
     repo.write_project_config(
-        r#"[post-create-command]
+        r#"[post-create]
 install = "echo 'Installing dependencies...'"
 build = "echo 'Building project...'"
 test = "echo 'Running tests...'"
@@ -307,7 +307,7 @@ fn test_approval_prompt_mixed_approved_unapproved_accept() {
     let repo = TestRepo::new();
     repo.commit("Initial commit");
     repo.write_project_config(
-        r#"post-create-command = [
+        r#"post-create = [
     "echo 'First command'",
     "echo 'Second command'",
     "echo 'Third command'"
@@ -366,7 +366,7 @@ fn test_approval_prompt_mixed_approved_unapproved_decline() {
     let repo = TestRepo::new();
     repo.commit("Initial commit");
     repo.write_project_config(
-        r#"post-create-command = [
+        r#"post-create = [
     "echo 'First command'",
     "echo 'Second command'",
     "echo 'Third command'"

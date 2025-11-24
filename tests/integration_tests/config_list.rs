@@ -31,9 +31,9 @@ command = "npm install"
     fs::create_dir_all(&config_dir).unwrap();
     fs::write(
         config_dir.join("wt.toml"),
-        r#"post-create-command = "npm install"
+        r#"post-create = "npm install"
 
-[post-start-command]
+[post-start]
 server = "npm run dev"
 "#,
     )
@@ -58,9 +58,9 @@ server = "npm run dev"
         [107m [0m  command = [32m"npm install"[0m
 
         ⚪ Project Config: [1m[REPO]/.config/wt.toml[0m
-        [107m [0m  post-create-command = [32m"npm install"[0m
+        [107m [0m  post-create = [32m"npm install"[0m
         [107m [0m  
-        [107m [0m  [1m[36m[post-start-command][0m
+        [107m [0m  [1m[36m[post-start][0m
         [107m [0m  server = [32m"npm run dev"[0m
 
         ----- stderr -----

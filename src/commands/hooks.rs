@@ -174,7 +174,7 @@ impl<'a> HookPipeline<'a> {
         target_branch: Option<&str>,
         auto_trust: bool,
     ) -> anyhow::Result<()> {
-        let Some(pre_commit_config) = &project_config.pre_commit_command else {
+        let Some(pre_commit_config) = &project_config.pre_commit else {
             return Ok(());
         };
 

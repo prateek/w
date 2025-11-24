@@ -43,7 +43,7 @@ fn test_post_create_single_command() {
     repo.commit("Initial commit");
 
     // Create project config with a single command (string format)
-    repo.write_project_config(r#"post-create-command = "echo 'Setup complete'""#);
+    repo.write_project_config(r#"post-create = "echo 'Setup complete'""#);
 
     repo.commit("Add config");
 
@@ -70,7 +70,7 @@ fn test_post_create_multiple_commands_array() {
     repo.commit("Initial commit");
 
     // Create project config with multiple commands (array format)
-    repo.write_project_config(r#"post-create-command = ["echo 'First'", "echo 'Second'"]"#);
+    repo.write_project_config(r#"post-create = ["echo 'First'", "echo 'Second'"]"#);
 
     repo.commit("Add config with multiple commands");
 
@@ -101,7 +101,7 @@ fn test_post_create_named_commands() {
 
     // Create project config with named commands (table format)
     repo.write_project_config(
-        r#"[post-create-command]
+        r#"[post-create]
 install = "echo 'Installing deps'"
 setup = "echo 'Running setup'"
 "#,
@@ -135,7 +135,7 @@ fn test_post_create_failing_command() {
     repo.commit("Initial commit");
 
     // Create project config with a command that will fail
-    repo.write_project_config(r#"post-create-command = "exit 1""#);
+    repo.write_project_config(r#"post-create = "exit 1""#);
 
     repo.commit("Add config with failing command");
 
@@ -163,7 +163,7 @@ fn test_post_create_template_expansion() {
 
     // Create project config with template variables
     repo.write_project_config(
-        r#"post-create-command = [
+        r#"post-create = [
     "echo 'Repo: {{ main_worktree }}' > info.txt",
     "echo 'Branch: {{ branch }}' >> info.txt",
     "echo 'Worktree: {{ worktree }}' >> info.txt",
@@ -234,7 +234,7 @@ fn test_post_start_single_background_command() {
 
     // Create project config with a background command
     repo.write_project_config(
-        r#"post-start-command = "sleep 0.1 && echo 'Background task done' > background.txt""#,
+        r#"post-start = "sleep 0.1 && echo 'Background task done' > background.txt""#,
     );
 
     repo.commit("Add background command");
@@ -273,7 +273,7 @@ fn test_post_start_multiple_background_commands() {
 
     // Create project config with multiple background commands (table format)
     repo.write_project_config(
-        r#"[post-start-command]
+        r#"[post-start]
 task1 = "echo 'Task 1 running' > task1.txt"
 task2 = "echo 'Task 2 running' > task2.txt"
 "#,
@@ -319,9 +319,9 @@ fn test_both_post_create_and_post_start() {
 
     // Create project config with both command types
     repo.write_project_config(
-        r#"post-create-command = "echo 'Setup done' > setup.txt"
+        r#"post-create = "echo 'Setup done' > setup.txt"
 
-[post-start-command]
+[post-start]
 server = "sleep 0.05 && echo 'Server running' > server.txt"
 "#,
     );
@@ -363,7 +363,7 @@ fn test_invalid_toml() {
     repo.commit("Initial commit");
 
     // Create invalid TOML
-    repo.write_project_config("post-create-command = [invalid syntax\n");
+    repo.write_project_config("post-create = [invalid syntax\n");
 
     repo.commit("Add invalid config");
 
@@ -381,9 +381,7 @@ fn test_post_start_log_file_captures_output() {
     repo.commit("Initial commit");
 
     // Create command that writes to both stdout and stderr
-    repo.write_project_config(
-        r#"post-start-command = "echo 'stdout output' && echo 'stderr output' >&2""#,
-    );
+    repo.write_project_config(r#"post-start = "echo 'stdout output' && echo 'stderr output' >&2""#);
 
     repo.commit("Add command with stdout/stderr");
 
@@ -442,7 +440,7 @@ fn test_post_start_invalid_command_handling() {
     repo.commit("Initial commit");
 
     // Create command with syntax error (missing quote)
-    repo.write_project_config(r#"post-start-command = "echo 'unclosed quote""#);
+    repo.write_project_config(r#"post-start = "echo 'unclosed quote""#);
 
     repo.commit("Add invalid command");
 
@@ -477,7 +475,7 @@ fn test_post_start_multiple_commands_separate_logs() {
 
     // Create multiple background commands with distinct output
     repo.write_project_config(
-        r#"[post-start-command]
+        r#"[post-start]
 task1 = "echo 'TASK1_OUTPUT'"
 task2 = "echo 'TASK2_OUTPUT'"
 task3 = "echo 'TASK3_OUTPUT'"
@@ -555,7 +553,7 @@ fn test_execute_flag_with_post_start_commands() {
     repo.commit("Initial commit");
 
     // Create post-start command
-    repo.write_project_config(r#"post-start-command = "echo 'Background task' > background.txt""#);
+    repo.write_project_config(r#"post-start = "echo 'Background task' > background.txt""#);
 
     repo.commit("Add background command");
 
@@ -602,7 +600,7 @@ fn test_post_start_complex_shell_commands() {
 
     // Create command with pipes and redirects
     repo.write_project_config(
-        r#"post-start-command = "echo 'line1\nline2\nline3' | grep line2 > filtered.txt""#,
+        r#"post-start = "echo 'line1\nline2\nline3' | grep line2 > filtered.txt""#,
     );
 
     repo.commit("Add complex shell command");
@@ -634,7 +632,7 @@ fn test_post_start_multiline_commands_with_newlines() {
 
     // Create command with actual newlines (using TOML triple-quoted string)
     repo.write_project_config(
-        r#"post-start-command = """
+        r#"post-start = """
 echo 'first line' > multiline.txt
 echo 'second line' >> multiline.txt
 echo 'third line' >> multiline.txt
@@ -685,7 +683,7 @@ fn test_post_create_multiline_with_control_structures() {
 
     // Test multiline command with if-else control structure
     repo.write_project_config(
-        r#"post-create-command = """
+        r#"post-create = """
 if [ ! -f test.txt ]; then
   echo 'File does not exist' > result.txt
 else
@@ -746,9 +744,7 @@ fn test_post_start_skipped_on_existing_worktree() {
     repo.commit("Initial commit");
 
     // Create project config with post-start command
-    repo.write_project_config(
-        r#"post-start-command = "echo 'POST-START-RAN' > post_start_marker.txt""#,
-    );
+    repo.write_project_config(r#"post-start = "echo 'POST-START-RAN' > post_start_marker.txt""#);
 
     repo.commit("Add post-start config");
 

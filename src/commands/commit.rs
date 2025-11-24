@@ -139,7 +139,7 @@ impl CommitOptions<'_> {
         let project_config = self.ctx.repo.load_project_config()?;
         let has_pre_commit = project_config
             .as_ref()
-            .map(|c| c.pre_commit_command.is_some())
+            .map(|c| c.pre_commit.is_some())
             .unwrap_or(false);
 
         if self.no_verify && has_pre_commit {

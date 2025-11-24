@@ -45,7 +45,7 @@ fn test_approval_single_command() {
     let repo = TestRepo::new();
     repo.commit("Initial commit");
 
-    repo.write_project_config(r#"post-create-command = "echo 'Worktree path: {{ worktree }}'""#);
+    repo.write_project_config(r#"post-create = "echo 'Worktree path: {{ worktree }}'""#);
 
     repo.commit("Add config");
 
@@ -63,7 +63,7 @@ fn test_approval_multiple_commands() {
     repo.commit("Initial commit");
 
     repo.write_project_config(
-        r#"post-create-command = [
+        r#"post-create = [
     "echo 'Branch: {{ branch }}'",
     "echo 'Worktree: {{ worktree }}'",
     "echo 'Repo: {{ main_worktree }}'",
@@ -87,7 +87,7 @@ fn test_approval_mixed_approved_unapproved() {
     repo.commit("Initial commit");
 
     repo.write_project_config(
-        r#"post-create-command = [
+        r#"post-create = [
     "echo 'First command'",
     "echo 'Second command'",
     "echo 'Third command'"
@@ -118,7 +118,7 @@ fn test_force_flag_does_not_save_approvals() {
     let repo = TestRepo::new();
     repo.commit("Initial commit");
 
-    repo.write_project_config(r#"post-create-command = "echo 'test command' > output.txt""#);
+    repo.write_project_config(r#"post-create = "echo 'test command' > output.txt""#);
 
     repo.commit("Add config");
 
@@ -157,7 +157,7 @@ fn test_already_approved_commands_skip_prompt() {
     let repo = TestRepo::new();
     repo.commit("Initial commit");
 
-    repo.write_project_config(r#"post-create-command = "echo 'approved' > output.txt""#);
+    repo.write_project_config(r#"post-create = "echo 'approved' > output.txt""#);
 
     repo.commit("Add config");
 
@@ -184,7 +184,7 @@ fn test_decline_approval_skips_only_unapproved() {
     repo.commit("Initial commit");
 
     repo.write_project_config(
-        r#"post-create-command = [
+        r#"post-create = [
     "echo 'First command'",
     "echo 'Second command'",
     "echo 'Third command'"
@@ -220,7 +220,7 @@ fn test_approval_named_commands() {
     repo.commit("Initial commit");
 
     repo.write_project_config(
-        r#"[post-create-command]
+        r#"[post-create]
 install = "echo 'Installing dependencies...'"
 build = "echo 'Building project...'"
 test = "echo 'Running tests...'"
@@ -280,9 +280,7 @@ fn test_run_hook_pre_merge_requires_approval() {
     let repo = TestRepo::new();
     repo.commit("Initial commit");
 
-    repo.write_project_config(
-        r#"pre-merge-command = "echo 'Running pre-merge checks on {{ branch }}'""#,
-    );
+    repo.write_project_config(r#"pre-merge = "echo 'Running pre-merge checks on {{ branch }}'""#);
 
     repo.commit("Add pre-merge hook");
 
@@ -304,9 +302,7 @@ fn test_run_hook_post_merge_requires_approval() {
     let repo = TestRepo::new();
     repo.commit("Initial commit");
 
-    repo.write_project_config(
-        r#"post-merge-command = "echo 'Post-merge cleanup for {{ branch }}'""#,
-    );
+    repo.write_project_config(r#"post-merge = "echo 'Post-merge cleanup for {{ branch }}'""#);
 
     repo.commit("Add post-merge hook");
 
@@ -328,7 +324,7 @@ fn test_approval_fails_in_non_tty() {
     let repo = TestRepo::new();
     repo.commit("Initial commit");
 
-    repo.write_project_config(r#"post-create-command = "echo 'test command'""#);
+    repo.write_project_config(r#"post-create = "echo 'test command'""#);
     repo.commit("Add config");
 
     // Run WITHOUT piping stdin - this simulates non-TTY environment
@@ -348,7 +344,7 @@ fn test_force_bypasses_tty_check() {
     let repo = TestRepo::new();
     repo.commit("Initial commit");
 
-    repo.write_project_config(r#"post-create-command = "echo 'test command'""#);
+    repo.write_project_config(r#"post-create = "echo 'test command'""#);
     repo.commit("Add config");
 
     // Run with --force to bypass approval entirely

@@ -54,9 +54,9 @@ impl Command {
 ///
 /// Internally stores commands as `Vec<Command>` for uniform processing.
 /// Deserializes from three TOML formats:
-/// - Single string: `post-create-command = "npm install"`
-/// - Array: `post-create-command = ["npm install", "npm test"]`
-/// - Named table: `[post-create-command]` followed by `install = "npm install"`
+/// - Single string: `post-create = "npm install"`
+/// - Array: `post-create = ["npm install", "npm test"]`
+/// - Named table: `[post-create]` followed by `install = "npm install"`
 ///
 /// **Order preservation:** Named commands preserve TOML insertion order (requires
 /// `preserve_order` feature on toml crate and IndexMap for deserialization). This

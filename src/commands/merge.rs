@@ -258,7 +258,7 @@ pub fn run_pre_merge_commands(
     target_branch: &str,
     auto_trust: bool,
 ) -> anyhow::Result<()> {
-    let Some(pre_merge_config) = &project_config.pre_merge_command else {
+    let Some(pre_merge_config) = &project_config.pre_merge else {
         return Ok(());
     };
 
@@ -291,7 +291,7 @@ pub fn execute_post_merge_commands(
         None => return Ok(()),
     };
 
-    let Some(post_merge_config) = &project_config.post_merge_command else {
+    let Some(post_merge_config) = &project_config.post_merge else {
         return Ok(());
     };
 

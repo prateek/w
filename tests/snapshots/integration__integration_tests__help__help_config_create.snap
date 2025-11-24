@@ -92,7 +92,7 @@ Creates [2m~/.config/worktrunk/config.toml[0m with the following content:
   [2mproject = "github.com/user/repo"[0m
   [2mcommand = "npm install"[0m
   [2m[0m
-  [2m# NOTE: For project-specific commands (post-create, post-start, pre-merge, etc.),[0m
+  [2m# NOTE: For project-specific hooks (post-create, post-start, pre-merge, etc.),[0m
   [2m# use a separate PROJECT config file at <repo>/.config/wt.toml[0m
   [2m# See: .config/wt.example.toml for project configuration examples[0m
   [2m[0m

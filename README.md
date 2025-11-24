@@ -166,25 +166,25 @@ For more details, including custom prompt templates: `wt config --help`
 
 Automate tasks at different points in the worktree lifecycle. Configure hooks in `.config/wt.toml`.
 
-| Hook                    | When                               | On Failure     |
-| ----------------------- | ---------------------------------- | -------------- |
-| **post-create-command** | After worktree created             | Warn, continue |
-| **post-start-command**  | After worktree created (background) | Warn, continue |
-| **pre-commit-command**  | Before squash commit created       | Stop merge     |
-| **pre-merge-command**   | After squash, before push          | Stop merge     |
-| **post-merge-command**  | After successful merge             | Warn, continue |
+| Hook             | When                               | On Failure     |
+| ---------------- | ---------------------------------- | -------------- |
+| **post-create**  | After worktree created             | Warn, continue |
+| **post-start**   | After worktree created (background) | Warn, continue |
+| **pre-commit**   | Before squash commit created       | Stop merge     |
+| **pre-merge**    | After squash, before push          | Stop merge     |
+| **post-merge**   | After successful merge             | Warn, continue |
 
 ```toml
 # Install dependencies, build setup
-[post-create-command]
+[post-create]
 "install" = "uv sync"
 
 # Dev servers, file watchers (runs in background)
-[post-start-command]
+[post-start]
 "dev" = "uv run dev"
 
 # Tests and lints before merging (blocks on failure)
-[pre-merge-command]
+[pre-merge]
 "test" = "uv run pytest"
 "lint" = "uv run ruff check"
 ```
@@ -285,13 +285,13 @@ launches Claude Code in that directory.
 **Auto-generate commit messages** — Configure an LLM to generate commit
 messages during merge. See [LLM Commit Messages](#llm-commit-messages).
 
-**Automate startup with hooks** — Use `post-create-command` for environment
-setup, `post-start-command` for non-blocking tasks. For example, worktrunk uses
-`post-start-command` to bootstrap build caches from main via copy-on-write,
+**Automate startup with hooks** — Use `post-create` for environment
+setup, `post-start` for non-blocking tasks. For example, worktrunk uses
+`post-start` to bootstrap build caches from main via copy-on-write,
 eliminating cold compiles (see [worktrunk's config](.config/wt.toml)). See
 [Project Hooks](#project-hooks) for details.
 
-**Use `pre-merge-command` as a "local CI"** — Running `wt merge` with pre-merge
+**Use `pre-merge` as a "local CI"** — Running `wt merge` with pre-merge
 hooks is like having a local CI pipeline. Tests run after squashing but before
 pushing to main, and failures abort the merge. This protects `main` from one
 agent forgetting to run tests, without having to babysit it.
@@ -310,10 +310,10 @@ terminal that supports hyperlinks.
 instead of duplicating logic:
 
 ```toml
-[post-create-command]
+[post-create]
 "setup" = "task install"
 
-[pre-merge-command]
+[pre-merge]
 "validate" = "just test lint"
 ```
 

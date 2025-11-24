@@ -26,26 +26,26 @@ pub fn handle_standalone_run_hook(hook_type: HookType, force: bool) -> anyhow::R
     // Execute the hook based on type
     match hook_type {
         HookType::PostCreate => {
-            check_hook_configured(&project_config.post_create_command, hook_type)?;
+            check_hook_configured(&project_config.post_create, hook_type)?;
             ctx.execute_post_create_commands()
         }
         HookType::PostStart => {
-            check_hook_configured(&project_config.post_start_command, hook_type)?;
+            check_hook_configured(&project_config.post_start, hook_type)?;
             ctx.execute_post_start_commands_sequential()
         }
         HookType::PreCommit => {
-            check_hook_configured(&project_config.pre_commit_command, hook_type)?;
+            check_hook_configured(&project_config.pre_commit, hook_type)?;
             // Pre-commit hook can optionally use target branch context
             let target_branch = repo.default_branch().ok();
             HookPipeline::new(ctx).run_pre_commit(&project_config, target_branch.as_deref(), false)
         }
         HookType::PreMerge => {
-            check_hook_configured(&project_config.pre_merge_command, hook_type)?;
+            check_hook_configured(&project_config.pre_merge, hook_type)?;
             let target_branch = repo.default_branch().unwrap_or_else(|_| "main".to_string());
             run_pre_merge_commands(&project_config, &ctx, &target_branch, false)
         }
         HookType::PostMerge => {
-            check_hook_configured(&project_config.post_merge_command, hook_type)?;
+            check_hook_configured(&project_config.post_merge, hook_type)?;
             let target_branch = repo.default_branch().unwrap_or_else(|_| "main".to_string());
             execute_post_merge_commands(&ctx, &target_branch, false)
         }
@@ -123,7 +123,7 @@ pub fn handle_squash(
     let project_config = repo.load_project_config()?;
     let has_pre_commit = project_config
         .as_ref()
-        .map(|c| c.pre_commit_command.is_some())
+        .map(|c| c.pre_commit.is_some())
         .unwrap_or(false);
 
     if skip_pre_commit && has_pre_commit {

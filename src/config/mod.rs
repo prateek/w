@@ -18,11 +18,11 @@
 //! **Purpose**: Project-specific hooks and commands, checked into git
 //!
 //! **Settings**:
-//! - `post-create-command` - Sequential blocking commands when creating worktree
-//! - `post-start-command` - Parallel background commands after worktree created
-//! - `pre-commit-command` - Validation before committing changes during merge
-//! - `pre-merge-command` - Validation before merging to target branch
-//! - `post-merge-command` - Cleanup after successful merge
+//! - `post-create` - Sequential blocking commands when creating worktree
+//! - `post-start` - Parallel background commands after worktree created
+//! - `pre-commit` - Validation before committing changes during merge
+//! - `pre-merge` - Validation before merging to target branch
+//! - `post-merge` - Cleanup after successful merge
 //!
 //! **Managed by**: Checked into the repository, shared across all developers
 //!
@@ -174,17 +174,17 @@ mod tests {
     #[test]
     fn test_project_config_default() {
         let config = ProjectConfig::default();
-        assert!(config.post_create_command.is_none());
-        assert!(config.post_start_command.is_none());
-        assert!(config.pre_merge_command.is_none());
-        assert!(config.post_merge_command.is_none());
+        assert!(config.post_create.is_none());
+        assert!(config.post_start.is_none());
+        assert!(config.pre_merge.is_none());
+        assert!(config.post_merge.is_none());
     }
 
     #[test]
     fn test_command_config_single() {
-        let toml = r#"post-create-command = "npm install""#;
+        let toml = r#"post-create = "npm install""#;
         let config: ProjectConfig = toml::from_str(toml).unwrap();
-        let cmd_config = config.post_create_command.unwrap();
+        let cmd_config = config.post_create.unwrap();
         let commands = cmd_config.commands();
         assert_eq!(commands.len(), 1);
         assert_eq!(
@@ -195,9 +195,9 @@ mod tests {
 
     #[test]
     fn test_command_config_multiple() {
-        let toml = r#"post-create-command = ["npm install", "npm test"]"#;
+        let toml = r#"post-create = ["npm install", "npm test"]"#;
         let config: ProjectConfig = toml::from_str(toml).unwrap();
-        let cmd_config = config.post_create_command.unwrap();
+        let cmd_config = config.post_create.unwrap();
         let commands = cmd_config.commands();
         assert_eq!(commands.len(), 2);
         assert_eq!(
@@ -213,12 +213,12 @@ mod tests {
     #[test]
     fn test_command_config_named() {
         let toml = r#"
-            [post-start-command]
+            [post-start]
             server = "npm run dev"
             watch = "npm run watch"
         "#;
         let config: ProjectConfig = toml::from_str(toml).unwrap();
-        let cmd_config = config.post_start_command.unwrap();
+        let cmd_config = config.post_start.unwrap();
         let commands = cmd_config.commands();
         assert_eq!(commands.len(), 2);
         // Preserves TOML insertion order
@@ -244,13 +244,13 @@ mod tests {
     fn test_command_config_named_preserves_toml_order() {
         // Test that named commands preserve TOML order (not alphabetical)
         let toml = r#"
-            [pre-merge-command]
+            [pre-merge]
             insta = "cargo insta test"
             doc = "cargo doc"
             clippy = "cargo clippy"
         "#;
         let config: ProjectConfig = toml::from_str(toml).unwrap();
-        let cmd_config = config.pre_merge_command.unwrap();
+        let cmd_config = config.pre_merge.unwrap();
         let commands = cmd_config.commands();
 
         // Extract just the names for easier verification
@@ -275,12 +275,12 @@ mod tests {
     fn test_command_config_task_order() {
         // Test exact ordering as used in post_start tests
         let toml = r#"
-[post-start-command]
+[post-start]
 task1 = "echo 'Task 1 running' > task1.txt"
 task2 = "echo 'Task 2 running' > task2.txt"
 "#;
         let config: ProjectConfig = toml::from_str(toml).unwrap();
-        let cmd_config = config.post_start_command.unwrap();
+        let cmd_config = config.post_start.unwrap();
         let commands = cmd_config.commands();
 
         assert_eq!(commands.len(), 2);
@@ -300,21 +300,21 @@ task2 = "echo 'Task 2 running' > task2.txt"
     #[test]
     fn test_project_config_both_commands() {
         let toml = r#"
-            post-create-command = ["npm install"]
+            post-create = ["npm install"]
 
-            [post-start-command]
+            [post-start]
             server = "npm run dev"
         "#;
         let config: ProjectConfig = toml::from_str(toml).unwrap();
-        assert!(config.post_create_command.is_some());
-        assert!(config.post_start_command.is_some());
+        assert!(config.post_create.is_some());
+        assert!(config.post_start.is_some());
     }
 
     #[test]
     fn test_pre_merge_command_single() {
-        let toml = r#"pre-merge-command = "cargo test""#;
+        let toml = r#"pre-merge = "cargo test""#;
         let config: ProjectConfig = toml::from_str(toml).unwrap();
-        let cmd_config = config.pre_merge_command.unwrap();
+        let cmd_config = config.pre_merge.unwrap();
         let commands = cmd_config.commands();
         assert_eq!(commands.len(), 1);
         assert_eq!(
@@ -325,9 +325,9 @@ task2 = "echo 'Task 2 running' > task2.txt"
 
     #[test]
     fn test_pre_merge_command_multiple() {
-        let toml = r#"pre-merge-command = ["cargo fmt -- --check", "cargo test"]"#;
+        let toml = r#"pre-merge = ["cargo fmt -- --check", "cargo test"]"#;
         let config: ProjectConfig = toml::from_str(toml).unwrap();
-        let cmd_config = config.pre_merge_command.unwrap();
+        let cmd_config = config.pre_merge.unwrap();
         let commands = cmd_config.commands();
         assert_eq!(commands.len(), 2);
         assert_eq!(
@@ -347,13 +347,13 @@ task2 = "echo 'Task 2 running' > task2.txt"
     #[test]
     fn test_pre_merge_command_named() {
         let toml = r#"
-            [pre-merge-command]
+            [pre-merge]
             format = "cargo fmt -- --check"
             lint = "cargo clippy"
             test = "cargo test"
         "#;
         let config: ProjectConfig = toml::from_str(toml).unwrap();
-        let cmd_config = config.pre_merge_command.unwrap();
+        let cmd_config = config.pre_merge.unwrap();
         let commands = cmd_config.commands();
         assert_eq!(commands.len(), 3);
         // Preserves TOML insertion order
@@ -385,30 +385,30 @@ task2 = "echo 'Task 2 running' > task2.txt"
 
     #[test]
     fn test_command_config_roundtrip_single() {
-        let original = r#"post-create-command = "npm install""#;
+        let original = r#"post-create = "npm install""#;
         let config: ProjectConfig = toml::from_str(original).unwrap();
         let serialized = toml::to_string(&config).unwrap();
         let config2: ProjectConfig = toml::from_str(&serialized).unwrap();
         assert_eq!(config, config2);
         // Verify it serialized back as a string, not array
-        assert!(serialized.contains(r#"post-create-command = "npm install""#));
+        assert!(serialized.contains(r#"post-create = "npm install""#));
     }
 
     #[test]
     fn test_command_config_roundtrip_multiple() {
-        let original = r#"post-create-command = ["npm install", "npm test"]"#;
+        let original = r#"post-create = ["npm install", "npm test"]"#;
         let config: ProjectConfig = toml::from_str(original).unwrap();
         let serialized = toml::to_string(&config).unwrap();
         let config2: ProjectConfig = toml::from_str(&serialized).unwrap();
         assert_eq!(config, config2);
         // Verify it serialized back as an array
-        assert!(serialized.contains(r#"post-create-command = ["npm install", "npm test"]"#));
+        assert!(serialized.contains(r#"post-create = ["npm install", "npm test"]"#));
     }
 
     #[test]
     fn test_command_config_roundtrip_named() {
         let original = r#"
-            [post-start-command]
+            [post-start]
             server = "npm run dev"
             watch = "npm run watch"
         "#;
@@ -417,7 +417,7 @@ task2 = "echo 'Task 2 running' > task2.txt"
         let config2: ProjectConfig = toml::from_str(&serialized).unwrap();
         assert_eq!(config, config2);
         // Verify it serialized back as a named table
-        assert!(serialized.contains("[post-start-command]"));
+        assert!(serialized.contains("[post-start]"));
         assert!(serialized.contains(r#"server = "npm run dev""#));
         assert!(serialized.contains(r#"watch = "npm run watch""#));
     }

@@ -7,21 +7,21 @@ use serde::{Deserialize, Serialize};
 
 use super::commands::CommandConfig;
 
-/// Project-specific configuration with hooks and commands.
+/// Project-specific configuration with hooks.
 ///
 /// This config is stored at `<repo>/.config/wt.toml` within the repository and
-/// IS checked into git. It defines project-specific commands that run automatically
+/// IS checked into git. It defines project-specific hooks that run automatically
 /// during worktree operations. All developers working on the project share this config.
 ///
 /// # Template Variables
 ///
-/// All commands support these template variables:
+/// All hooks support these template variables:
 /// - `{{ repo }}` - Repository name (e.g., "my-project")
 /// - `{{ branch }}` - Branch name (e.g., "feature-foo")
 /// - `{{ worktree }}` - Absolute path to the worktree
 /// - `{{ repo_root }}` - Absolute path to the repository root
 ///
-/// Merge-related commands (`pre-commit-command`, `pre-merge-command`, `post-merge-command`) also support:
+/// Merge-related hooks (`pre-commit`, `pre-merge`, `post-merge`) also support:
 /// - `{{ target }}` - Target branch for the merge (e.g., "main")
 #[derive(Debug, Serialize, Deserialize, Clone, Default, PartialEq)]
 pub struct ProjectConfig {
@@ -29,15 +29,15 @@ pub struct ProjectConfig {
     /// Supports string (single command), array (sequential), or table (named, sequential)
     ///
     /// Available template variables: `{{ repo }}`, `{{ branch }}`, `{{ worktree }}`, `{{ repo_root }}`
-    #[serde(default, rename = "post-create-command")]
-    pub post_create_command: Option<CommandConfig>,
+    #[serde(default, rename = "post-create")]
+    pub post_create: Option<CommandConfig>,
 
     /// Commands to execute in parallel as background processes (non-blocking)
     /// Supports string (single), array (parallel), or table (named, parallel)
     ///
     /// Available template variables: `{{ repo }}`, `{{ branch }}`, `{{ worktree }}`, `{{ repo_root }}`
-    #[serde(default, rename = "post-start-command")]
-    pub post_start_command: Option<CommandConfig>,
+    #[serde(default, rename = "post-start")]
+    pub post_start: Option<CommandConfig>,
 
     /// Commands to execute before committing changes during merge (blocking, fail-fast validation)
     /// Supports string (single command), array (sequential), or table (named, sequential)
@@ -45,24 +45,24 @@ pub struct ProjectConfig {
     /// Runs before any commit operation during `wt merge` (both squash and no-squash modes)
     ///
     /// Available template variables: `{{ repo }}`, `{{ branch }}`, `{{ worktree }}`, `{{ repo_root }}`, `{{ target }}`
-    #[serde(default, rename = "pre-commit-command")]
-    pub pre_commit_command: Option<CommandConfig>,
+    #[serde(default, rename = "pre-commit")]
+    pub pre_commit: Option<CommandConfig>,
 
     /// Commands to execute before merging (blocking, fail-fast validation)
     /// Supports string (single command), array (sequential), or table (named, sequential)
     /// All commands must exit with code 0 for merge to proceed
     ///
     /// Available template variables: `{{ repo }}`, `{{ branch }}`, `{{ worktree }}`, `{{ repo_root }}`, `{{ target }}`
-    #[serde(default, rename = "pre-merge-command")]
-    pub pre_merge_command: Option<CommandConfig>,
+    #[serde(default, rename = "pre-merge")]
+    pub pre_merge: Option<CommandConfig>,
 
     /// Commands to execute after successful merge in the main worktree (blocking)
     /// Supports string (single command), array (sequential), or table (named, sequential)
     /// Runs after push succeeds but before cleanup
     ///
     /// Available template variables: `{{ repo }}`, `{{ branch }}`, `{{ worktree }}`, `{{ repo_root }}`, `{{ target }}`
-    #[serde(default, rename = "post-merge-command")]
-    pub post_merge_command: Option<CommandConfig>,
+    #[serde(default, rename = "post-merge")]
+    pub post_merge: Option<CommandConfig>,
 }
 
 impl ProjectConfig {

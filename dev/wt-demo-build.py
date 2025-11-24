@@ -107,7 +107,7 @@ def prepare_repo():
     # Project hooks
     (DEMO_REPO / ".config").mkdir()
     (DEMO_REPO / ".config" / "wt.toml").write_text(
-        '[pre-merge-command]\ntest = "cargo nextest run"\n'
+        '[pre-merge]\ntest = "cargo nextest run"\n'
     )
     git(["-C", str(DEMO_REPO), "add", ".config/wt.toml"])
     commit_dated(DEMO_REPO, "Add project hooks", "5d")

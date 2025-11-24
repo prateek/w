@@ -290,7 +290,7 @@ fn test_switch_no_config_commands_skips_post_start_commands() {
 
     fs::write(
         config_dir.join("wt.toml"),
-        format!(r#"post-start-commands = ["{}"]"#, create_file_cmd),
+        format!(r#"post-starts = ["{}"]"#, create_file_cmd),
     )
     .unwrap();
 
@@ -355,7 +355,7 @@ fn test_switch_no_config_commands_with_force() {
     fs::create_dir_all(&config_dir).unwrap();
     fs::write(
         config_dir.join("wt.toml"),
-        r#"post-start-commands = ["echo 'test'"]"#,
+        r#"post-starts = ["echo 'test'"]"#,
     )
     .unwrap();
 

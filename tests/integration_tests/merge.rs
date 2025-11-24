@@ -889,11 +889,7 @@ fn test_merge_pre_merge_command_success() {
     // Create project config with pre-merge command
     let config_dir = repo.root_path().join(".config");
     fs::create_dir_all(&config_dir).unwrap();
-    fs::write(
-        config_dir.join("wt.toml"),
-        r#"pre-merge-command = "exit 0""#,
-    )
-    .unwrap();
+    fs::write(config_dir.join("wt.toml"), r#"pre-merge = "exit 0""#).unwrap();
 
     repo.commit("Add config");
 
@@ -942,11 +938,7 @@ fn test_merge_pre_merge_command_failure() {
     // Create project config with failing pre-merge command
     let config_dir = repo.root_path().join(".config");
     fs::create_dir_all(&config_dir).unwrap();
-    fs::write(
-        config_dir.join("wt.toml"),
-        r#"pre-merge-command = "exit 1""#,
-    )
-    .unwrap();
+    fs::write(config_dir.join("wt.toml"), r#"pre-merge = "exit 1""#).unwrap();
 
     repo.commit("Add config");
 
@@ -995,11 +987,7 @@ fn test_merge_pre_merge_command_no_hooks() {
     // Create project config with failing pre-merge command
     let config_dir = repo.root_path().join(".config");
     fs::create_dir_all(&config_dir).unwrap();
-    fs::write(
-        config_dir.join("wt.toml"),
-        r#"pre-merge-command = "exit 1""#,
-    )
-    .unwrap();
+    fs::write(config_dir.join("wt.toml"), r#"pre-merge = "exit 1""#).unwrap();
 
     repo.commit("Add config");
 
@@ -1051,7 +1039,7 @@ fn test_merge_pre_merge_command_named() {
     fs::write(
         config_dir.join("wt.toml"),
         r#"
-[pre-merge-command]
+[pre-merge]
 format = "exit 0"
 lint = "exit 0"
 test = "exit 0"
@@ -1108,7 +1096,7 @@ fn test_merge_post_merge_command_success() {
     fs::create_dir_all(&config_dir).unwrap();
     fs::write(
         config_dir.join("wt.toml"),
-        r#"post-merge-command = "echo 'merged {{ branch }} to {{ target }}' > post-merge-ran.txt""#,
+        r#"post-merge = "echo 'merged {{ branch }} to {{ target }}' > post-merge-ran.txt""#,
     )
     .unwrap();
 
@@ -1174,7 +1162,7 @@ fn test_merge_post_merge_command_skipped_with_no_verify() {
     fs::create_dir_all(&config_dir).unwrap();
     fs::write(
         config_dir.join("wt.toml"),
-        r#"post-merge-command = "echo 'merged {{ branch }} to {{ target }}' > post-merge-ran.txt""#,
+        r#"post-merge = "echo 'merged {{ branch }} to {{ target }}' > post-merge-ran.txt""#,
     )
     .unwrap();
 
@@ -1232,11 +1220,7 @@ fn test_merge_post_merge_command_failure() {
     // Create project config with failing post-merge command
     let config_dir = repo.root_path().join(".config");
     fs::create_dir_all(&config_dir).unwrap();
-    fs::write(
-        config_dir.join("wt.toml"),
-        r#"post-merge-command = "exit 1""#,
-    )
-    .unwrap();
+    fs::write(config_dir.join("wt.toml"), r#"post-merge = "exit 1""#).unwrap();
 
     repo.commit("Add config");
 
@@ -1288,7 +1272,7 @@ fn test_merge_post_merge_command_named() {
     fs::write(
         config_dir.join("wt.toml"),
         r#"
-[post-merge-command]
+[post-merge]
 notify = "echo 'Merge to {{ target }} complete' > notify.txt"
 deploy = "echo 'Deploying branch {{ branch }}' > deploy.txt"
 "#,
@@ -1356,7 +1340,7 @@ fn test_merge_pre_commit_command_success() {
     fs::create_dir_all(&config_dir).unwrap();
     fs::write(
         config_dir.join("wt.toml"),
-        r#"pre-commit-command = "echo 'Pre-commit check passed'""#,
+        r#"pre-commit = "echo 'Pre-commit check passed'""#,
     )
     .unwrap();
 
@@ -1393,11 +1377,7 @@ fn test_merge_pre_commit_command_failure() {
     // Create project config with failing pre-commit command
     let config_dir = repo.root_path().join(".config");
     fs::create_dir_all(&config_dir).unwrap();
-    fs::write(
-        config_dir.join("wt.toml"),
-        r#"pre-commit-command = "exit 1""#,
-    )
-    .unwrap();
+    fs::write(config_dir.join("wt.toml"), r#"pre-commit = "exit 1""#).unwrap();
 
     repo.commit("Add config");
 
@@ -1434,7 +1414,7 @@ fn test_merge_pre_squash_command_success() {
     fs::create_dir_all(&config_dir).unwrap();
     fs::write(
         config_dir.join("wt.toml"),
-        "pre-commit-command = \"echo 'Pre-commit check passed'\"",
+        "pre-commit = \"echo 'Pre-commit check passed'\"",
     )
     .unwrap();
 
@@ -1485,11 +1465,7 @@ fn test_merge_pre_squash_command_failure() {
     // Create project config with failing pre-commit command (used for both squash and no-squash)
     let config_dir = repo.root_path().join(".config");
     fs::create_dir_all(&config_dir).unwrap();
-    fs::write(
-        config_dir.join("wt.toml"),
-        r#"pre-commit-command = "exit 1""#,
-    )
-    .unwrap();
+    fs::write(config_dir.join("wt.toml"), r#"pre-commit = "exit 1""#).unwrap();
 
     repo.commit("Add config");
 
@@ -1708,11 +1684,11 @@ EOF
     }
 
     let config_content = r#"
-[pre-merge-command]
+[pre-merge]
 "test" = "cargo test"
 "lint" = "cargo clippy"
 
-[post-merge-command]
+[post-merge]
 "install" = "cargo install --path ."
 "#;
 
@@ -1907,10 +1883,10 @@ fi
     }
 
     let config_content = r#"
-[post-create-command]
+[post-create]
 "install" = "uv sync"
 
-[post-start-command]
+[post-start]
 "dev" = "uv run dev"
 "#;
 
@@ -2035,7 +2011,7 @@ fi
     }
 
     let config_content = r#"
-[pre-merge-command]
+[pre-merge]
 "test" = "uv run pytest"
 "lint" = "uv run ruff check"
 "#;
@@ -3013,7 +2989,7 @@ fn test_step_squash_with_no_verify_flag() {
     fs::create_dir_all(feature_wt.join(".config")).expect("Failed to create .config");
     fs::write(
         feature_wt.join(".config/wt.toml"),
-        "pre-commit-command = \"echo pre-commit check\"",
+        "pre-commit = \"echo pre-commit check\"",
     )
     .expect("Failed to write wt.toml");
 
@@ -3128,7 +3104,7 @@ fn test_step_squash_with_both_flags() {
     fs::create_dir_all(feature_wt.join(".config")).expect("Failed to create .config");
     fs::write(
         feature_wt.join(".config/wt.toml"),
-        "pre-commit-command = \"echo pre-commit check\"",
+        "pre-commit = \"echo pre-commit check\"",
     )
     .expect("Failed to write wt.toml");
 
@@ -3187,7 +3163,7 @@ fn test_step_commit_with_no_verify_flag() {
     fs::create_dir_all(repo.root_path().join(".config")).expect("Failed to create .config");
     fs::write(
         repo.root_path().join(".config/wt.toml"),
-        "pre-commit-command = \"echo pre-commit check\"",
+        "pre-commit = \"echo pre-commit check\"",
     )
     .expect("Failed to write wt.toml");
 
@@ -3244,7 +3220,7 @@ fn test_step_commit_with_both_flags() {
     fs::create_dir_all(repo.root_path().join(".config")).expect("Failed to create .config");
     fs::write(
         repo.root_path().join(".config/wt.toml"),
-        "pre-commit-command = \"echo pre-commit check\"",
+        "pre-commit = \"echo pre-commit check\"",
     )
     .expect("Failed to write wt.toml");
 

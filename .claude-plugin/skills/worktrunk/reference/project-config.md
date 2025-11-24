@@ -49,10 +49,10 @@ For Rust projects, common commands:
 
 Match hooks to project needs using this decision tree:
 
-- **Dependency installation** (fast, must complete) → `post-create-command`
-- **Tests/linting** (fast, must pass) → `pre-commit-command` or `pre-merge-command`
-- **Long builds** (slow, optional) → `post-start-command`
-- **Deployment** (after merge) → `post-merge-command`
+- **Dependency installation** (fast, must complete) → `post-create`
+- **Tests/linting** (fast, must pass) → `pre-commit` or `pre-merge`
+- **Long builds** (slow, optional) → `post-start`
+- **Deployment** (after merge) → `post-merge`
 
 ### Step 4: Validate Commands Work
 
@@ -69,16 +69,16 @@ which cargo     # Check tool exists
 Typical npm project:
 ```toml
 # Install dependencies when creating new worktrees (blocking)
-post-create-command = "npm install"
+post-create = "npm install"
 
 # Validate code quality before committing (blocking, fail-fast)
-pre-commit-command = [
+pre-commit = [
     "npm run lint",
     "npm run typecheck"
 ]
 
 # Run tests before merging (blocking, fail-fast)
-pre-merge-command = "npm test"
+pre-merge = "npm test"
 ```
 
 </example>
@@ -88,16 +88,16 @@ pre-merge-command = "npm test"
 Typical Rust project:
 ```toml
 # Build runs in background (slow)
-post-start-command = "cargo build"
+post-start = "cargo build"
 
 # Format and lint before committing (blocking, fail-fast)
-pre-commit-command = [
+pre-commit = [
     "cargo fmt --check",
     "cargo clippy -- -D warnings"
 ]
 
 # Run tests before merging (blocking, fail-fast)
-pre-merge-command = "cargo test"
+pre-merge = "cargo test"
 ```
 
 </example>
@@ -107,10 +107,10 @@ pre-merge-command = "cargo test"
 Document why each hook exists:
 ```toml
 # Dependencies must be installed before worktree is usable
-post-create-command = "npm install"
+post-create = "npm install"
 
 # Enforce code quality standards (matches CI checks)
-pre-commit-command = ["npm run lint", "npm run typecheck"]
+pre-commit = ["npm run lint", "npm run typecheck"]
 ```
 
 ### Step 7: Suggest Testing
@@ -133,11 +133,11 @@ cat .config/wt.toml
 ### Step 2: Determine Appropriate Hook Type
 
 Ask: When should this run?
-- Creating worktree → `post-create-command`
-- Switching to worktree → `post-start-command`
-- Before committing → `pre-commit-command`
-- Before merging → `pre-merge-command`
-- After merging → `post-merge-command`
+- Creating worktree → `post-create`
+- Switching to worktree → `post-start`
+- Before committing → `pre-commit`
+- Before merging → `pre-merge`
+- After merging → `post-merge`
 
 ### Step 3: Handle Format Conversion if Needed
 
@@ -145,12 +145,12 @@ Ask: When should this run?
 
 Current:
 ```toml
-post-create-command = "npm install"
+post-create = "npm install"
 ```
 
 Adding "npm run db:migrate":
 ```toml
-post-create-command = [
+post-create = [
     "npm install",
     "npm run db:migrate"
 ]
@@ -162,12 +162,12 @@ post-create-command = [
 
 Current:
 ```toml
-pre-commit-command = ["npm run lint"]
+pre-commit = ["npm run lint"]
 ```
 
 Adding typecheck:
 ```toml
-pre-commit-command = [
+pre-commit = [
     "npm run lint",
     "npm run typecheck"
 ]
@@ -194,14 +194,14 @@ Available in all hook types:
 <example type="basic-variables">
 
 ```toml
-post-create-command = "echo 'Working on {{ branch }} in {{ repo }}'"
+post-create = "echo 'Working on {{ branch }} in {{ repo }}'"
 ```
 
 </example>
 
 ### Merge Variables (Merge Hooks Only)
 
-Available in: `pre-commit-command`, `pre-merge-command`, `post-merge-command`
+Available in: `pre-commit`, `pre-merge`, `post-merge`
 
 Additional variable:
 - `{{ target }}` - Target branch for merge (e.g., "main")
@@ -210,7 +210,7 @@ Additional variable:
 
 Run different tests based on target branch:
 ```toml
-pre-merge-command = """
+pre-merge = """
 if [ "{{ target }}" = "main" ]; then
     npm run test:full
 else
@@ -228,29 +228,29 @@ All hooks support three command formats.
 ### Single Command (String)
 
 ```toml
-post-create-command = "npm install"
+post-create = "npm install"
 ```
 
 ### Multiple Commands (Array)
 
 ```toml
-post-create-command = [
+post-create = [
     "npm install",
     "npm run build"
 ]
 ```
 
 Behavior:
-- `post-create-command`: Sequential
-- `post-start-command`: Parallel
-- `pre-commit-command`: Sequential
-- `pre-merge-command`: Sequential
-- `post-merge-command`: Sequential
+- `post-create`: Sequential
+- `post-start`: Parallel
+- `pre-commit`: Sequential
+- `pre-merge`: Sequential
+- `post-merge`: Sequential
 
 ### Named Commands (Table)
 
 ```toml
-[post-create-command]
+[post-create]
 dependencies = "npm install"
 database = "npm run db:migrate"
 services = "docker-compose up -d"
@@ -262,7 +262,7 @@ Behavior same as array format, but with descriptive names.
 
 Five hook types with different timing and behavior:
 
-### post-create-command
+### post-create
 
 **When**: After creating new worktree, before switching to it
 **Blocking**: Yes (user waits)
@@ -277,7 +277,7 @@ Five hook types with different timing and behavior:
 <example type="post-create">
 
 ```toml
-post-create-command = [
+post-create = [
     "npm install",
     "npm run db:migrate"
 ]
@@ -285,7 +285,7 @@ post-create-command = [
 
 </example>
 
-### post-start-command
+### post-start
 
 **When**: After switching to existing worktree
 **Blocking**: No (runs in background)
@@ -300,7 +300,7 @@ post-create-command = [
 <example type="post-start">
 
 ```toml
-post-start-command = [
+post-start = [
     "npm run build",
     "docker-compose up -d"
 ]
@@ -308,7 +308,7 @@ post-start-command = [
 
 </example>
 
-### pre-commit-command
+### pre-commit
 
 **When**: Before committing during merge
 **Blocking**: Yes
@@ -323,7 +323,7 @@ post-start-command = [
 <example type="pre-commit">
 
 ```toml
-pre-commit-command = [
+pre-commit = [
     "npm run lint",
     "npm run typecheck"
 ]
@@ -331,7 +331,7 @@ pre-commit-command = [
 
 </example>
 
-### pre-merge-command
+### pre-merge
 
 **When**: Before merging to target branch
 **Blocking**: Yes
@@ -346,12 +346,12 @@ pre-commit-command = [
 <example type="pre-merge">
 
 ```toml
-pre-merge-command = "npm test"
+pre-merge = "npm test"
 ```
 
 </example>
 
-### post-merge-command
+### post-merge
 
 **When**: After successful merge, before cleanup
 **Blocking**: Yes
@@ -366,7 +366,7 @@ pre-merge-command = "npm test"
 <example type="post-merge">
 
 ```toml
-post-merge-command = "npm run deploy"
+post-merge = "npm run deploy"
 ```
 
 </example>
@@ -433,13 +433,13 @@ Move long-running commands to background:
 
 Before (blocks for minutes):
 ```toml
-post-create-command = "npm run build"
+post-create = "npm run build"
 ```
 
 After (runs in background):
 ```toml
-post-create-command = "npm install"  # Fast, blocking
-post-start-command = "npm run build"  # Slow, background
+post-create = "npm install"  # Fast, blocking
+post-start = "npm run build"  # Slow, background
 ```
 
 </example>

@@ -753,7 +753,7 @@ mod tests {
         );
     }
 
-    /// Test switch --create with post-create-command (blocking) and post-start-command (background)
+    /// Test switch --create with post-create (blocking) and post-start (background)
     /// Note: bash and fish disabled due to flaky PTY buffering race conditions
     ///
     /// TODO: Fix timing/race condition in bash where "Building project..." output appears
@@ -773,13 +773,13 @@ mod tests {
         fs::write(
             config_dir.join("wt.toml"),
             r#"# Blocking command that runs before worktree is ready
-post-create-command = [
+post-create = [
     "echo 'Installing dependencies...'",
     "echo 'Building project...'"
 ]
 
 # Background command that runs in parallel
-[post-start-command]
+[post-start]
 server = "echo 'Starting dev server on port 3000'"
 watch = "echo 'Watching for file changes'"
 "#,
@@ -813,7 +813,7 @@ approved-commands = [
         assert_snapshot!(format!("switch_with_hooks_{}", shell), output.normalized());
     }
 
-    /// Test merge with successful pre-merge-command validation
+    /// Test merge with successful pre-merge validation
     /// Note: fish disabled due to flaky PTY buffering race conditions
     /// TODO: bash variant occasionally fails on Ubuntu CI with snapshot mismatches due to PTY timing
     #[rstest]
@@ -830,7 +830,7 @@ approved-commands = [
         fs::create_dir_all(&config_dir).unwrap();
         fs::write(
             config_dir.join("wt.toml"),
-            r#"[pre-merge-command]
+            r#"[pre-merge]
 format = "echo '✓ Code formatting check passed'"
 lint = "echo '✓ Linting passed - no warnings'"
 test = "echo '✓ All 47 tests passed in 2.3s'"
@@ -896,7 +896,7 @@ approved-commands = [
         );
     }
 
-    /// Test merge with failing pre-merge-command that aborts the merge
+    /// Test merge with failing pre-merge that aborts the merge
     /// Note: fish disabled due to flaky PTY buffering race conditions
     #[rstest]
     #[case("bash")]
@@ -912,7 +912,7 @@ approved-commands = [
         fs::create_dir_all(&config_dir).unwrap();
         fs::write(
             config_dir.join("wt.toml"),
-            r#"[pre-merge-command]
+            r#"[pre-merge]
 format = "echo '✓ Code formatting check passed'"
 test = "echo '✗ Test suite failed: 3 tests failing' && exit 1"
 "#,
@@ -997,7 +997,7 @@ approved-commands = [
         fs::write(
             config_dir.join("wt.toml"),
             format!(
-                r#"[pre-merge-command]
+                r#"[pre-merge]
 check1 = "{} check1 3"
 check2 = "{} check2 3"
 "#,
@@ -1086,7 +1086,7 @@ approved-commands = [
         fs::create_dir_all(&config_dir).unwrap();
         fs::write(
             config_dir.join("wt.toml"),
-            r#"post-start-command = "echo 'test command executed'""#,
+            r#"post-start = "echo 'test command executed'""#,
         )
         .unwrap();
 
@@ -1206,7 +1206,7 @@ approved-commands = ["echo 'test command executed'"]
         fs::create_dir_all(&config_dir).unwrap();
         fs::write(
             config_dir.join("wt.toml"),
-            r#"post-start-command = "echo 'background task'""#,
+            r#"post-start = "echo 'background task'""#,
         )
         .unwrap();
 
@@ -1275,7 +1275,7 @@ approved-commands = ["echo 'background task'"]
         fs::create_dir_all(&config_dir).unwrap();
         fs::write(
             config_dir.join("wt.toml"),
-            r#"post-start-command = "echo 'fish background task'""#,
+            r#"post-start = "echo 'fish background task'""#,
         )
         .unwrap();
 
@@ -1520,7 +1520,7 @@ approved-commands = ["echo 'fish background task'"]
         fs::create_dir_all(&config_dir).unwrap();
         fs::write(
             config_dir.join("wt.toml"),
-            r#"post-start-command = "echo 'background job'""#,
+            r#"post-start = "echo 'background job'""#,
         )
         .unwrap();
 
@@ -1569,7 +1569,7 @@ approved-commands = ["echo 'background job'"]
         fs::create_dir_all(&config_dir).unwrap();
         fs::write(
             config_dir.join("wt.toml"),
-            r#"post-start-command = "echo 'bash background'""#,
+            r#"post-start = "echo 'bash background'""#,
         )
         .unwrap();
 
@@ -1921,7 +1921,7 @@ approved-commands = ["echo 'bash background'"]
         fs::create_dir_all(&config_dir).unwrap();
         fs::write(
             config_dir.join("wt.toml"),
-            r#"post-start-command = "echo 'cleanup test'""#,
+            r#"post-start = "echo 'cleanup test'""#,
         )
         .unwrap();
 
@@ -2058,7 +2058,7 @@ fi
         }
 
         let config_content = r#"
-[pre-merge-command]
+[pre-merge]
 "test" = "uv run pytest"
 "lint" = "uv run ruff check"
 "#;
@@ -2288,10 +2288,10 @@ fi
         }
 
         let config_content = r#"
-[post-create-command]
+[post-create]
 "install" = "uv sync"
 
-[post-start-command]
+[post-start]
 "dev" = "uv run dev"
 "#;
 
@@ -2348,7 +2348,7 @@ fi
 
         // Create project config with named post-create commands
         repo.write_project_config(
-            r#"[post-create-command]
+            r#"[post-create]
 install = "echo 'Installing dependencies...'"
 build = "echo 'Building project...'"
 test = "echo 'Running tests...'"

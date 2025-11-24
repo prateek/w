@@ -1,37 +1,37 @@
 # Worktrunk Project Configuration
 # Location: <repo>/.config/wt.toml
 #
-# This file defines project-specific commands that run automatically during
+# This file defines project-specific hooks that run automatically during
 # worktree operations. It should be checked into git and shared across all
 # developers working on the project.
 
-# Available template variables (all commands):
+# Available template variables (all hooks):
 #   {{ repo }}      - Repository name (e.g., "my-project")
 #   {{ branch }}    - Branch name (slashes replaced with dashes)
 #   {{ worktree }}  - Absolute path to the worktree
 #   {{ repo_root }} - Absolute path to the repository root
 #
-# Merge-related commands also support:
+# Merge-related hooks also support:
 #   {{ target }}    - Target branch for the merge (e.g., "main")
 
-# Post-Create Commands
+# Post-Create Hook
 # Runs SEQUENTIALLY and BLOCKS until complete
 # The worktree switch won't complete until these finish
 # Commands run one after another in the worktree directory
 #
 # Format options:
 # 1. Single string:
-#    post-create-command = "npm install"
+#    post-create = "npm install"
 #
 # 2. Array (runs sequentially):
-#    post-create-command = ["npm install", "npm run build"]
+#    post-create = ["npm install", "npm run build"]
 #
 # 3. Named table (runs sequentially in declaration order):
-# [post-create-command]
+# [post-create]
 # install = "npm install --frozen-lockfile"
 # build = "npm run build"
 
-# Post-Start Commands
+# Post-Start Hook
 # Runs in BACKGROUND as detached processes (parallel)
 # Use for: uv sync, npm install, bundle install, build, dev servers, file watchers,
 # long-running tasks
@@ -40,79 +40,79 @@
 #
 # Format options:
 # 1. Single string:
-#    post-start-command = "npm run dev"
+#    post-start = "npm run dev"
 #
 # 2. Array (runs in parallel):
-#    post-start-command = ["npm run dev", "npm run watch"]
+#    post-start = ["npm run dev", "npm run watch"]
 #
 # 3. Named table (runs in parallel):
-# [post-start-command]
+# [post-start]
 # server = "npm run dev"
 # watch = "npm run watch"
 
-# Pre-Commit Commands
+# Pre-Commit Hook
 # Runs SEQUENTIALLY before committing changes during merge (blocking, fail-fast)
 # All commands must exit with code 0 for commit to proceed
 # Runs for both squash and no-squash merge modes
 # Use for: formatters, linters, quick validation
 #
-# Format options same as post-create-command
-# pre-commit-command = "cargo fmt -- --check"
+# Format options same as post-create
+# pre-commit = "cargo fmt -- --check"
 #
 # Or multiple:
-# [pre-commit-command]
+# [pre-commit]
 # format = "cargo fmt -- --check"
 # lint = "cargo clippy -- -D warnings"
 
-# Pre-Merge Commands
+# Pre-Merge Hook
 # Runs SEQUENTIALLY before merging to target branch (blocking, fail-fast)
 # All commands must exit with code 0 for merge to proceed
 # Use for: tests, linters, build verification before merging
 #
-# Format options same as post-create-command
-# pre-merge-command = ["cargo test", "cargo build"]
+# Format options same as post-create
+# pre-merge = ["cargo test", "cargo build"]
 #
 # Or named:
-# [pre-merge-command]
+# [pre-merge]
 # test = "cargo test"
 # build = "cargo build --release"
 
-# Post-Merge Commands
+# Post-Merge Hook
 # Runs SEQUENTIALLY in the main worktree after successful merge (blocking)
 # Runs after push succeeds but before cleanup
 # Use for: updating production builds, notifications, cleanup
 #
-# Format options same as post-create-command
-# post-merge-command = "cargo install --path ."
+# Format options same as post-create
+# post-merge = "cargo install --path ."
 
 # Example: Node.js Project
-# [post-create-command]
+# [post-create]
 # install = "npm ci"
 #
-# [post-start-command]
+# [post-start]
 # server = "npm run dev"
 #
-# [pre-merge-command]
+# [pre-merge]
 # lint = "npm run lint"
 # test = "npm test"
 
 # Example: Rust Project
-# [post-create-command]
+# [post-create]
 # build = "cargo build"
 #
-# [pre-merge-command]
+# [pre-merge]
 # format = "cargo fmt -- --check"
 # clippy = "cargo clippy -- -D warnings"
 # test = "cargo test"
 #
-# post-merge-command = "cargo install --path ."
+# post-merge = "cargo install --path ."
 
 # Example: Python Project
-# [post-create-command]
+# [post-create]
 # venv = "python -m venv .venv"
 # install = ".venv/bin/pip install -r requirements.txt"
 #
-# [pre-merge-command]
+# [pre-merge]
 # format = ".venv/bin/black --check ."
 # lint = ".venv/bin/ruff check ."
 # test = ".venv/bin/pytest"

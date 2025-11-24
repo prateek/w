@@ -1,4 +1,4 @@
-# Post-start commands for worktree setup
+# Post-start hooks for worktree setup
 # These run after creating a new worktree
 #
 # Available template variables:
@@ -11,30 +11,30 @@
 # but seeded from base to warm-start builds (low disk usage)
 # macOS: uses cp -c (clonefile on APFS)
 # Linux: would need cp --reflink=auto (GNU coreutils) or rsync 3.2.3+ with --reflink
-post-start-command = """
+post-start = """
 [ -d {{ repo_root }}/target ] &&
 [ ! -e {{ worktree }}/target ] &&
 cp -cR {{ repo_root }}/target/. {{ worktree }}/target/
 """
 
-# Post-merge commands
+# Post-merge hooks
 # These run in the main worktree after successful merge and push
 # Available template variables: {{ repo }}, {{ branch }}, {{ worktree }}, {{ repo_root }}, {{ target }}
-[post-merge-command]
+[post-merge]
 build = "cargo build --all-targets"
 install = "cargo install --path ."
 
-# Pre-commit commands
+# Pre-commit hooks
 # These run sequentially before committing changes during merge (both squash and no-squash)
 # All commands must exit with code 0 for commit to proceed
-[pre-commit-command]
+[pre-commit]
 pre-commit = "pre-commit run --all-files"
 
-# Pre-merge commands
+# Pre-merge hooks
 # These run sequentially before merging to main
 # All commands must exit with code 0 for merge to proceed
-# Note: This must come AFTER post-merge-command because [pre-merge-command] starts
+# Note: This must come AFTER post-merge because [pre-merge] starts
 # a TOML table section, and everything after it would be inside that section
-[pre-merge-command]
+[pre-merge]
 insta = "NEXTEST_STATUS_LEVEL=fail NEXTEST_SUCCESS_OUTPUT=never cargo insta test --check --test-runner nextest --test-runner-fallback true --features shell-integration-tests"
 doc = "RUSTDOCFLAGS='-Dwarnings' cargo doc --no-deps"

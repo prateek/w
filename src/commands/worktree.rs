@@ -400,7 +400,7 @@ impl<'a> CommandContext<'a> {
             None => return Ok(()),
         };
 
-        let Some(post_create_config) = &project_config.post_create_command else {
+        let Some(post_create_config) = &project_config.post_create else {
             return Ok(());
         };
 
@@ -423,7 +423,7 @@ impl<'a> CommandContext<'a> {
             None => return Ok(()),
         };
 
-        let Some(post_start_config) = &project_config.post_start_command else {
+        let Some(post_start_config) = &project_config.post_start else {
             return Ok(());
         };
 
@@ -444,7 +444,7 @@ impl<'a> CommandContext<'a> {
             None => return Ok(()),
         };
 
-        let Some(post_start_config) = &project_config.post_start_command else {
+        let Some(post_start_config) = &project_config.post_start else {
             return Ok(());
         };
 

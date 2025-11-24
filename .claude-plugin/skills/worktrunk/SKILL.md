@@ -109,9 +109,9 @@ Common request for workflow automation. Follow discovery process:
    - For Python: Check pyproject.toml
 
 3. **Design appropriate hooks**
-   - Dependencies (fast, must complete) → `post-create-command`
-   - Tests/linting (must pass) → `pre-commit-command` or `pre-merge-command`
-   - Long builds → `post-start-command`
+   - Dependencies (fast, must complete) → `post-create`
+   - Tests/linting (must pass) → `pre-commit` or `pre-merge`
+   - Long builds → `post-start`
 
 4. **Validate commands work**
    ```console
@@ -122,13 +122,13 @@ Common request for workflow automation. Follow discovery process:
 5. **Create `.config/wt.toml`**
    ```toml
    # Install dependencies when creating worktrees
-   post-create-command = "npm install"
+   post-create = "npm install"
 
    # Validate code quality before committing
-   pre-commit-command = ["npm run lint", "npm run typecheck"]
+   pre-commit = ["npm run lint", "npm run typecheck"]
 
    # Run tests before merging
-   pre-merge-command = "npm test"
+   pre-merge = "npm test"
    ```
 
 6. **Add comments explaining choices**
@@ -192,5 +192,5 @@ Find specific sections with grep:
 ```console
 grep -A 20 "## Installation" reference/README.md
 grep -A 20 "## LLM Setup" reference/user-config.md
-grep -A 30 "### post-create-command" reference/project-config.md
+grep -A 30 "### post-create" reference/project-config.md
 ```

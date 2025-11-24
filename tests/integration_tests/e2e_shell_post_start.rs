@@ -36,7 +36,7 @@ fn test_shell_integration_post_start_background(#[case] shell: &str) {
     fs::create_dir_all(&config_dir).unwrap();
     fs::write(
         config_dir.join("wt.toml"),
-        r#"post-start-command = "sleep 0.05 && echo 'Background task done' > bg_marker.txt""#,
+        r#"post-start = "sleep 0.05 && echo 'Background task done' > bg_marker.txt""#,
     )
     .unwrap();
 
@@ -136,7 +136,7 @@ fn test_bash_shell_integration_post_start_parallel() {
     fs::create_dir_all(&config_dir).unwrap();
     fs::write(
         config_dir.join("wt.toml"),
-        r#"[post-start-command]
+        r#"[post-start]
 task1 = "sleep 0.05 && echo 'Task 1' > task1.txt"
 task2 = "sleep 0.05 && echo 'Task 2' > task2.txt"
 "#,
@@ -209,7 +209,7 @@ fn test_bash_shell_integration_post_create_blocks() {
     fs::create_dir_all(&config_dir).unwrap();
     fs::write(
         config_dir.join("wt.toml"),
-        r#"post-create-command = "echo 'Setup done' > setup.txt""#,
+        r#"post-create = "echo 'Setup done' > setup.txt""#,
     )
     .unwrap();
 
@@ -281,7 +281,7 @@ fn test_fish_shell_integration_post_start_background() {
     fs::create_dir_all(&config_dir).unwrap();
     fs::write(
         config_dir.join("wt.toml"),
-        r#"[post-start-command]
+        r#"[post-start]
 fish_bg = "sleep 0.05 && echo 'Fish background done' > fish_bg.txt"
 "#,
     )

@@ -56,7 +56,7 @@ verify = true          # Run project hooks
 project = "github.com/user/repo"
 command = "npm install"
 
-# NOTE: For project-specific commands (post-create, post-start, pre-merge, etc.),
+# NOTE: For project-specific hooks (post-create, post-start, pre-merge, etc.),
 # use a separate PROJECT config file at <repo>/.config/wt.toml
 # See: .config/wt.example.toml for project configuration examples
 

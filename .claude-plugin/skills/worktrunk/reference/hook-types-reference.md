@@ -6,18 +6,18 @@ Detailed behavior and use cases for all five Worktrunk hook types.
 
 | Hook | When | Blocking? | Fail-Fast? | Variables | Execution |
 |------|------|-----------|------------|-----------|-----------|
-| `post-create-command` | After creating worktree | Yes | No | Basic | Sequential |
-| `post-start-command` | When switching to worktree | No | No | Basic | Parallel |
-| `pre-commit-command` | Before committing during merge | Yes | Yes | Basic + Merge | Sequential |
-| `pre-merge-command` | Before merging to target | Yes | Yes | Basic + Merge | Sequential |
-| `post-merge-command` | After successful merge | Yes | No | Basic + Merge | Sequential |
+| `post-create` | After creating worktree | Yes | No | Basic | Sequential |
+| `post-start` | When switching to worktree | No | No | Basic | Parallel |
+| `pre-commit` | Before committing during merge | Yes | Yes | Basic + Merge | Sequential |
+| `pre-merge` | Before merging to target | Yes | Yes | Basic + Merge | Sequential |
+| `post-merge` | After successful merge | Yes | No | Basic + Merge | Sequential |
 
 **Basic variables**: `{{ repo }}`, `{{ branch }}`, `{{ worktree }}`, `{{ repo_root }}`
 **Merge variables**: Basic + `{{ target }}`
 
 ## Detailed Behavior
 
-### post-create-command
+### post-create
 
 **When it runs**: After creating a new worktree, before switching to it.
 
@@ -35,7 +35,7 @@ Detailed behavior and use cases for all five Worktrunk hook types.
 
 **Example**:
 ```toml
-post-create-command = [
+post-create = [
     "npm install",
     "npm run db:migrate",
     "cp .env.example .env"
@@ -44,7 +44,7 @@ post-create-command = [
 
 **What happens**: User runs `wt switch --create feature-x`. Commands execute sequentially. User sees progress. After all complete, they're switched to the new worktree.
 
-### post-start-command
+### post-start
 
 **When it runs**: After creating a new worktree (not when switching to existing).
 
@@ -62,7 +62,7 @@ post-create-command = [
 
 **Example**:
 ```toml
-post-start-command = [
+post-start = [
     "npm run build",
     "docker-compose up -d",
     "git pull origin main"
@@ -71,7 +71,7 @@ post-start-command = [
 
 **What happens**: User runs `wt switch --create feature-x`. After creation completes, all three commands start immediately in parallel in background. User can work while they run. Check `.wt-logs/` for output.
 
-### pre-commit-command
+### pre-commit
 
 **When it runs**: Before committing changes during `wt merge`.
 
@@ -89,7 +89,7 @@ post-start-command = [
 
 **Example**:
 ```toml
-pre-commit-command = [
+pre-commit = [
     "npm run lint",
     "npm run typecheck",
     "npm run format:check"
@@ -98,7 +98,7 @@ pre-commit-command = [
 
 **What happens**: User runs `wt merge`. Before creating commit, all three commands run. If any fails, commit is aborted. User fixes issues and tries again.
 
-### pre-merge-command
+### pre-merge
 
 **When it runs**: Before merging to target branch during `wt merge`.
 
@@ -117,7 +117,7 @@ pre-commit-command = [
 
 **Example**:
 ```toml
-pre-merge-command = [
+pre-merge = [
     "npm test",
     "npm run build"
 ]
@@ -125,7 +125,7 @@ pre-merge-command = [
 
 **What happens**: User runs `wt merge`. After commit succeeds, before merging, both commands run. If any fails, merge is aborted but commit remains.
 
-### post-merge-command
+### post-merge
 
 **When it runs**: After successful merge to target branch, before cleanup.
 
@@ -144,7 +144,7 @@ pre-merge-command = [
 
 **Example**:
 ```toml
-post-merge-command = [
+post-merge = [
     "npm run deploy",
     "./scripts/notify-slack.sh"
 ]
@@ -157,14 +157,14 @@ post-merge-command = [
 Full sequence when running `wt merge`:
 
 1. Validate working tree is clean
-2. **Run `pre-commit-command`** (fail-fast)
+2. **Run `pre-commit`** (fail-fast)
 3. Create commit
 4. Switch to main worktree
 5. Pull latest changes
-6. **Run `pre-merge-command`** (fail-fast)
+6. **Run `pre-merge`** (fail-fast)
 7. Merge branch into target
 8. Push to remote
-9. **Run `post-merge-command`** (best-effort)
+9. **Run `post-merge`** (best-effort)
 10. Clean up (delete branch, remove worktree)
 
 ## Format Variants
@@ -173,27 +173,27 @@ All hooks support three formats:
 
 ### Single Command (String)
 ```toml
-post-create-command = "npm install"
+post-create = "npm install"
 ```
 
 ### Multiple Commands (Array)
 ```toml
-post-create-command = [
+post-create = [
     "npm install",
     "npm run build"
 ]
 ```
 
 Behavior:
-- `post-create-command`: Sequential execution
-- `post-start-command`: Parallel execution
-- `pre-commit-command`: Sequential execution
-- `pre-merge-command`: Sequential execution
-- `post-merge-command`: Sequential execution
+- `post-create`: Sequential execution
+- `post-start`: Parallel execution
+- `pre-commit`: Sequential execution
+- `pre-merge`: Sequential execution
+- `post-merge`: Sequential execution
 
 ### Named Commands (Table)
 ```toml
-[post-create-command]
+[post-create]
 dependencies = "npm install"
 database = "npm run db:migrate"
 services = "docker-compose up -d"
@@ -206,7 +206,7 @@ Behavior same as array format, but with descriptive names.
 ### Basic Variables (All Hooks)
 
 ```toml
-post-create-command = "echo 'Working on {{ branch }} in {{ repo }}'"
+post-create = "echo 'Working on {{ branch }} in {{ repo }}'"
 ```
 
 Available:
@@ -218,10 +218,10 @@ Available:
 ### Merge Variables (Merge Hooks Only)
 
 ```toml
-pre-merge-command = "echo 'Merging {{ branch }} into {{ target }}'"
+pre-merge = "echo 'Merging {{ branch }} into {{ target }}'"
 ```
 
-Available in: `pre-commit-command`, `pre-merge-command`, `post-merge-command`
+Available in: `pre-commit`, `pre-merge`, `post-merge`
 
 Additional variable:
 - `{{ target }}` - Target branch for merge (e.g., "main")
@@ -231,7 +231,7 @@ Additional variable:
 Use shell conditionals with variables:
 
 ```toml
-pre-merge-command = """
+pre-merge = """
 if [ "{{ target }}" = "main" ]; then
     npm run test:full
 elif [ "{{ target }}" = "staging" ]; then
@@ -247,24 +247,24 @@ fi
 ### Fast Dependencies + Slow Build
 ```toml
 # Blocking: must complete before work starts
-post-create-command = "npm install"
+post-create = "npm install"
 
 # Background: builds while user works
-post-start-command = "npm run build"
+post-start = "npm run build"
 ```
 
 ### Progressive Validation
 ```toml
 # Quick checks before commit
-pre-commit-command = ["npm run lint", "npm run typecheck"]
+pre-commit = ["npm run lint", "npm run typecheck"]
 
 # Thorough validation before merge
-pre-merge-command = ["npm test", "npm run build"]
+pre-merge = ["npm test", "npm run build"]
 ```
 
 ### Target-Specific Behavior
 ```toml
-post-merge-command = """
+post-merge = """
 if [ "{{ target }}" = "main" ]; then
     npm run deploy:production
 elif [ "{{ target }}" = "staging" ]; then
@@ -275,12 +275,12 @@ fi
 
 ### Monorepo with Multiple Tools
 ```toml
-[post-create-command]
+[post-create]
 frontend = "cd frontend && npm install"
 backend = "cd backend && cargo build"
 database = "docker-compose up -d postgres"
 
-[pre-merge-command]
+[pre-merge]
 frontend-tests = "cd frontend && npm test"
 backend-tests = "cd backend && cargo test"
 ```

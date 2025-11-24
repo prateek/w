@@ -40,7 +40,7 @@ fn test_ask_approvals_no_config() {
 fn test_ask_approvals_force() {
     let repo = TestRepo::new();
     repo.commit("Initial commit");
-    repo.write_project_config(r#"post-create-command = "echo 'test'""#);
+    repo.write_project_config(r#"post-create = "echo 'test'""#);
     repo.commit("Add config");
 
     snapshot_ask_approvals("ask_approvals_force", &repo, &["--force"]);
@@ -50,7 +50,7 @@ fn test_ask_approvals_force() {
 fn test_ask_approvals_all_with_none_approved() {
     let repo = TestRepo::new();
     repo.commit("Initial commit");
-    repo.write_project_config(r#"post-create-command = "echo 'test'""#);
+    repo.write_project_config(r#"post-create = "echo 'test'""#);
     repo.commit("Add config");
 
     snapshot_ask_approvals("ask_approvals_all_none_approved", &repo, &["--all"]);
@@ -83,7 +83,7 @@ fn test_clear_approvals_with_approvals() {
     let repo = TestRepo::new();
     let project_id = format!("{}/origin", repo.root_path().display());
     repo.commit("Initial commit");
-    repo.write_project_config(r#"post-create-command = "echo 'test'""#);
+    repo.write_project_config(r#"post-create = "echo 'test'""#);
     repo.commit("Add config");
 
     // Manually approve the command by writing to test config
@@ -113,7 +113,7 @@ fn test_clear_approvals_global_with_approvals() {
     let repo = TestRepo::new();
     let project_id = format!("{}/origin", repo.root_path().display());
     repo.commit("Initial commit");
-    repo.write_project_config(r#"post-create-command = "echo 'test'""#);
+    repo.write_project_config(r#"post-create = "echo 'test'""#);
     repo.commit("Add config");
 
     // Manually approve the command
@@ -139,7 +139,7 @@ fn test_clear_approvals_after_clear() {
     let repo = TestRepo::new();
     let project_id = format!("{}/origin", repo.root_path().display());
     repo.commit("Initial commit");
-    repo.write_project_config(r#"post-create-command = "echo 'test'""#);
+    repo.write_project_config(r#"post-create = "echo 'test'""#);
     repo.commit("Add config");
 
     // Manually approve the command
@@ -167,9 +167,9 @@ fn test_clear_approvals_multiple_approvals() {
     repo.commit("Initial commit");
     repo.write_project_config(
         r#"
-post-create-command = "echo 'first'"
-post-start-command = "echo 'second'"
-[pre-commit-command]
+post-create = "echo 'first'"
+post-start = "echo 'second'"
+[pre-commit]
 lint = "echo 'third'"
 "#,
     );

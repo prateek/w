@@ -27,9 +27,10 @@ exit_code: 0
 
 # Only initialize if wt is available (in PATH or via WORKTRUNK_BIN)
 if command -v wt >/dev/null 2>&1 || [[ -n "${WORKTRUNK_BIN:-}" ]]; then
-    # Use WORKTRUNK_BIN if set, otherwise default to 'wt'
+    # Use WORKTRUNK_BIN if set, otherwise resolve binary path
+    # Must resolve BEFORE defining shell function, so lazy completion can call binary directly
     # This allows testing development builds: export WORKTRUNK_BIN=./target/debug/wt
-    _WORKTRUNK_CMD="${WORKTRUNK_BIN:-wt}"
+    _WORKTRUNK_CMD="${WORKTRUNK_BIN:-$(command -v wt)}"
 
 # Shared directive parser for POSIX shells (bash, zsh, oil).
 # Streams worktrunk's NUL-delimited output in real-time via FIFO while keeping
@@ -124,7 +125,7 @@ wt_exec() {
     wt() {
         # Initialize _WORKTRUNK_CMD if not set (e.g., after shell snapshot restore)
         if [[ -z "$_WORKTRUNK_CMD" ]]; then
-            _WORKTRUNK_CMD="${WORKTRUNK_BIN:-wt}"
+            _WORKTRUNK_CMD="${WORKTRUNK_BIN:-$(command -v wt)}"
         fi
 
         local use_source=false

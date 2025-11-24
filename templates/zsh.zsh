@@ -2,9 +2,10 @@
 
 # Only initialize if {{ cmd_prefix }} is available (in PATH or via WORKTRUNK_BIN)
 if command -v {{ cmd_prefix }} >/dev/null 2>&1 || [[ -n "${WORKTRUNK_BIN:-}" ]]; then
-    # Use WORKTRUNK_BIN if set, otherwise default to '{{ cmd_prefix }}'
+    # Use WORKTRUNK_BIN if set, otherwise resolve binary path
+    # Must resolve BEFORE defining shell function, so lazy completion can call binary directly
     # This allows testing development builds: export WORKTRUNK_BIN=./target/debug/{{ cmd_prefix }}
-    _WORKTRUNK_CMD="${WORKTRUNK_BIN:-{{ cmd_prefix }}}"
+    _WORKTRUNK_CMD="${WORKTRUNK_BIN:-$(command -v {{ cmd_prefix }})}"
 
 {{ posix_shim }}
 
@@ -12,7 +13,7 @@ if command -v {{ cmd_prefix }} >/dev/null 2>&1 || [[ -n "${WORKTRUNK_BIN:-}" ]];
     {{ cmd_prefix }}() {
         # Initialize _WORKTRUNK_CMD if not set (e.g., after shell snapshot restore)
         if [[ -z "$_WORKTRUNK_CMD" ]]; then
-            _WORKTRUNK_CMD="${WORKTRUNK_BIN:-{{ cmd_prefix }}}"
+            _WORKTRUNK_CMD="${WORKTRUNK_BIN:-$(command -v {{ cmd_prefix }})}"
         fi
 
         local use_source=false

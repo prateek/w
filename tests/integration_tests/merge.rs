@@ -2234,7 +2234,7 @@ fn test_merge_no_commit_with_clean_tree() {
         [107m [0m   feature.txt | 1 [32m+[m
         [107m [0m   1 file changed, 1 insertion(+)
         ✅ [32mMerged to [1m[32mmain[0m[0m (1 commit, 1 file, [32m+1[0m)
-        ✅ [32mWorktree preserved (--no-remove)[0m
+        ⚪ Worktree preserved (--no-remove)
 
         ----- stderr -----
         ");
@@ -2337,7 +2337,7 @@ fn test_merge_no_commit_no_squash_no_remove_redundant() {
         [107m [0m   feature.txt | 1 [32m+[m
         [107m [0m   1 file changed, 1 insertion(+)
         ✅ [32mMerged to [1m[32mmain[0m[0m (1 commit, 1 file, [32m+1[0m)
-        ✅ [32mWorktree preserved (--no-remove)[0m
+        ⚪ Worktree preserved (--no-remove)
 
         ----- stderr -----
         ");

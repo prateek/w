@@ -118,7 +118,7 @@ fn test_configure_shell_already_exists() {
         exit_code: 0
         ----- stdout -----
         ⚪ Already configured shell extension & completions for [1mzsh[0m @ [1m~/.zshrc[0m
-        ✅ All shells already configured
+        ⚪ All shells already configured
 
         ----- stderr -----
         ");

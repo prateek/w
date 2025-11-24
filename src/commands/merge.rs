@@ -220,29 +220,21 @@ pub fn handle_merge(
     Ok(())
 }
 
-/// Format the merge summary message (no emoji - output system adds it)
-fn format_merge_summary(main_path: Option<&std::path::Path>) -> String {
-    use worktrunk::styling::GREEN;
-
-    // Show where we ended up
-    if let Some(path) = main_path {
-        format!(
-            "{GREEN}Returned to main at {GREEN_BOLD}{}{GREEN_BOLD:#}{GREEN:#}",
-            format_path_for_display(path)
-        )
-    } else {
-        format!("{GREEN}Worktree preserved (--no-remove){GREEN:#}")
-    }
-}
-
 /// Handle output for merge summary using global output context
 fn handle_merge_summary_output(main_path: Option<&std::path::Path>) -> anyhow::Result<()> {
-    let message = format_merge_summary(main_path);
+    use worktrunk::styling::GREEN;
 
-    // Show success message (formatting added by OutputContext)
-    crate::output::success(message)?;
+    if let Some(path) = main_path {
+        // Action completed: moved to main worktree
+        crate::output::success(format!(
+            "{GREEN}Returned to main at {GREEN_BOLD}{}{GREEN_BOLD:#}{GREEN:#}",
+            format_path_for_display(path)
+        ))?;
+    } else {
+        // No action: worktree stayed as-is (acknowledging --no-remove flag)
+        crate::output::info("Worktree preserved (--no-remove)")?;
+    }
 
-    // Flush output
     crate::output::flush()?;
 
     Ok(())

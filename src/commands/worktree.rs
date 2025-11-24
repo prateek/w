@@ -107,7 +107,9 @@ use worktrunk::git::{
     not_fast_forward, push_failed, worktree_creation_failed, worktree_missing,
     worktree_path_exists, worktree_path_occupied,
 };
-use worktrunk::styling::{CYAN, CYAN_BOLD, GREEN, GREEN_BOLD, WARNING, format_with_gutter};
+use worktrunk::styling::{
+    AnstyleStyle, CYAN, CYAN_BOLD, GREEN, GREEN_BOLD, WARNING, format_with_gutter,
+};
 
 use super::command_executor::CommandContext;
 use super::hooks::{HookFailureStrategy, HookPipeline};
@@ -626,15 +628,11 @@ pub fn handle_push(
             summary_parts.join(", ")
         ))?;
     } else {
-        // No commits to push - show current HEAD commit info
-        let head_sha = repo
-            .run_command(&["rev-parse", "--short", "HEAD"])?
-            .trim()
-            .to_string();
-        let green_dim = GREEN.dimmed();
+        // No commits to push - state description without action verb
+        let bold = AnstyleStyle::new().bold();
 
-        // For merge workflow context, acknowledge operations that didn't happen
-        let note = if let Some(ops) = operations {
+        // For merge workflow context, explain why nothing was pushed
+        let context = if let Some(ops) = operations {
             let mut notes = Vec::new();
             if !ops.committed && !ops.squashed {
                 notes.push("no new commits");
@@ -643,17 +641,17 @@ pub fn handle_push(
                 notes.push("no rebase needed");
             }
             if notes.is_empty() {
-                "already up to date".to_string()
+                String::new()
             } else {
-                notes.join(", ")
+                format!(" ({})", notes.join(", "))
             }
         } else {
-            // Standalone push - no merge workflow context
-            "already up to date".to_string()
+            String::new()
         };
 
-        crate::output::success(format!(
-            "{GREEN}{verb} {GREEN_BOLD}{target_branch}{GREEN_BOLD:#}{GREEN} @ {green_dim}{head_sha}{green_dim:#} ({note}){GREEN:#}"
+        // No action: nothing was pushed, just acknowledging state
+        crate::output::info(format!(
+            "Already up to date with {bold}{target_branch}{bold:#}{context}"
         ))?;
     }
 

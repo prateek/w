@@ -306,7 +306,8 @@ fn main() {
                                     "Configured {changes_count} shell{plural}"
                                 ))?;
                             } else {
-                                crate::output::success("All shells already configured")?;
+                                // No action: all shells were already configured
+                                crate::output::info("All shells already configured")?;
                             }
 
                             // Restart hint for current shell (only if config files changed, not just completions)

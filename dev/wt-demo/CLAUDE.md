@@ -4,7 +4,7 @@
 
 Build and record the demo GIF:
 
-```bash
+```console
 python3 dev/wt-demo-build.py
 ```
 

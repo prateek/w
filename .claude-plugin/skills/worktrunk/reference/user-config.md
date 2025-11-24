@@ -18,7 +18,7 @@ Most users want this for LLM commit messages. Follow this sequence:
 
 ### Step 1: Check if LLM Tool Exists
 
-```bash
+```console
 which llm
 # or
 which aichat
@@ -29,12 +29,12 @@ which aichat
 <example type="llm-install-guide">
 
 For `llm` (Python-based, recommended):
-```bash
+```console
 uv tool install -U llm
 ```
 
 For `aichat` (Rust-based, 20+ providers):
-```bash
+```console
 # See: https://github.com/sigoden/aichat
 ```
 
@@ -45,7 +45,7 @@ For `aichat` (Rust-based, 20+ providers):
 <example type="api-key-setup">
 
 For Claude (via llm):
-```bash
+```console
 llm install llm-anthropic
 llm keys set anthropic
 # User pastes API key from: https://console.anthropic.com/settings/keys
@@ -53,7 +53,7 @@ llm models default claude-3.5-sonnet
 ```
 
 For OpenAI (via llm):
-```bash
+```console
 llm keys set openai
 # User pastes API key from: https://platform.openai.com/api-keys
 ```
@@ -77,7 +77,7 @@ Ask: "Should I add this to your config at `~/.config/worktrunk/config.toml`?"
 
 ### Step 5: After Approval, Check if Config Exists
 
-```bash
+```console
 wt config list
 ```
 
@@ -89,7 +89,7 @@ Read existing config, add the `[commit-generation]` section, preserve existing s
 
 ### Step 7: Suggest Testing
 
-```bash
+```console
 # Test LLM works
 llm "say hello"
 
@@ -257,7 +257,7 @@ command = "npm install"
 
 ## Key Commands
 
-```bash
+```console
 wt config list        # View current config
 wt config create      # Create initial config file
 wt config --help      # Show LLM setup guide

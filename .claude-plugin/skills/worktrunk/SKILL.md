@@ -58,17 +58,17 @@ When a user asks for configuration help, determine which type based on:
 Most common request. Follow this sequence:
 
 1. **Check if LLM tool exists**
-   ```bash
+   ```console
    which llm  # or: which aichat
    ```
 
 2. **If not installed, guide installation (don't run it)**
-   ```bash
+   ```console
    uv tool install -U llm
    ```
 
 3. **Guide API key setup (don't run it)**
-   ```bash
+   ```console
    llm install llm-anthropic
    llm keys set anthropic
    llm models default claude-3.5-sonnet
@@ -87,7 +87,7 @@ Most common request. Follow this sequence:
    - Read, modify, write preserving structure
 
 6. **Suggest testing**
-   ```bash
+   ```console
    llm "say hello"
    wt merge  # in a repo with uncommitted changes
    ```
@@ -99,7 +99,7 @@ Most common request. Follow this sequence:
 Common request for workflow automation. Follow discovery process:
 
 1. **Detect project type**
-   ```bash
+   ```console
    ls package.json Cargo.toml pyproject.toml
    ```
 
@@ -114,7 +114,7 @@ Common request for workflow automation. Follow discovery process:
    - Long builds → `post-start-command`
 
 4. **Validate commands work**
-   ```bash
+   ```console
    npm run lint  # verify exists
    which cargo   # verify tool exists
    ```
@@ -134,7 +134,7 @@ Common request for workflow automation. Follow discovery process:
 6. **Add comments explaining choices**
 
 7. **Suggest testing**
-   ```bash
+   ```console
    wt switch --create test-hooks
    ```
 
@@ -171,7 +171,7 @@ Common request for workflow automation. Follow discovery process:
 
 ## Key Commands
 
-```bash
+```console
 # View all configuration
 wt config list
 
@@ -189,7 +189,7 @@ Load **reference/README.md** for general features, installation, commands, and e
 Load **reference files** for detailed configuration, hook specifications, and troubleshooting.
 
 Find specific sections with grep:
-```bash
+```console
 grep -A 20 "## Installation" reference/README.md
 grep -A 20 "## LLM Setup" reference/user-config.md
 grep -A 30 "### post-create-command" reference/project-config.md

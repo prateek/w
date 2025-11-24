@@ -146,7 +146,7 @@ pub enum ConfigShellCommand {
 Add one line to your shell config:
 
 Bash (~/.bashrc):
-```bash
+```console
 eval "$(wt config shell init bash)"
 ```
 
@@ -158,7 +158,7 @@ wt config shell init fish | source
 Zsh (~/.zshrc):
 ```zsh
 eval "$(wt config shell init zsh)"
-```bash
+```console
 
 ## Auto Setup
 
@@ -173,17 +173,17 @@ Use `wt config shell install` to automatically add to your shell config."#)]
     #[command(after_long_help = r#"## Auto Setup
 
 Detects existing shell config files and adds integration:
-```bash
+```console
 wt config shell install
 ```
 
 Install for specific shell only:
-```bash
+```console
 wt config shell install zsh
 ```
 
 Skip confirmation prompt:
-```bash
+```console
 wt config shell install --force
 ```"#)]
     Install {
@@ -200,17 +200,17 @@ wt config shell install --force
     #[command(after_long_help = r#"## Removal
 
 Removes shell integration lines from config files:
-```bash
+```console
 wt config shell uninstall
 ```
 
 Remove from specific shell only:
-```bash
+```console
 wt config shell uninstall zsh
 ```
 
 Skip confirmation prompt:
-```bash
+```console
 wt config shell uninstall --force
 ```
 
@@ -234,7 +234,7 @@ Detects various forms of the integration pattern regardless of:
 
 Generate completions for your shell:
 
-```bash
+```console
 wt config shell completions zsh > ~/.zfunc/_wt
 ```
 
@@ -346,17 +346,17 @@ commands.
 ## Examples
 
 Pre-approve all commands for current project:
-```bash
+```console
 wt config approvals ask
 ```
 
 Clear approvals for current project:
-```bash
+```console
 wt config approvals clear
 ```
 
 Clear global approvals:
-```bash
+```console
 wt config approvals clear --global
 ```"#)]
     Approvals {
@@ -518,19 +518,19 @@ pub enum Commands {
 
 1. Set up shell integration
 
-   ```bash
+   ```console
    wt config shell install
    ```
 
    Or manually add to your shell config:
 
-   ```bash
+   ```console
    eval "$(wt config shell init bash)"
    ```
 
 2. (Optional) Create config file
 
-   ```bash
+   ```console
    wt config create
    ```
 
@@ -551,7 +551,7 @@ pub enum Commands {
 
 For Claude:
 
-```bash
+```console
 llm install llm-anthropic
 llm keys set anthropic
 llm models default claude-3.5-sonnet
@@ -559,7 +559,7 @@ llm models default claude-3.5-sonnet
 
 For OpenAI:
 
-```bash
+```console
 llm keys set openai
 ```
 
@@ -667,7 +667,7 @@ Note: `locked` and `prunable` are top-level fields on worktree objects, not in s
 
 **Query examples:**
 
-```bash
+```console
 # Find worktrees with conflicts
 jq '.[] | select(.status.branch_state == \"Conflicts\")'
 
@@ -757,37 +757,37 @@ See `wt config approvals --help`.
 
 Switch to existing worktree:
 
-```bash
+```console
 wt switch feature-branch
 ```
 
 Create new worktree from main:
 
-```bash
+```console
 wt switch --create new-feature
 ```
 
 Switch to previous worktree:
 
-```bash
+```console
 wt switch -
 ```
 
 Create from specific base:
 
-```bash
+```console
 wt switch --create hotfix --base production
 ```
 
 Create and run command:
 
-```bash
+```console
 wt switch --create docs --execute "code ."
 ```
 
 Skip hooks during creation:
 
-```bash
+```console
 wt switch --create temp --no-verify
 ```
 
@@ -795,7 +795,7 @@ wt switch --create temp --no-verify
 
 Use `@` for current HEAD, `-` for previous, `^` for main:
 
-```bash
+```console
 wt switch @                              # Switch to current branch's worktree
 wt switch -                              # Switch to previous worktree
 wt switch --create new-feature --base=^  # Branch from main (default)
@@ -859,37 +859,37 @@ Stops any git fsmonitor daemon for the worktree before removal. This prevents or
 
 Remove current worktree and branch:
 
-```bash
+```console
 wt remove
 ```
 
 Remove specific worktree and branch:
 
-```bash
+```console
 wt remove feature-branch
 ```
 
 Remove worktree but keep branch:
 
-```bash
+```console
 wt remove --no-delete-branch feature-branch
 ```
 
 Remove multiple worktrees:
 
-```bash
+```console
 wt remove old-feature another-branch
 ```
 
 Remove in foreground (blocking):
 
-```bash
+```console
 wt remove --no-background feature-branch
 ```
 
 Switch to default in main:
 
-```bash
+```console
 wt remove  # (when already in main worktree)
 ```"#)]
     Remove {
@@ -952,25 +952,25 @@ See `wt config approvals --help`.
 
 Basic merge to main:
 
-```bash
+```console
 wt merge
 ```
 
 Merge without squashing:
 
-```bash
+```console
 wt merge --no-squash
 ```
 
 Keep worktree after merging:
 
-```bash
+```console
 wt merge --no-remove
 ```
 
 Skip all hooks:
 
-```bash
+```console
 wt merge --no-verify
 ```"#)]
     Merge {

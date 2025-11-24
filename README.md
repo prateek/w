@@ -32,7 +32,7 @@ List worktrees, create a worktree, make a trivial change, merge the change:
 
 <!-- README:snapshot:tests/integration_tests/snapshots/integration__integration_tests__shell_wrapper__tests__readme_example_simple_switch.snap -->
 
-```bash
+```console
 $ wt switch --create fix-auth
 ✅ Created new worktree for fix-auth from main at ../repo.fix-auth
 ```
@@ -45,7 +45,7 @@ $ wt switch --create fix-auth
 
 <!-- README:snapshot:tests/snapshots/integration__integration_tests__merge__readme_example_simple.snap -->
 
-```bash
+```console
 $ wt merge
 🔄 Merging 1 commit to main @ a1b2c3d (no commit/squash/rebase needed)
    * a1b2c3d Implement JWT validation
@@ -63,7 +63,7 @@ See [`wt merge`](#wt-merge) for all options.
 
 <!-- README:snapshot:tests/snapshots/integration__integration_tests__list__readme_example_simple_list.snap -->
 
-```bash
+```console
 $ wt list
   Branch     Status         HEAD±    main↕  Path         Remote⇅  Commit    Age   Message
 @ main           ^                          ./test-repo   ↑0  ↓0  b834638e  10mo  Initial commit
@@ -79,7 +79,7 @@ See [`wt list`](#wt-list) for all options.
 
 ## Installation
 
-```bash
+```console
 cargo install worktrunk
 wt config shell install  # Sets up shell integration
 ```
@@ -126,7 +126,7 @@ Then `wt merge` will generate commit messages automatically:
 
 <!-- README:snapshot:tests/snapshots/integration__integration_tests__merge__readme_example_complex.snap -->
 
-```bash
+```console
 $ wt merge
 🔄 Squashing 3 commits into a single commit (3 files, +33)...
 🔄 Generating squash commit message...
@@ -191,7 +191,7 @@ Automate tasks at different points in the worktree lifecycle. Configure hooks in
 
 <!-- README:snapshot:tests/integration_tests/snapshots/integration__integration_tests__shell_wrapper__tests__readme_example_hooks_post_create.snap -->
 
-```bash
+```console
 $ wt switch --create feature-x
 🔄 Running post-create install:
    uv sync
@@ -210,7 +210,7 @@ $ wt switch --create feature-x
 
 <!-- README:snapshot:tests/integration_tests/snapshots/integration__integration_tests__shell_wrapper__tests__readme_example_hooks_pre_merge.snap -->
 
-```bash
+```console
 $ wt merge
 🔄 Squashing 3 commits into a single commit (2 files, +45)...
 🔄 Generating squash commit message...
@@ -257,7 +257,7 @@ Worktrunk requires shell integration in order to switch directories, during `wt
 switch` & `wt merge`/`wt remove`. To add automatic setup to shell config files
 (Bash, Zsh, and Fish):
 
-```bash
+```console
 wt config shell install
 ```
 
@@ -269,13 +269,13 @@ For manual setup instructions, see `wt config shell --help`.
 new agent-in-worktree in a couple of seconds. For example, to create a worktree
 and immediately start Claude:
 
-```bash
+```console
 alias wsl='wt switch --create --execute=claude'
 ```
 
 Then:
 
-```bash
+```console
 wsl new-feature
 ```
 
@@ -402,37 +402,37 @@ See `wt config approvals --help`.
 
 Switch to existing worktree:
 
-```bash
+```console
 wt switch feature-branch
 ```
 
 Create new worktree from main:
 
-```bash
+```console
 wt switch --create new-feature
 ```
 
 Switch to previous worktree:
 
-```bash
+```console
 wt switch -
 ```
 
 Create from specific base:
 
-```bash
+```console
 wt switch --create hotfix --base production
 ```
 
 Create and run command:
 
-```bash
+```console
 wt switch --create docs --execute "code ."
 ```
 
 Skip hooks during creation:
 
-```bash
+```console
 wt switch --create temp --no-verify
 ```
 
@@ -440,7 +440,7 @@ wt switch --create temp --no-verify
 
 Use `@` for current HEAD, `-` for previous, `^` for main:
 
-```bash
+```console
 wt switch @                              # Switch to current branch's worktree
 wt switch -                              # Switch to previous worktree
 wt switch --create new-feature --base=^  # Branch from main (default)
@@ -537,25 +537,25 @@ See `wt config approvals --help`.
 
 Basic merge to main:
 
-```bash
+```console
 wt merge
 ```
 
 Merge without squashing:
 
-```bash
+```console
 wt merge --no-squash
 ```
 
 Keep worktree after merging:
 
-```bash
+```console
 wt merge --no-remove
 ```
 
 Skip all hooks:
 
-```bash
+```console
 wt merge --no-verify
 ```
 
@@ -619,37 +619,37 @@ Stops any git fsmonitor daemon for the worktree before removal. This prevents or
 
 Remove current worktree and branch:
 
-```bash
+```console
 wt remove
 ```
 
 Remove specific worktree and branch:
 
-```bash
+```console
 wt remove feature-branch
 ```
 
 Remove worktree but keep branch:
 
-```bash
+```console
 wt remove --no-delete-branch feature-branch
 ```
 
 Remove multiple worktrees:
 
-```bash
+```console
 wt remove old-feature another-branch
 ```
 
 Remove in foreground (blocking):
 
-```bash
+```console
 wt remove --no-background feature-branch
 ```
 
 Switch to default in main:
 
-```bash
+```console
 wt remove  # (when already in main worktree)
 ```
 
@@ -759,7 +759,7 @@ Note: `locked` and `prunable` are top-level fields on worktree objects, not in s
 
 **Query examples:**
 
-```bash
+```console
 # Find worktrees with conflicts
 jq '.[] | select(.status.branch_state == "Conflicts")'
 
@@ -808,19 +808,19 @@ Options:
 
 1. Set up shell integration
 
-   ```bash
+   ```console
    wt config shell install
    ```
 
    Or manually add to your shell config:
 
-   ```bash
+   ```console
    eval "$(wt config shell init bash)"
    ```
 
 2. (Optional) Create config file
 
-   ```bash
+   ```console
    wt config create
    ```
 
@@ -841,7 +841,7 @@ Options:
 
 For Claude:
 
-```bash
+```console
 llm install llm-anthropic
 llm keys set anthropic
 llm models default claude-3.5-sonnet
@@ -849,7 +849,7 @@ llm models default claude-3.5-sonnet
 
 For OpenAI:
 
-```bash
+```console
 llm keys set openai
 ```
 
@@ -906,7 +906,7 @@ Options:
 
 By default, worktrees live as siblings to the main repo (`myapp.feature-x/`).
 
-```bash
+```console
 wt config list    # Show all config files and locations
 wt config create  # Create global config with examples
 wt config --help  # Show setup guide, file locations, and options
@@ -918,7 +918,7 @@ wt config --help  # Show setup guide, file locations, and options
 
 Add emoji status markers to branches that appear in `wt list`.
 
-```bash
+```console
 # Set status for current branch
 wt config status set "🤖"
 
@@ -930,7 +930,7 @@ git config worktrunk.status.feature-x "💬"
 
 <!-- README:snapshot:tests/snapshots/integration__integration_tests__list__with_user_status.snap -->
 
-```bash
+```console
 $ wt list
   Branch             Status         HEAD±    main↕  Path                 Remote⇅  Commit    Age   Message
 @ main                   ^                          ./test-repo                   b834638e  10mo  Initial commit
@@ -959,7 +959,7 @@ When using Claude:
 
 <!-- README:snapshot:tests/snapshots/integration__integration_tests__list__with_user_status.snap -->
 
-```bash
+```console
 $ wt list
   Branch             Status         HEAD±    main↕  Path                 Remote⇅  Commit    Age   Message
 @ main                   ^                          ./test-repo                   b834638e  10mo  Initial commit
@@ -1044,7 +1044,7 @@ Worktrunk gives each branch its own directory with independent build caches, pro
 
 Git's built-in worktree commands work but require manual lifecycle management:
 
-```bash
+```console
 # Plain git worktree workflow
 git worktree add -b feature-branch ../myapp-feature main
 cd ../myapp-feature
@@ -1057,7 +1057,7 @@ git branch -d feature-branch
 
 Worktrunk automates the full lifecycle:
 
-```bash
+```console
 wt switch --create feature-branch  # Creates worktree, runs setup hooks
 # ...work...
 wt merge                            # Squashes, merges, removes worktree
@@ -1092,7 +1092,7 @@ Git TUIs operate on a single repository. Worktrunk manages multiple worktrees, r
 
 If you encounter errors related to tree-sitter or C compilation (like "error: 'for' loop initial declarations are only allowed in C99 mode" or "undefined reference to le16toh"), install without syntax highlighting:
 
-```bash
+```console
 cargo install worktrunk --no-default-features
 ```
 
@@ -1124,7 +1124,7 @@ cargo test --test integration --features shell-integration-tests
 
 Use [cargo-release](https://github.com/crate-ci/cargo-release) to publish new versions:
 
-```bash
+```console
 cargo install cargo-release
 
 # Bump version, update Cargo.lock, commit, tag, and push

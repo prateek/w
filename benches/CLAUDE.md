@@ -2,7 +2,7 @@
 
 ## Quick Start
 
-```bash
+```console
 # Run fast synthetic benchmarks (skip slow ones)
 cargo bench --bench list -- --skip cold --skip real
 
@@ -44,7 +44,7 @@ The rust-lang/rust repository is automatically cached:
 ## Faster Iteration During Development
 
 ### Option 1: Skip Slow Benchmarks
-```bash
+```console
 # Skip cold cache and real repo benchmarks
 cargo bench --bench list -- --skip cold --skip real
 
@@ -53,7 +53,7 @@ cargo bench --bench list bench_list_by_worktree_count
 ```
 
 ### Option 2: Use Pattern Matching
-```bash
+```console
 # Run all benchmarks with "list_by" in the name
 cargo bench --bench list "list_by"
 

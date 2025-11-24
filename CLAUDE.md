@@ -36,7 +36,7 @@ fn parse_config() { ... }
 
 ### Running Tests
 
-```bash
+```console
 # Unit tests (fast, ~200 tests)
 cargo test --lib --bins
 
@@ -58,7 +58,7 @@ The pre-merge hook runs the full test suite and is the recommended way to verify
 
 When working in Claude Code web, run the setup script first:
 
-```bash
+```console
 ./dev/setup-claude-code-web.sh
 ```
 
@@ -515,7 +515,7 @@ Use `--force` to skip interactive prompts in tests. Don't pipe input to stdin.
 ### Running Benchmarks Selectively
 
 Run specific benchmarks by name to skip expensive ones:
-```bash
+```console
 cargo bench --bench list bench_list_by_worktree_count
 cargo bench --bench completion
 ```

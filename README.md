@@ -301,6 +301,11 @@ which branches have active sessions in `wt list`. When the agent is working, the
 branch shows `🤖`; when it's waiting for the user, it shows `💬`. Setup
 instructions: [Custom Worktree Status](#custom-worktree-status).
 
+**Monitor CI status across all branches** — Use `wt list --full --branches` to
+see PR/CI status for all branches (including those without worktrees) in a single
+view. The CI column shows clickable links to PR/MR pages when running in a
+terminal that supports hyperlinks.
+
 **Delegate to task runners** — Reference existing Taskfile/Justfile/Makefile commands
 instead of duplicating logic:
 

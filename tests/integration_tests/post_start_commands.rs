@@ -511,6 +511,11 @@ approved-commands = [
         .filter(|e| e.path().extension().and_then(|s| s.to_str()) == Some("log"))
         .collect();
 
+    // Wait for content to be flushed in each log file before reading
+    for entry in &log_files {
+        wait_for_file_content(&entry.path(), Duration::from_secs(5));
+    }
+
     // Read all log files and verify no cross-contamination
     let mut found_outputs = vec![false, false, false];
     for entry in log_files {
@@ -616,10 +621,10 @@ approved-commands = ["echo 'line1\nline2\nline3' | grep line2 > filtered.txt"]
 
     snapshot_switch("post_start_complex_shell", &repo, &["--create", "feature"]);
 
-    // Wait for background command to create the file
+    // Wait for background command to create the file AND flush content
     let worktree_path = repo.root_path().parent().unwrap().join("test-repo.feature");
     let filtered_file = worktree_path.join("filtered.txt");
-    wait_for_file(filtered_file.as_path(), Duration::from_secs(5));
+    wait_for_file_content(filtered_file.as_path(), Duration::from_secs(5));
 
     let contents = fs::read_to_string(&filtered_file).unwrap();
     assert_snapshot!(contents, @"line2");

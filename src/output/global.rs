@@ -83,7 +83,7 @@ pub fn hint(message: impl Into<String>) -> io::Result<()> {
 
 /// Display a shell integration hint (suppressed in directive mode)
 ///
-/// Shell integration hints like "To enable automatic cd, run: wt config shell install" are only
+/// Shell integration hints like "Run `wt config shell install` to enable automatic cd" are only
 /// shown in interactive mode since directive mode users already have shell integration
 pub fn shell_integration_hint(message: impl Into<String>) -> io::Result<()> {
     with_output(|h| h.shell_integration_hint(message.into()))

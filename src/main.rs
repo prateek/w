@@ -510,7 +510,8 @@ fn main() {
                     handle_switch(&branch, create, base.as_deref(), force, !verify, &config)?;
 
                 // Show success message (temporal locality: immediately after worktree creation)
-                handle_switch_output(&result, &resolved_branch, execute.is_some())?;
+                // Pass cli.internal to indicate whether shell integration is active
+                handle_switch_output(&result, &resolved_branch, execute.is_some(), cli.internal)?;
 
                 // Now spawn post-start hooks (background processes, after success message)
                 // Only run post-start commands when creating a NEW worktree, not when switching to existing

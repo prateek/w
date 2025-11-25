@@ -1,7 +1,7 @@
 use anyhow::Context;
 use std::path::PathBuf;
 use worktrunk::config::WorktrunkConfig;
-use worktrunk::git::{Repository, detached_head};
+use worktrunk::git::Repository;
 
 use super::command_executor::CommandContext;
 
@@ -24,15 +24,15 @@ pub struct CommandEnv {
 }
 
 impl CommandEnv {
-    /// Load the command environment from the current process context.
-    pub fn current() -> anyhow::Result<Self> {
+    /// Load the command environment for a specific action.
+    ///
+    /// `action` describes what command is running (e.g., "merge", "squash").
+    /// Used in error messages when the environment can't be loaded.
+    pub fn for_action(action: &str) -> anyhow::Result<Self> {
         let repo = Repository::current();
         let worktree_path = std::env::current_dir()
             .map_err(|e| anyhow::anyhow!("Failed to get current directory: {}", e))?;
-        let branch = repo
-            .current_branch()
-            .context("Failed to get current branch")?
-            .ok_or_else(|| anyhow::anyhow!("{}", detached_head()))?;
+        let branch = repo.require_current_branch(action)?;
         let config = WorktrunkConfig::load().context("Failed to load config")?;
         let repo_root = repo.worktree_base()?;
 

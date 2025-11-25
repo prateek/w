@@ -89,7 +89,7 @@ impl RepositoryCliExt for Repository {
         }
 
         let target_repo = Repository::at(&worktree_path);
-        target_repo.ensure_clean_working_tree()?;
+        target_repo.ensure_clean_working_tree(Some("remove worktree"))?;
 
         let current_worktree = self.worktree_root()?;
         let removing_current = current_worktree == worktree_path;

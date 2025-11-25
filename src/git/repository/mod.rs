@@ -178,6 +178,14 @@ impl Repository {
         }
     }
 
+    /// Get the current branch name, or error if in detached HEAD state.
+    ///
+    /// `action` describes what requires being on a branch (e.g., "merge").
+    pub fn require_current_branch(&self, action: &str) -> anyhow::Result<String> {
+        self.current_branch()?
+            .ok_or_else(|| detached_head(Some(action)))
+    }
+
     /// Read a user-defined status from `worktrunk.status.<branch>` in git config.
     pub fn branch_keyed_status(&self, branch: &str) -> Option<String> {
         let config_key = format!("worktrunk.status.{}", branch);
@@ -249,9 +257,9 @@ impl Repository {
     /// - `Err` if "-" but no previous branch in history
     pub fn resolve_worktree_name(&self, name: &str) -> anyhow::Result<String> {
         match name {
-            "@" => self
-                .current_branch()?
-                .ok_or_else(|| anyhow::anyhow!("{}", detached_head())),
+            "@" => self.current_branch()?.ok_or_else(|| {
+                anyhow::anyhow!("{}", detached_head(Some("resolve '@' to current branch")))
+            }),
             "-" => {
                 // Read from worktrunk.history (recorded by wt switch operations)
                 // History stores (current, previous), we want previous
@@ -417,9 +425,10 @@ impl Repository {
     /// Ensure the working tree is clean (no uncommitted changes).
     ///
     /// Returns an error if there are uncommitted changes.
-    pub fn ensure_clean_working_tree(&self) -> anyhow::Result<()> {
+    /// `action` describes what was blocked (e.g., "remove worktree").
+    pub fn ensure_clean_working_tree(&self, action: Option<&str>) -> anyhow::Result<()> {
         if self.is_dirty()? {
-            return Err(uncommitted_changes());
+            return Err(uncommitted_changes(action));
         }
         Ok(())
     }

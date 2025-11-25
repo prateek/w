@@ -1,7 +1,7 @@
 use anyhow::Context;
 use etcetera::base_strategy::{BaseStrategy, choose_base_strategy};
 use std::path::PathBuf;
-use worktrunk::git::{Repository, detached_head};
+use worktrunk::git::Repository;
 use worktrunk::path::format_path_for_display;
 use worktrunk::shell::Shell;
 use worktrunk::styling::{AnstyleStyle, CYAN, GREEN, GREEN_BOLD, format_toml};
@@ -352,9 +352,7 @@ pub fn handle_config_status_set(value: String, branch: Option<String>) -> anyhow
 
     let branch_name = match branch {
         Some(b) => b,
-        None => repo
-            .current_branch()?
-            .ok_or_else(|| anyhow::anyhow!("{}", detached_head()))?,
+        None => repo.require_current_branch("set status for current branch")?,
     };
 
     let config_key = format!("worktrunk.status.{}", branch_name);
@@ -397,8 +395,7 @@ pub fn handle_config_status_unset(target: String) -> anyhow::Result<()> {
     } else {
         // Clear specific branch status
         let branch_name = if target.is_empty() {
-            repo.current_branch()?
-                .ok_or_else(|| anyhow::anyhow!("{}", detached_head()))?
+            repo.require_current_branch("clear status for current branch")?
         } else {
             target
         };

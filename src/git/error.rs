@@ -101,16 +101,28 @@ pub fn parse_error(msg: impl std::fmt::Display) -> anyhow::Error {
 }
 
 /// Detached HEAD error
-pub fn detached_head() -> anyhow::Error {
+///
+/// `action` describes what was blocked (e.g., "merge")
+pub fn detached_head(action: Option<&str>) -> anyhow::Error {
+    let message = match action {
+        Some(action) => format!("Cannot {action}: not on a branch (detached HEAD)"),
+        None => "Not on a branch (detached HEAD)".to_string(),
+    };
     anyhow::anyhow!(
-        "{ERROR_EMOJI} {ERROR}Not on a branch (detached HEAD){ERROR:#}\n\n{HINT_EMOJI} {HINT}You are in detached HEAD state{HINT:#}"
+        "{ERROR_EMOJI} {ERROR}{message}{ERROR:#}\n\n{HINT_EMOJI} {HINT}Switch to a branch first with 'git switch <branch>'{HINT:#}"
     )
 }
 
 /// Uncommitted changes error
-pub fn uncommitted_changes() -> anyhow::Error {
+///
+/// `action` describes what was blocked (e.g., "remove worktree")
+pub fn uncommitted_changes(action: Option<&str>) -> anyhow::Error {
+    let message = match action {
+        Some(action) => format!("Cannot {action}: working tree has uncommitted changes"),
+        None => "Working tree has uncommitted changes".to_string(),
+    };
     anyhow::anyhow!(
-        "{ERROR_EMOJI} {ERROR}Working tree has uncommitted changes{ERROR:#}\n\n{HINT_EMOJI} {HINT}Commit or stash them first{HINT:#}"
+        "{ERROR_EMOJI} {ERROR}{message}{ERROR:#}\n\n{HINT_EMOJI} {HINT}Commit or stash them first{HINT:#}"
     )
 }
 

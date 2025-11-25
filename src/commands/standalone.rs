@@ -13,7 +13,7 @@ use super::repository_ext::RepositoryCliExt;
 /// Handle `wt step hook` command
 pub fn handle_standalone_run_hook(hook_type: HookType, force: bool) -> anyhow::Result<()> {
     // Derive context from current environment
-    let env = CommandEnv::current()?;
+    let env = CommandEnv::for_action(&format!("run {hook_type} hook"))?;
     let repo = &env.repo;
     let ctx = env.context(force);
 
@@ -65,7 +65,7 @@ pub fn handle_standalone_commit(
     no_verify: bool,
     stage_mode: super::commit::StageMode,
 ) -> anyhow::Result<()> {
-    let env = CommandEnv::current()?;
+    let env = CommandEnv::for_action("commit")?;
     let ctx = env.context(force);
     let mut options = CommitOptions::new(&ctx);
     options.no_verify = no_verify;
@@ -94,7 +94,7 @@ pub fn handle_squash(
 ) -> anyhow::Result<bool> {
     use super::commit::StageMode;
 
-    let env = CommandEnv::current()?;
+    let env = CommandEnv::for_action("squash")?;
     let repo = &env.repo;
     let current_branch = env.branch.clone();
     let ctx = env.context(force);

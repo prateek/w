@@ -68,14 +68,17 @@ pub fn handle_merge(
     force: bool,
     stage_mode: super::commit::StageMode,
 ) -> anyhow::Result<()> {
-    let env = CommandEnv::current()?;
+    let env = CommandEnv::for_action("merge")?;
     let repo = &env.repo;
     let config = &env.config;
     let current_branch = env.branch.clone();
 
     // Validate --no-commit: requires clean working tree
     if !commit && repo.is_dirty()? {
-        return Err(anyhow::anyhow!("{}", worktrunk::git::uncommitted_changes()));
+        return Err(anyhow::anyhow!(
+            "{}",
+            worktrunk::git::uncommitted_changes(Some("merge with --no-commit"))
+        ));
     }
 
     // Validate --no-commit flag compatibility
@@ -181,7 +184,7 @@ pub fn handle_merge(
     if remove_effective {
         // STEP 1: Check for uncommitted changes before attempting cleanup
         // This prevents showing "Cleaning up worktree..." before failing
-        repo.ensure_clean_working_tree()?;
+        repo.ensure_clean_working_tree(Some("remove worktree after merge"))?;
 
         // STEP 2: Remove worktree via shared remove output handler so final message matches wt remove
         let worktree_root = repo.worktree_root()?;

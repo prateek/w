@@ -69,6 +69,7 @@ tree-sitter = { version = "0.25", optional = true }
 tree-sitter-bash = { version = "0.25", optional = true }
 tree-sitter-highlight = { version = "0.25", optional = true }
 unicode-width = "0.2"
+wrap-ansi = "0.1"
 osc8 = "0.1.0"
 home = "0.5.12"
 

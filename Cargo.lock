@@ -27,6 +27,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4b46cbb362ab8752921c97e041f5e366ee6297bd428a31275b9fcf1e380f7299"
 
 [[package]]
+name = "ansi-escape-sequences"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6afb74bb006f83a46d689f70e46ce3a9830db762134b3b585986fa9eab21f75d"
+dependencies = [
+ "regex",
+]
+
+[[package]]
 name = "ansi-str"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -759,6 +768,12 @@ name = "downcast-rs"
 version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "75b325c5dbd37f80359721ad39aca5a29fb04c89279657cffdda8736d0c0b9d2"
+
+[[package]]
+name = "east-asian-width"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ef8c47de0fcde8bd09c98fc22e4ea10ed14b9c05bf02c309e1e743aee7d0d9f6"
 
 [[package]]
 name = "either"
@@ -2074,6 +2089,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2b2231b7c3057d5e4ad0156fb3dc807d900806020c5ffa3ee6ff2c8c76fb8520"
 
 [[package]]
+name = "string-width"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2f00d94d660cfa7bf3669352ebe9e06cc0351e0c9e696a31d051a54fa4bbb2b5"
+dependencies = [
+ "east-asian-width",
+ "regex",
+ "strip-ansi-escapes",
+ "unicode-segmentation",
+]
+
+[[package]]
+name = "strip-ansi-escapes"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2a8f8038e7e7969abb3f1b7c2a811225e9296da208539e0f79c5251d6cac0025"
+dependencies = [
+ "vte 0.14.1",
+]
+
+[[package]]
 name = "strsim"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2900,6 +2936,19 @@ dependencies = [
  "unicode-width",
  "vergen-gitcl",
  "vt100",
+ "wrap-ansi",
+]
+
+[[package]]
+name = "wrap-ansi"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "848bc403c11fc8f4d6597f2bad2ce43111fbf6757c7dd7d62590199e8dade5fd"
+dependencies = [
+ "ansi-escape-sequences",
+ "regex",
+ "string-width",
+ "thiserror 2.0.17",
 ]
 
 [[package]]

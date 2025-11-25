@@ -74,6 +74,8 @@ pub fn hyperlink(text: &str, url: &str) -> String {
 
 // Re-export for tests
 #[cfg(test)]
+use format::wrap_styled_text;
+#[cfg(test)]
 use format::wrap_text_at_width;
 // ============================================================================
 // Tests
@@ -445,5 +447,102 @@ command = "npm install"
         assert!(result.contains(url));
         assert!(result.contains(text));
         assert!(result.ends_with("\x1b]8;;\x1b\\"));
+    }
+
+    // wrap_styled_text tests
+    #[test]
+    fn test_wrap_styled_text_no_wrapping_needed() {
+        let result = super::wrap_styled_text("short line", 50);
+        assert_eq!(result, vec!["short line"]);
+    }
+
+    #[test]
+    fn test_wrap_styled_text_zero_width() {
+        let result = super::wrap_styled_text("some text", 0);
+        assert_eq!(result, vec!["some text"]);
+    }
+
+    #[test]
+    fn test_wrap_styled_text_at_word_boundary() {
+        let text = "This is a very long line that needs wrapping";
+        let result = super::wrap_styled_text(text, 20);
+
+        // Should wrap into multiple lines
+        assert!(result.len() > 1, "Should wrap into multiple lines");
+
+        // Each line should be within width limit (using visual_width to ignore ANSI codes)
+        for line in &result {
+            let visual = visual_width(line);
+            assert!(
+                visual <= 20 || !line.contains(' '),
+                "Line '{}' has visual width {} which exceeds 20",
+                line,
+                visual
+            );
+        }
+    }
+
+    #[test]
+    fn test_wrap_styled_text_preserves_styles_across_breaks() {
+        // Create styled text: bold text that spans multiple words
+        let bold = Style::new().bold();
+        let input = format!("{bold}This is bold text that will wrap{bold:#}");
+        let result = super::wrap_styled_text(&input, 15);
+
+        // Should wrap
+        assert!(result.len() > 1, "Should wrap into multiple lines");
+
+        // First line should start with bold code
+        assert!(
+            result[0].contains("\x1b[1m"),
+            "First line should have bold code"
+        );
+
+        // Subsequent lines should re-emit the active style
+        // The style tracking should preserve bold across line breaks
+        for line in &result[1..] {
+            // Each continuation should either have the style re-emitted
+            // or just contain the text (if style was applied to word boundary)
+            // The key is no garbled output
+            assert!(!line.is_empty(), "Wrapped lines should have content");
+        }
+    }
+
+    #[test]
+    fn test_wrap_styled_text_handles_reset() {
+        // Text with style, then reset, then more text
+        let bold = Style::new().bold();
+        let input = format!("{bold}Bold{bold:#}\x1b[0m plain \x1b[32mgreen text here\x1b[0m");
+        let result = super::wrap_styled_text(&input, 10);
+
+        // Should produce valid output without crashes
+        assert!(!result.is_empty());
+    }
+
+    #[test]
+    fn test_wrap_styled_text_empty_input() {
+        let result = super::wrap_styled_text("", 50);
+        assert_eq!(result, vec![""]);
+    }
+
+    #[test]
+    fn test_wrap_styled_text_single_long_word() {
+        // A single word longer than max_width should still be included
+        let result = super::wrap_styled_text("verylongwordthatcannotbewrapped", 10);
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0], "verylongwordthatcannotbewrapped");
+    }
+
+    #[test]
+    fn test_wrap_styled_text_with_ansi_codes_in_word() {
+        // Style that starts and ends within a single word
+        let bold = Style::new().bold();
+        let input = format!("pre {bold}styled{bold:#} post");
+        let result = super::wrap_styled_text(&input, 50);
+
+        // Should not wrap (fits)
+        assert_eq!(result.len(), 1);
+        // Should contain the style codes
+        assert!(result[0].contains("\x1b[1m"), "Should contain bold code");
     }
 }

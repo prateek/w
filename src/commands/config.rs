@@ -285,22 +285,17 @@ fn check_zsh_compinit_missing() -> bool {
     // Use --no-globalrcs to skip system files (like /etc/zshrc on macOS which enables compinit)
     // This ensures we're checking the USER's configuration, not system defaults
     // Suppress stderr to avoid noise like "can't change option: zle"
-    let output = Command::new("zsh")
-        .args([
-            "--no-globalrcs",
-            "-ic",
-            r#"(( $+functions[compdef] )) && echo "__WT_COMPINIT_YES__" || echo "__WT_COMPINIT_NO__""#,
-        ])
+    // The (( ... )) arithmetic returns exit 0 if true (compdef exists), 1 if false
+    let status = Command::new("zsh")
+        .args(["--no-globalrcs", "-ic", "(( $+functions[compdef] ))"])
+        .stdout(Stdio::null())
         .stderr(Stdio::null())
-        .output()
+        .status()
         .ok();
 
-    match output {
-        Some(out) => {
-            let stdout = String::from_utf8_lossy(&out.stdout);
-            stdout.contains("__WT_COMPINIT_NO__")
-        }
-        None => false, // Can't determine, don't warn
+    match status {
+        Some(s) => !s.success(), // compdef NOT found = need to warn
+        None => false,           // Can't determine, don't warn
     }
 }
 

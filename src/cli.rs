@@ -616,13 +616,11 @@ Docs: <https://llm.datasette.io/> | <https://github.com/sigoden/aichat>
 
 ## Status Symbols
 
-Order: `?!+»✘ ✖⚠≡∅ ↻⋈ ↑↓↕ ⇡⇣⇅ ⎇⌫⊠`
+Order: `+!? ✖⚠≡∅ ↻⋈ ↑↓↕ ⇡⇣⇅ ⎇⌫⊠`
 
-- `?` Untracked files present
-- `!` Modified files (unstaged changes)
 - `+` Staged files (ready to commit)
-- `»` Renamed files
-- `✘` Deleted files
+- `!` Modified files (unstaged changes)
+- `?` Untracked files present
 - `✖` **Merge conflicts** - unresolved conflicts in working tree (fix before continuing)
 - `⚠` **Would conflict** - merging into main would fail
 - `≡` Working tree matches main (identical contents, regardless of commit history)

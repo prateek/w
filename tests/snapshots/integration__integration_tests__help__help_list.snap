@@ -76,13 +76,11 @@ Global Options:
 
 [32mStatus Symbols[0m
 
-Order: [2m?!+»✘ ✖⚠≡∅ ↻⋈ ↑↓↕ ⇡⇣⇅ ⎇⌫⊠[0m
+Order: [2m+!? ✖⚠≡∅ ↻⋈ ↑↓↕ ⇡⇣⇅ ⎇⌫⊠[0m
 
-- [2m?[0m Untracked files present
-- [2m![0m Modified files (unstaged changes)
 - [2m+[0m Staged files (ready to commit)
-- [2m»[0m Renamed files
-- [2m✘[0m Deleted files
+- [2m![0m Modified files (unstaged changes)
+- [2m?[0m Untracked files present
 - [2m✖[0m [1mMerge conflicts[0m - unresolved conflicts in working tree (fix before continuing)
 - [2m⚠[0m [1mWould conflict[0m - merging into main would fail
 - [2m≡[0m Working tree matches main (identical contents, regardless of commit history)

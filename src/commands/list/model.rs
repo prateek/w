@@ -18,6 +18,12 @@ pub struct DisplayFields {
     pub ci_status_display: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status_display: Option<String>,
+    /// Pre-formatted single-line representation for statusline tools.
+    /// Format: `branch  status  ±working  commits  upstream  ci` (2-space separators)
+    ///
+    /// Use via JSON: `wt list --format=json | jq '.[] | select(.is_current) | .status_line'`
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub status_line: Option<String>,
 }
 
 impl DisplayFields {
@@ -51,6 +57,7 @@ impl DisplayFields {
             upstream_display,
             ci_status_display,
             status_display: None,
+            status_line: None,
         }
     }
 }
@@ -76,13 +83,24 @@ pub struct WorktreeData {
     pub working_tree_diff_with_main: Option<Option<LineDiff>>,
     pub worktree_state: Option<String>,
     pub is_main: bool,
+    /// Whether this is the current worktree (matches $PWD)
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub is_current: bool,
+    /// Whether this was the previous worktree (from WT_PREVIOUS_BRANCH)
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub is_previous: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub working_diff_display: Option<String>,
 }
 
 impl WorktreeData {
     /// Create WorktreeData from a Worktree, with all computed fields set to None.
-    pub(crate) fn from_worktree(wt: &worktrunk::git::Worktree, is_main: bool) -> Self {
+    pub(crate) fn from_worktree(
+        wt: &worktrunk::git::Worktree,
+        is_main: bool,
+        is_current: bool,
+        is_previous: bool,
+    ) -> Self {
         Self {
             // Identity fields (known immediately from worktree list)
             path: wt.path.clone(),
@@ -91,6 +109,8 @@ impl WorktreeData {
             locked: wt.locked.clone(),
             prunable: wt.prunable.clone(),
             is_main,
+            is_current,
+            is_previous,
 
             // Computed fields start as None (filled progressively)
             ..Default::default()
@@ -283,6 +303,57 @@ impl ListItem {
             counts.ahead == 0
         }
     }
+
+    /// Format this item as a single-line statusline string.
+    ///
+    /// Format: `branch  status  ±working  commits  upstream  ci`
+    /// Uses 2-space separators between non-empty parts.
+    pub fn format_statusline(&self) -> String {
+        let mut parts: Vec<String> = Vec::new();
+
+        // 1. Branch name
+        parts.push(self.branch_name().to_string());
+
+        // 2. Status symbols (compact, no grid alignment)
+        if let Some(ref symbols) = self.status_symbols {
+            let status = symbols.format_compact();
+            if !status.is_empty() {
+                parts.push(status);
+            }
+        }
+
+        // 3. Working diff (worktrees only)
+        if let Some(data) = self.worktree_data()
+            && let Some(ref diff) = data.working_tree_diff
+            && !diff.is_empty()
+            && let Some(formatted) =
+                ColumnKind::WorkingDiff.format_diff_plain(diff.added, diff.deleted)
+        {
+            parts.push(format!("±{formatted}"));
+        }
+
+        // 4. Commits ahead/behind main
+        if let Some(formatted) =
+            ColumnKind::AheadBehind.format_diff_plain(self.counts().ahead, self.counts().behind)
+        {
+            parts.push(formatted);
+        }
+
+        // 5. Upstream status
+        if let Some(ref upstream) = self.upstream
+            && let Some((_, ahead, behind)) = upstream.active()
+            && let Some(formatted) = ColumnKind::Upstream.format_diff_plain(ahead, behind)
+        {
+            parts.push(formatted);
+        }
+
+        // 6. CI status
+        if let Some(Some(ref pr_status)) = self.pr_status {
+            parts.push(pr_status.format_indicator());
+        }
+
+        parts.join("  ")
+    }
 }
 
 /// Main branch divergence state
@@ -435,6 +506,26 @@ impl std::fmt::Display for BranchOpState {
     }
 }
 
+impl BranchOpState {
+    /// Returns styled symbol with appropriate color, or None for None variant.
+    ///
+    /// Color semantics:
+    /// - ERROR (red): Conflicts - blocking problems
+    /// - WARNING (yellow): Rebase, Merge, MergeTreeConflicts - active/stuck states
+    /// - HINT (dimmed): MatchesMain, NoCommits - low urgency removability indicators
+    pub fn styled(&self) -> Option<String> {
+        use worktrunk::styling::{ERROR, HINT, WARNING};
+        match self {
+            Self::None => None,
+            Self::Conflicts => Some(format!("{ERROR}{self}{ERROR:#}")),
+            Self::Rebase | Self::Merge | Self::MergeTreeConflicts => {
+                Some(format!("{WARNING}{self}{WARNING:#}"))
+            }
+            Self::MatchesMain | Self::NoCommits => Some(format!("{HINT}{self}{HINT:#}")),
+        }
+    }
+}
+
 impl serde::Serialize for BranchOpState {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -556,7 +647,7 @@ impl StatusSymbols {
     ///
     /// See [`StatusSymbols`] struct doc for symbol categories.
     pub fn render_with_mask(&self, mask: &PositionMask) -> String {
-        use worktrunk::styling::{CYAN, ERROR, HINT, StyledLine, WARNING};
+        use worktrunk::styling::{CYAN, HINT, StyledLine, WARNING};
 
         let mut result = String::with_capacity(64);
 
@@ -571,14 +662,9 @@ impl StatusSymbols {
         // - Yellow (WARNING): Potential conflicts, git operations, locked/prunable (active/stuck states)
         // - Cyan: Working tree changes (activity)
         // - Dimmed (HINT): Branch state symbols that indicate removability + divergence arrows (low urgency)
-        let (branch_op_state_str, has_branch_op_state) = match self.branch_op_state {
-            BranchOpState::None => (String::new(), false),
-            BranchOpState::Conflicts => (format!("{ERROR}✖{ERROR:#}"), true),
-            BranchOpState::Rebase => (format!("{WARNING}↻{WARNING:#}"), true),
-            BranchOpState::Merge => (format!("{WARNING}⋈{WARNING:#}"), true),
-            BranchOpState::MergeTreeConflicts => (format!("{WARNING}⚠{WARNING:#}"), true),
-            BranchOpState::MatchesMain => (format!("{HINT}≡{HINT:#}"), true),
-            BranchOpState::NoCommits => (format!("{HINT}∅{HINT:#}"), true),
+        let (branch_op_state_str, has_branch_op_state) = match self.branch_op_state.styled() {
+            Some(s) => (s, true),
+            None => (String::new(), false),
         };
         let main_divergence_str = if self.main_divergence != MainDivergence::None {
             format!("{HINT}{}{HINT:#}", self.main_divergence)
@@ -690,6 +776,36 @@ impl StatusSymbols {
             && self.upstream_divergence == UpstreamDivergence::None
             && self.working_tree.is_empty()
             && self.user_status.is_none()
+    }
+
+    /// Render status symbols in compact form for statusline (no grid alignment).
+    pub fn format_compact(&self) -> String {
+        use worktrunk::styling::{CYAN, WARNING};
+
+        let mut result = String::new();
+
+        // Working tree symbols (compact, no padding)
+        if !self.working_tree.is_empty() {
+            result.push_str(&format!("{CYAN}{}{CYAN:#}", self.working_tree));
+        }
+
+        // Branch/op state
+        if let Some(styled) = self.branch_op_state.styled() {
+            result.push_str(&styled);
+        }
+
+        // Worktree state (locked/prunable) - skip branch indicator (⎇)
+        // Note: ⎇ only appears for branch-only items, never for worktrees (statusline context)
+        if !self.worktree_state.is_empty() && self.worktree_state != "⎇" {
+            result.push_str(&format!("{WARNING}{}{WARNING:#}", self.worktree_state));
+        }
+
+        // User status
+        if let Some(ref user_status) = self.user_status {
+            result.push_str(user_status);
+        }
+
+        result
     }
 }
 

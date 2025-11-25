@@ -167,7 +167,53 @@ pub struct PrStatus {
     pub url: Option<String>,
 }
 
+impl CiStatus {
+    /// Get the ANSI color for this CI status.
+    ///
+    /// - Passed: Green
+    /// - Running: Blue
+    /// - Failed: Red
+    /// - Conflicts: Yellow
+    /// - NoCI: BrightBlack (dimmed)
+    pub fn color(&self) -> anstyle::AnsiColor {
+        use anstyle::AnsiColor;
+        match self {
+            Self::Passed => AnsiColor::Green,
+            Self::Running => AnsiColor::Blue,
+            Self::Failed => AnsiColor::Red,
+            Self::Conflicts => AnsiColor::Yellow,
+            Self::NoCI => AnsiColor::BrightBlack,
+        }
+    }
+}
+
+impl CiSource {
+    /// Get the indicator symbol for this CI source
+    pub fn indicator(&self) -> &'static str {
+        match self {
+            Self::PullRequest => "●",
+            Self::Branch => "○",
+        }
+    }
+}
+
 impl PrStatus {
+    /// Get the style for this PR status (color + optional dimming for stale)
+    pub fn style(&self) -> anstyle::Style {
+        use anstyle::{Color, Style};
+        let style = Style::new().fg_color(Some(Color::Ansi(self.ci_status.color())));
+        if self.is_stale { style.dimmed() } else { style }
+    }
+
+    /// Format CI status as a colored indicator for statusline output.
+    ///
+    /// Returns a string like "●" with appropriate ANSI color.
+    pub fn format_indicator(&self) -> String {
+        let style = self.style();
+        let indicator = self.source.indicator();
+        format!("{style}{indicator}{style:#}")
+    }
+
     /// Detect CI status for a branch using gh/glab CLI
     /// First tries to find PR/MR status, then falls back to workflow/pipeline runs
     /// Returns None if no CI found or CLI tools unavailable

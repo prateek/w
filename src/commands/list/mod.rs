@@ -116,7 +116,7 @@
 //! - Run `git gc` periodically to consolidate objects into pack files
 //! - Minimize uncommitted changes across worktrees (each dirty worktree adds diff overhead)
 
-mod ci_status;
+pub mod ci_status;
 pub(crate) mod collect;
 mod collect_progressive_impl;
 mod columns;
@@ -133,6 +133,9 @@ mod spacing_test;
 use model::{ListData, ListItem};
 use progressive::RenderMode;
 use worktrunk::git::Repository;
+
+// Re-export for statusline and other consumers
+pub use collect::{CollectOptions, build_worktree_item, populate_items};
 
 pub fn handle_list(
     format: crate::OutputFormat,

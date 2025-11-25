@@ -14,6 +14,7 @@ pub mod repository_ext;
 #[cfg(unix)]
 pub mod select;
 pub mod standalone;
+pub mod statusline;
 pub mod worktree;
 
 pub use config::{

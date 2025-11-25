@@ -554,9 +554,10 @@ fn main() {
                 handle_standalone_run_hook(HookType::PostMerge, force)
             }
         },
-        #[cfg(unix)]
         Commands::Beta { action } => match action {
+            #[cfg(unix)]
             BetaCommand::Select => handle_select(cli.internal),
+            BetaCommand::Statusline { claude_code } => commands::statusline::run(claude_code),
         },
         Commands::List {
             format,

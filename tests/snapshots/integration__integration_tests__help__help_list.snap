@@ -116,6 +116,12 @@ with the same fields in the same order as Status Symbols above:
 
 Note: [2mlocked[0m and [2mprunable[0m are top-level fields on worktree objects, not in status.
 
+[1mWorktree position fields[0m (for identifying special worktrees):
+
+- [2mis_main[0m: boolean - is the main/default worktree
+- [2mis_current[0m: boolean - is the current working directory (present when true)
+- [2mis_previous[0m: boolean - is the previous worktree from [2mwt switch[0m (present when true)
+
 [1mQuery examples:[0m
 
   [2m# Find worktrees with conflicts[0m
@@ -132,5 +138,8 @@ Note: [2mlocked[0m and [2mprunable[0m are top-level fields on worktree objec
   [2m[0m
   [2m# Find locked worktrees[0m
   [2mjq '.[] | select(.locked != null)'[0m
+  [2m[0m
+  [2m# Get current worktree info (useful for statusline tools)[0m
+  [2mjq '.[] | select(.is_current == true)'[0m
 
 ----- stderr -----

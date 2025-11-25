@@ -57,6 +57,7 @@ exit_code: 0
       "upstream_divergence": "",
       "worktree_state": ""
     },
+    "status_line": "main",
     "type": "worktree",
     "path": "[REPO]",
     "bare": false,
@@ -70,7 +71,8 @@ exit_code: 0
       "deleted": 0
     },
     "worktree_state": null,
-    "is_main": true
+    "is_main": true,
+    "is_current": true
   },
   {
     "head_sha": "b834638e33dbc6b37002685ee0777f4b8f1af904",
@@ -109,6 +111,7 @@ exit_code: 0
       "worktree_state": "",
       "user_status": "🔧"
     },
+    "status_line": "with-status  /u001b[2m∅/u001b[0m🔧",
     "type": "worktree",
     "path": "[WORKTREE_WITH_STATUS]",
     "bare": false,
@@ -159,6 +162,7 @@ exit_code: 0
       "upstream_divergence": "",
       "worktree_state": ""
     },
+    "status_line": "without-status  /u001b[2m∅/u001b[0m",
     "type": "worktree",
     "path": "[WORKTREE_WITHOUT_STATUS]",
     "bare": false,

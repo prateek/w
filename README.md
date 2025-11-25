@@ -758,6 +758,12 @@ with the same fields in the same order as Status Symbols above:
 
 Note: `locked` and `prunable` are top-level fields on worktree objects, not in status.
 
+**Worktree position fields** (for identifying special worktrees):
+
+- `is_main`: boolean - is the main/default worktree
+- `is_current`: boolean - is the current working directory (present when true)
+- `is_previous`: boolean - is the previous worktree from `wt switch` (present when true)
+
 **Query examples:**
 
 ```console
@@ -775,6 +781,9 @@ jq '.[] | select(.status.main_divergence == "Ahead")'
 
 # Find locked worktrees
 jq '.[] | select(.locked != null)'
+
+# Get current worktree info (useful for statusline tools)
+jq '.[] | select(.is_current == true)'
 ```
 
 <!-- README:end -->

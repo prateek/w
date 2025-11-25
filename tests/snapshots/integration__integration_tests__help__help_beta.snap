@@ -18,7 +18,8 @@ wt beta - Experimental commands
 Usage: wt beta [OPTIONS] <COMMAND>
 
 Commands:
-  select  Interactive worktree selector
+  select      Interactive worktree selector
+  statusline  Single-line status for shell prompts
 
 Options:
   -h, --help

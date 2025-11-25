@@ -286,7 +286,7 @@ pub fn handle_select(is_directive_mode: bool) -> anyhow::Result<()> {
     };
 
     // Get current worktree path for styling
-    let current_worktree_path = repo.worktree_root().ok();
+    let _current_worktree_path = repo.worktree_root().ok();
 
     // Use the same layout system as `wt list` for proper column alignment
     let layout = super::list::layout::calculate_layout_from_basics(
@@ -307,8 +307,7 @@ pub fn handle_select(is_directive_mode: bool) -> anyhow::Result<()> {
             let branch_name = item.branch_name().to_string();
 
             // Use layout system to render the line - this handles all column alignment
-            let rendered_line =
-                layout.render_list_item_line(&item, current_worktree_path.as_ref(), None);
+            let rendered_line = layout.render_list_item_line(&item, None);
             let display_text_with_ansi = rendered_line.render();
             let display_text = rendered_line.plain_text();
 

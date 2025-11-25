@@ -57,6 +57,7 @@ exit_code: 0
       "upstream_divergence": "",
       "worktree_state": ""
     },
+    "status_line": "main",
     "type": "worktree",
     "path": "[REPO]",
     "bare": false,
@@ -70,7 +71,8 @@ exit_code: 0
       "deleted": 0
     },
     "worktree_state": null,
-    "is_main": true
+    "is_main": true,
+    "is_current": true
   },
   {
     "head_sha": "f16cd37915d5ee93903252f5cf877c76c54f3d50",
@@ -109,6 +111,7 @@ exit_code: 0
     },
     "commits_display": "/u001b[32m↑2/u001b[0m /u001b[2m/u001b[31m↓2/u001b[0m",
     "branch_diff_display": "/u001b[32m+1/u001b[0m",
+    "status_line": "feature-ahead  /u001b[36m!?/u001b[0m  ±/u001b[32m+1/u001b[0m /u001b[31m-1/u001b[0m  /u001b[32m↑2/u001b[0m /u001b[2m/u001b[31m↓2/u001b[0m",
     "type": "worktree",
     "path": "[WORKTREE_FEATURE_AHEAD]",
     "bare": false,
@@ -158,6 +161,7 @@ exit_code: 0
       "worktree_state": ""
     },
     "commits_display": "/u001b[2m/u001b[31m↓2/u001b[0m",
+    "status_line": "feature-behind  /u001b[2m∅/u001b[0m  /u001b[2m/u001b[31m↓2/u001b[0m",
     "type": "worktree",
     "path": "[WORKTREE_FEATURE_BEHIND]",
     "bare": false,

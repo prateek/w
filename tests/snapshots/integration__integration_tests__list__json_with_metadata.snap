@@ -57,6 +57,7 @@ exit_code: 0
       "upstream_divergence": "",
       "worktree_state": ""
     },
+    "status_line": "main",
     "type": "worktree",
     "path": "[REPO]",
     "bare": false,
@@ -70,7 +71,8 @@ exit_code: 0
       "deleted": 0
     },
     "worktree_state": null,
-    "is_main": true
+    "is_main": true,
+    "is_current": true
   },
   {
     "head_sha": "b834638e33dbc6b37002685ee0777f4b8f1af904",
@@ -107,6 +109,7 @@ exit_code: 0
       "upstream_divergence": "",
       "worktree_state": ""
     },
+    "status_line": "feature-detached  /u001b[2m∅/u001b[0m",
     "type": "worktree",
     "path": "[WORKTREE_FEATURE_DETACHED]",
     "bare": false,
@@ -157,6 +160,7 @@ exit_code: 0
       "upstream_divergence": "",
       "worktree_state": "⊠"
     },
+    "status_line": "locked-feature  /u001b[2m∅/u001b[0m/u001b[33m⊠/u001b[0m",
     "type": "worktree",
     "path": "[WORKTREE_LOCKED_FEATURE]",
     "bare": false,

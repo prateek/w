@@ -4,7 +4,7 @@ use std::path::Path;
 use unicode_width::UnicodeWidthStr;
 use worktrunk::styling::{CURRENT, StyledLine};
 
-use super::ci_status::{CiSource, CiStatus, PrStatus};
+use super::ci_status::PrStatus;
 use super::columns::{ColumnKind, DiffVariant};
 use super::layout::{
     ColumnFormat, ColumnLayout, DiffColumnConfig, DiffDisplayConfig, LayoutConfig,
@@ -75,37 +75,14 @@ impl ColumnKind {
 }
 
 impl PrStatus {
-    /// Determine the style for a CI status (color + optional dimming)
-    fn style(&self) -> Style {
-        let color = match self.ci_status {
-            CiStatus::Passed => AnsiColor::Green,
-            CiStatus::Running => AnsiColor::Blue,
-            CiStatus::Failed => AnsiColor::Red,
-            CiStatus::Conflicts => AnsiColor::Yellow,
-            CiStatus::NoCI => AnsiColor::BrightBlack,
-        };
-
-        if self.is_stale {
-            Style::new().fg_color(Some(Color::Ansi(color))).dimmed()
-        } else {
-            Style::new().fg_color(Some(Color::Ansi(color)))
-        }
-    }
-
-    /// Get indicator symbol and style for rendering
+    /// Get indicator symbol and style for rendering (with URL underline)
     fn indicator_and_style(&self) -> (&'static str, Style) {
-        let indicator = match self.source {
-            CiSource::PullRequest => "●",
-            CiSource::Branch => "○",
-        };
-
         let style = if self.url.is_some() {
             self.style().underline()
         } else {
             self.style()
         };
-
-        (indicator, style)
+        (self.source.indicator(), style)
     }
 
     fn render_indicator(&self) -> StyledLine {
@@ -364,24 +341,17 @@ impl LayoutConfig {
         })
     }
 
-    pub fn format_list_item_line(
-        &self,
-        item: &ListItem,
-        current_worktree_path: Option<&std::path::PathBuf>,
-        previous_branch: Option<&str>,
-    ) -> String {
-        self.render_list_item_line(item, current_worktree_path, previous_branch)
-            .render()
+    pub fn format_list_item_line(&self, item: &ListItem, previous_branch: Option<&str>) -> String {
+        self.render_list_item_line(item, previous_branch).render()
     }
 
     /// Render list item line as StyledLine (for extracting both plain and styled text)
     pub fn render_list_item_line(
         &self,
         item: &ListItem,
-        current_worktree_path: Option<&std::path::PathBuf>,
         previous_branch: Option<&str>,
     ) -> StyledLine {
-        let ctx = ListRowContext::new(item, current_worktree_path, previous_branch);
+        let ctx = ListRowContext::new(item, previous_branch);
         self.render_line(|column| {
             column.render_cell(
                 &ctx,
@@ -392,17 +362,17 @@ impl LayoutConfig {
         })
     }
 
-    /// Render a skeleton row showing known data (branch, path) with placeholders for other columns
-    pub fn format_skeleton_row(
-        &self,
-        item: &super::model::ListItem,
-        is_current: bool,
-        is_previous: bool,
-    ) -> String {
+    /// Render a skeleton row showing known data (branch, path) with placeholders for other columns.
+    ///
+    /// Only called for worktrees (not branches), so we can extract is_current/is_previous from WorktreeData.
+    pub fn format_skeleton_row(&self, item: &super::model::ListItem) -> String {
         use crate::display::shorten_path;
 
         let branch = item.branch_name();
+        let wt_data = item.worktree_data();
         let is_main = item.is_main();
+        let is_current = wt_data.map(|d| d.is_current).unwrap_or(false);
+        let is_previous = wt_data.map(|d| d.is_previous).unwrap_or(false);
         let shortened_path = item
             .worktree_path()
             .map(|p| shorten_path(p, &self.common_prefix))
@@ -418,19 +388,14 @@ impl LayoutConfig {
                 ColumnKind::Gutter => {
                     // Show actual gutter symbol even in skeleton
                     // Priority: @ (current) > ^ (main) > - (previous) > + (regular)
-                    let has_worktree = item.worktree_path().is_some();
-                    let symbol = if has_worktree {
-                        if is_current {
-                            "@ "
-                        } else if is_main {
-                            "^ "
-                        } else if is_previous {
-                            "- "
-                        } else {
-                            "+ "
-                        }
+                    let symbol = if is_current {
+                        "@ "
+                    } else if is_main {
+                        "^ "
+                    } else if is_previous {
+                        "- "
                     } else {
-                        "  "
+                        "+ "
                     };
                     cell.push_raw(symbol.to_string());
                 }
@@ -478,11 +443,7 @@ struct ListRowContext<'a> {
 }
 
 impl<'a> ListRowContext<'a> {
-    fn new(
-        item: &'a ListItem,
-        current_worktree_path: Option<&std::path::PathBuf>,
-        previous_branch: Option<&str>,
-    ) -> Self {
+    fn new(item: &'a ListItem, previous_branch: Option<&str>) -> Self {
         let worktree_data = item.worktree_data();
         let counts = item.counts();
         let commit = item.commit_details();
@@ -490,13 +451,14 @@ impl<'a> ListRowContext<'a> {
         let upstream = item.upstream();
         let head = item.head();
 
-        let is_current = worktree_data
-            .and_then(|data| current_worktree_path.map(|p| p == &data.path))
-            .unwrap_or(false);
-
-        let is_previous = previous_branch
-            .map(|prev| item.branch.as_deref() == Some(prev))
-            .unwrap_or(false);
+        // Use stored values for worktrees, compute for branches
+        let is_current = worktree_data.map(|d| d.is_current).unwrap_or(false);
+        let is_previous = worktree_data.map(|d| d.is_previous).unwrap_or_else(|| {
+            // Branches don't have WorktreeData, compute from previous_branch
+            previous_branch
+                .map(|prev| item.branch.as_deref() == Some(prev))
+                .unwrap_or(false)
+        });
 
         let mut ctx = Self {
             item,
@@ -511,7 +473,7 @@ impl<'a> ListRowContext<'a> {
             is_previous,
         };
 
-        ctx.text_style = ctx.compute_text_style(current_worktree_path);
+        ctx.text_style = ctx.compute_text_style();
         ctx
     }
 
@@ -519,20 +481,15 @@ impl<'a> ListRowContext<'a> {
         &self.head[..8.min(self.head.len())]
     }
 
-    fn compute_text_style(
-        &self,
-        current_worktree_path: Option<&std::path::PathBuf>,
-    ) -> Option<Style> {
-        let base_style = self.worktree_data.and_then(|data| {
-            let is_current = current_worktree_path
-                .map(|p| p == &data.path)
-                .unwrap_or(false);
-            match (is_current, data.is_main) {
-                (true, _) => Some(CURRENT),
-                (_, true) => Some(Style::new().fg_color(Some(Color::Ansi(AnsiColor::Cyan)))),
-                _ => None,
-            }
-        });
+    fn compute_text_style(&self) -> Option<Style> {
+        // Use stored is_current instead of recomputing from paths
+        let base_style =
+            self.worktree_data
+                .and_then(|data| match (self.is_current, data.is_main) {
+                    (true, _) => Some(CURRENT),
+                    (_, true) => Some(Style::new().fg_color(Some(Color::Ansi(AnsiColor::Cyan)))),
+                    _ => None,
+                });
 
         if self.item.is_potentially_removable() {
             Some(base_style.unwrap_or_default().dimmed())

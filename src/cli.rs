@@ -507,6 +507,21 @@ pub enum BetaCommand {
     /// Note: When viewing main itself, all commits shown without dimming
     #[cfg(unix)]
     Select,
+
+    /// Single-line status for shell prompts
+    ///
+    /// Format: `branch  status  ±working  commits  upstream  ci`
+    ///
+    /// Designed for shell prompts, starship, or editor integrations.
+    /// Uses same collection infrastructure as `wt list`.
+    Statusline {
+        /// Claude Code mode: read context from stdin, add directory and model
+        ///
+        /// Reads JSON from stdin with `.workspace.current_dir` and `.model.display_name`.
+        /// Output: `dir  branch  status  ±working  commits  upstream  ci  | model`
+        #[arg(long)]
+        claude_code: bool,
+    },
 }
 
 #[derive(Subcommand)]
@@ -665,6 +680,12 @@ with the same fields in the same order as Status Symbols above:
 
 Note: `locked` and `prunable` are top-level fields on worktree objects, not in status.
 
+**Worktree position fields** (for identifying special worktrees):
+
+- `is_main`: boolean - is the main/default worktree
+- `is_current`: boolean - is the current working directory (present when true)
+- `is_previous`: boolean - is the previous worktree from `wt switch` (present when true)
+
 **Query examples:**
 
 ```console
@@ -682,6 +703,9 @@ jq '.[] | select(.status.main_divergence == \"Ahead\")'
 
 # Find locked worktrees
 jq '.[] | select(.locked != null)'
+
+# Get current worktree info (useful for statusline tools)
+jq '.[] | select(.is_current == true)'
 ```")]
     List {
         /// Output format (table, json)

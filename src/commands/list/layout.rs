@@ -841,6 +841,8 @@ mod tests {
                 working_tree_diff_with_main: Some(Some(LineDiff::default())),
                 worktree_state: None,
                 is_main: false,
+                is_current: false,
+                is_previous: false,
                 working_diff_display: None,
             })),
         };
@@ -924,6 +926,8 @@ mod tests {
                 working_tree_diff_with_main: Some(Some(LineDiff::default())),
                 worktree_state: None,
                 is_main: true, // Primary worktree: no ahead/behind shown
+                is_current: false,
+                is_previous: false,
                 working_diff_display: None,
             })),
         };

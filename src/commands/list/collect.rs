@@ -493,20 +493,31 @@ pub fn collect(
     // Initialize worktree items with identity fields and None for computed fields
     let mut all_items: Vec<ListItem> = sorted_worktrees
         .iter()
-        .map(|wt| ListItem {
-            head: wt.head.clone(),
-            branch: wt.branch.clone(),
-            commit: None,
-            counts: None,
-            branch_diff: None,
-            upstream: None,
-            pr_status: None,
-            status_symbols: None,
-            display: DisplayFields::default(),
-            kind: ItemKind::Worktree(Box::new(WorktreeData::from_worktree(
-                wt,
-                wt.path == main_worktree.path,
-            ))),
+        .map(|wt| {
+            let is_main = wt.path == main_worktree.path;
+            let is_current = current_worktree_path
+                .as_ref()
+                .is_some_and(|cp| &wt.path == cp);
+            let is_previous = previous_branch
+                .as_deref()
+                .is_some_and(|prev| wt.branch.as_deref() == Some(prev));
+            ListItem {
+                head: wt.head.clone(),
+                branch: wt.branch.clone(),
+                commit: None,
+                counts: None,
+                branch_diff: None,
+                upstream: None,
+                pr_status: None,
+                status_symbols: None,
+                display: DisplayFields::default(),
+                kind: ItemKind::Worktree(Box::new(WorktreeData::from_worktree(
+                    wt,
+                    is_main,
+                    is_current,
+                    is_previous,
+                ))),
+            }
         })
         .collect();
 
@@ -571,21 +582,11 @@ pub fn collect(
             .iter()
             .map(|item| {
                 if item.worktree_data().is_some() {
-                    let is_current = item
-                        .worktree_path()
-                        .and_then(|p| current_worktree_path.as_ref().map(|cp| p == cp))
-                        .unwrap_or(false);
-                    let is_previous = previous_branch
-                        .as_deref()
-                        .map(|prev| item.branch.as_deref() == Some(prev))
-                        .unwrap_or(false);
-                    layout.format_skeleton_row(item, is_current, is_previous)
+                    // Worktrees get skeleton rows (format_skeleton_row extracts is_current/is_previous internally)
+                    layout.format_skeleton_row(item)
                 } else {
-                    layout.format_list_item_line(
-                        item,
-                        current_worktree_path.as_ref(),
-                        previous_branch.as_deref(),
-                    )
+                    // Branches render immediately (no skeleton needed)
+                    layout.format_list_item_line(item, previous_branch.as_deref())
                 }
             })
             .collect();
@@ -720,11 +721,7 @@ pub fn collect(
             }
 
             // Re-render the row with caching (now includes status if computed)
-            let rendered = layout.format_list_item_line(
-                item,
-                current_worktree_path.as_ref(),
-                previous_branch.as_deref(),
-            );
+            let rendered = layout.format_list_item_line(item, previous_branch.as_deref());
 
             // Compare using full line so changes beyond the clamp (e.g., CI) still refresh.
             if rendered != last_rendered_lines[item_idx] {
@@ -748,11 +745,7 @@ pub fn collect(
         if table.is_tty() {
             // Interactive: do final render pass and update footer to summary
             for (item_idx, item) in all_items.iter().enumerate() {
-                let rendered = layout.format_list_item_line(
-                    item,
-                    current_worktree_path.as_ref(),
-                    previous_branch.as_deref(),
-                );
+                let rendered = layout.format_list_item_line(item, previous_branch.as_deref());
                 if let Err(e) = table.update_row(item_idx, rendered) {
                     log::debug!("Final row update failed: {}", e);
                 }
@@ -763,11 +756,7 @@ pub fn collect(
             let mut final_lines = Vec::new();
             final_lines.push(layout.format_header_line());
             for item in &all_items {
-                final_lines.push(layout.format_list_item_line(
-                    item,
-                    current_worktree_path.as_ref(),
-                    previous_branch.as_deref(),
-                ));
+                final_lines.push(layout.format_list_item_line(item, previous_branch.as_deref()));
             }
             final_lines.push(String::new()); // Spacer
             final_lines.push(final_msg);
@@ -783,11 +772,9 @@ pub fn collect(
 
         crate::output::raw_terminal(layout.format_header_line())?;
         for item in &all_items {
-            crate::output::raw_terminal(layout.format_list_item_line(
-                item,
-                current_worktree_path.as_ref(),
-                previous_branch.as_deref(),
-            ))?;
+            crate::output::raw_terminal(
+                layout.format_list_item_line(item, previous_branch.as_deref()),
+            )?;
         }
         crate::output::raw_terminal("")?;
         crate::output::raw_terminal(final_msg)?;
@@ -795,8 +782,8 @@ pub fn collect(
 
     // Status symbols are now computed during data collection (both modes), no fallback needed
 
-    // Compute display fields for all items (used by JSON output)
-    // Table rendering uses raw data directly; these fields provide pre-formatted strings for JSON
+    // Compute display fields for all items (used by JSON output and statusline)
+    // Table rendering uses raw data directly; these fields provide pre-formatted strings
     for item in &mut all_items {
         item.display = super::model::DisplayFields::from_common_fields(
             &item.counts,
@@ -804,6 +791,7 @@ pub fn collect(
             &item.upstream,
             &item.pr_status,
         );
+        item.display.status_line = Some(item.format_statusline());
 
         if let super::model::ItemKind::Worktree(ref mut wt_data) = item.kind
             && let Some(ref working_tree_diff) = wt_data.working_tree_diff
@@ -866,4 +854,144 @@ fn sort_worktrees(
     });
 
     indexed.into_iter().map(|(_, wt)| wt).collect()
+}
+
+// ============================================================================
+// Public API for single-worktree collection (used by statusline)
+// ============================================================================
+
+pub use super::collect_progressive_impl::CollectOptions;
+
+/// Build a ListItem for a single worktree with identity fields only.
+///
+/// Computed fields (counts, diffs, CI) are left as None. Use `populate_items()`
+/// to fill them in.
+pub fn build_worktree_item(
+    wt: &Worktree,
+    is_main: bool,
+    is_current: bool,
+    is_previous: bool,
+) -> ListItem {
+    ListItem {
+        head: wt.head.clone(),
+        branch: wt.branch.clone(),
+        commit: None,
+        counts: None,
+        branch_diff: None,
+        upstream: None,
+        pr_status: None,
+        status_symbols: None,
+        display: DisplayFields::default(),
+        kind: ItemKind::Worktree(Box::new(WorktreeData::from_worktree(
+            wt,
+            is_main,
+            is_current,
+            is_previous,
+        ))),
+    }
+}
+
+/// Populate computed fields for items in parallel (blocking).
+///
+/// Spawns parallel git operations and collects results. Modifies items in place
+/// with: commit details, ahead/behind, diffs, upstream, CI, etc.
+///
+/// This is the blocking version used by statusline. For progressive rendering
+/// with callbacks, see the `collect()` function.
+pub fn populate_items(
+    items: &mut [ListItem],
+    default_branch: &str,
+    options: CollectOptions,
+) -> anyhow::Result<()> {
+    use std::sync::Arc;
+    use std::sync::atomic::AtomicUsize;
+
+    if items.is_empty() {
+        return Ok(());
+    }
+
+    // Create channel for cell updates
+    let (tx, rx) = chan::unbounded();
+
+    // Counter for cells (not used for progress, but required by spawn functions)
+    let cell_count = Arc::new(AtomicUsize::new(0));
+
+    // Collect worktree info: (index, path, head, branch)
+    let worktree_info: Vec<_> = items
+        .iter()
+        .enumerate()
+        .filter_map(|(idx, item)| {
+            item.worktree_data().map(|data| {
+                (
+                    idx,
+                    data.path.clone(),
+                    item.head.clone(),
+                    item.branch.clone(),
+                )
+            })
+        })
+        .collect();
+
+    // Spawn collection in background thread
+    let default_branch_clone = default_branch.to_string();
+    std::thread::spawn(move || {
+        for (idx, path, head, branch) in worktree_info {
+            // Create a minimal Worktree struct for the collection function
+            let wt = Worktree {
+                path,
+                head,
+                branch,
+                bare: false,
+                detached: false,
+                locked: None,
+                prunable: None,
+            };
+            super::collect_progressive_impl::collect_worktree_progressive(
+                &wt,
+                idx,
+                &default_branch_clone,
+                &options,
+                tx.clone(),
+                &cell_count,
+            );
+        }
+    });
+
+    // Drain cell updates (blocking until all complete)
+    drain_cell_updates(rx, items, |_item_idx, item, ctx| {
+        // Compute status symbols as data arrives (same logic as in collect())
+        let item_default_branch = if item.is_main() {
+            None
+        } else {
+            Some(default_branch)
+        };
+        compute_item_status_symbols(
+            item,
+            item_default_branch,
+            ctx.has_merge_tree_conflicts,
+            ctx.user_status.clone(),
+            ctx.working_tree_symbols.as_deref(),
+            ctx.has_conflicts,
+        );
+    });
+
+    // Compute display fields (including status_line for statusline command)
+    for item in items.iter_mut() {
+        item.display = DisplayFields::from_common_fields(
+            &item.counts,
+            &item.branch_diff,
+            &item.upstream,
+            &item.pr_status,
+        );
+        item.display.status_line = Some(item.format_statusline());
+
+        if let ItemKind::Worktree(ref mut wt_data) = item.kind
+            && let Some(ref working_tree_diff) = wt_data.working_tree_diff
+        {
+            wt_data.working_diff_display = super::columns::ColumnKind::WorkingDiff
+                .format_diff_plain(working_tree_diff.added, working_tree_diff.deleted);
+        }
+    }
+
+    Ok(())
 }

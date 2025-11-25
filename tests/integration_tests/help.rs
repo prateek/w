@@ -23,6 +23,12 @@ fn help_root() {
 }
 
 #[test]
+fn help_no_args() {
+    // Running `wt` with no args should show help and exit 0
+    snapshot_help("help_no_args", &[]);
+}
+
+#[test]
 fn help_config_shell() {
     snapshot_help("help_config_shell", &["config", "shell", "--help"]);
 }

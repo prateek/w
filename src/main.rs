@@ -74,7 +74,9 @@ fn maybe_handle_help_with_pager() -> bool {
         Ok(_) => false, // Normal args, not help
         Err(err) => {
             match err.kind() {
-                ErrorKind::DisplayHelp => {
+                ErrorKind::DisplayHelp
+                | ErrorKind::DisplayHelpOnMissingArgumentOrSubcommand
+                | ErrorKind::MissingSubcommand => {
                     // Re-resolve which subcommand's help user asked for
                     let target = help_resolver::resolve_target_command(&mut cmd, std::env::args());
                     let mut help = target.render_long_help().to_string(); // StyledStr -> string (contains raw markdown)

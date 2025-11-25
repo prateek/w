@@ -1,0 +1,46 @@
+---
+source: tests/integration_tests/help.rs
+info:
+  program: wt
+  args: []
+  env:
+    CLICOLOR_FORCE: "1"
+    COLUMNS: "150"
+    GIT_EDITOR: ""
+    WORKTRUNK_BIN: ""
+    WORKTRUNK_CONFIG_PATH: /nonexistent/test/config.toml
+---
+success: true
+exit_code: 0
+----- stdout -----
+
+----- stderr -----
+wt - Git worktree management
+Usage: wt [OPTIONS] <COMMAND>
+
+Commands:
+  config  Manage configuration and shell integration
+  step    Workflow building blocks
+  list    List worktrees and optionally branches
+  switch  Switch to a worktree
+  remove  Remove worktree and branch
+  merge   Merge worktree into target branch
+
+Options:
+  -h, --help
+          Print help (see a summary with '-h')
+
+  -V, --version
+          Print version
+
+Global Options:
+  -C <path>
+          Working directory for this command
+
+      --config <path>
+          User config file path
+
+  -v, --verbose
+          Show commands and debug info
+
+See [2mwt config --help[0m for configuration file locations and setup.

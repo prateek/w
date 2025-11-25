@@ -735,3 +735,122 @@ fn test_configure_shell_no_warning_for_bash_user() {
         ");
     });
 }
+
+/// Test that compinit warning does NOT show when installing fish (even if SHELL=zsh)
+/// Only `install zsh` or `install` (all) should trigger zsh-specific warnings
+#[test]
+fn test_configure_shell_no_warning_for_fish_install() {
+    let repo = TestRepo::new();
+    let temp_home = TempDir::new().unwrap();
+
+    // Create fish conf.d directory
+    let fish_conf_d = temp_home.path().join(".config/fish/conf.d");
+    fs::create_dir_all(&fish_conf_d).unwrap();
+
+    let settings = setup_home_snapshot_settings(&temp_home);
+    settings.bind(|| {
+        let mut cmd = wt_command();
+        repo.clean_cli_env(&mut cmd);
+        set_temp_home_env(&mut cmd, temp_home.path());
+        cmd.env("SHELL", "/bin/zsh"); // User is zsh user, but installing fish
+        cmd.arg("config")
+            .arg("shell")
+            .arg("install")
+            .arg("fish") // Specifically installing fish, not zsh
+            .arg("--force")
+            .current_dir(repo.root_path());
+
+        // Should NOT show compinit warning - we're installing fish, not zsh
+        assert_cmd_snapshot!(cmd, @r"
+        success: true
+        exit_code: 0
+        ----- stdout -----
+        ✅ Created shell extension for [1mfish[0m @ [1m~/.config/fish/conf.d/wt.fish[0m
+        ✅ Created completions for [1mfish[0m @ [1m~/.config/fish/completions/wt.fish[0m
+
+        ✅ Configured 1 shell
+
+        ----- stderr -----
+        ");
+    });
+}
+
+/// Test that compinit warning does NOT show when zsh is already configured
+#[test]
+fn test_configure_shell_no_warning_when_already_configured() {
+    let repo = TestRepo::new();
+    let temp_home = TempDir::new().unwrap();
+
+    // Create a .zshrc that ALREADY has wt integration (no compinit)
+    let zshrc_path = temp_home.path().join(".zshrc");
+    fs::write(
+        &zshrc_path,
+        "# Existing config\nif command -v wt >/dev/null 2>&1; then eval \"$(command wt config shell init zsh)\"; fi\n",
+    )
+    .unwrap();
+
+    let settings = setup_home_snapshot_settings(&temp_home);
+    settings.bind(|| {
+        let mut cmd = wt_command();
+        repo.clean_cli_env(&mut cmd);
+        set_temp_home_env(&mut cmd, temp_home.path());
+        cmd.env("SHELL", "/bin/zsh");
+        cmd.arg("config")
+            .arg("shell")
+            .arg("install")
+            .arg("zsh")
+            .arg("--force")
+            .current_dir(repo.root_path());
+
+        // Should NOT show compinit warning - zsh is AlreadyExists, not newly added
+        assert_cmd_snapshot!(cmd, @r"
+        success: true
+        exit_code: 0
+        ----- stdout -----
+        ⚪ Already configured shell extension & completions for [1mzsh[0m @ [1m~/.zshrc[0m
+        ⚪ All shells already configured
+
+        ----- stderr -----
+        ");
+    });
+}
+
+/// Test that compinit warning does NOT show when $SHELL is unset
+#[test]
+fn test_configure_shell_no_warning_when_shell_unset() {
+    let repo = TestRepo::new();
+    let temp_home = TempDir::new().unwrap();
+
+    // Create zsh and bash config files (no compinit)
+    let zshrc_path = temp_home.path().join(".zshrc");
+    let bashrc_path = temp_home.path().join(".bashrc");
+    fs::write(&zshrc_path, "# Existing zsh config\n").unwrap();
+    fs::write(&bashrc_path, "# Existing bash config\n").unwrap();
+
+    let settings = setup_home_snapshot_settings(&temp_home);
+    settings.bind(|| {
+        let mut cmd = wt_command();
+        repo.clean_cli_env(&mut cmd);
+        set_temp_home_env(&mut cmd, temp_home.path());
+        cmd.env_remove("SHELL"); // Explicitly unset SHELL
+        cmd.arg("config")
+            .arg("shell")
+            .arg("install")
+            .arg("--force")
+            .current_dir(repo.root_path());
+
+        // Should NOT show compinit warning - can't determine user's shell
+        assert_cmd_snapshot!(cmd, @r"
+        success: true
+        exit_code: 0
+        ----- stdout -----
+        ✅ Added shell extension & completions for [1mbash[0m @ [1m~/.bashrc[0m
+        ✅ Added shell extension & completions for [1mzsh[0m @ [1m~/.zshrc[0m
+        💡 [2mSkipped [1mfish[0m; ~/.config/fish/conf.d not found[0m
+
+        ✅ Configured 2 shells
+
+        ----- stderr -----
+        ");
+    });
+}

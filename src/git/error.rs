@@ -190,7 +190,7 @@ pub fn merge_commits_found() -> anyhow::Error {
 /// Not interactive error
 pub fn not_interactive() -> anyhow::Error {
     anyhow::anyhow!(
-        "{ERROR_EMOJI} {ERROR}Cannot prompt for approval in non-interactive environment{ERROR:#}\n\n{HINT_EMOJI} {HINT}In CI/CD, use --force to skip prompts. To pre-approve commands, use 'wt config approvals ask'{HINT:#}"
+        "{ERROR_EMOJI} {ERROR}Cannot prompt for approval in non-interactive environment{ERROR:#}\n\n{HINT_EMOJI} {HINT}In CI/CD, use --force to skip prompts. To pre-approve commands, use 'wt config approvals add'{HINT:#}"
     )
 }
 

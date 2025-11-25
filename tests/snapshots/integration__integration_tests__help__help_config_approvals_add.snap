@@ -5,7 +5,7 @@ info:
   args:
     - config
     - approvals
-    - ask
+    - add
     - "--help"
   env:
     CLICOLOR_FORCE: "1"
@@ -16,8 +16,8 @@ info:
 success: true
 exit_code: 0
 ----- stdout -----
-wt config approvals ask - Store approvals in config
-Usage: wt config approvals ask [OPTIONS]
+wt config approvals add - Store approvals in config
+Usage: wt config approvals add [OPTIONS]
 
 Options:
   -f, --force

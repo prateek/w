@@ -27,7 +27,7 @@ use commands::{
     ConfigAction, RebaseResult, handle_config_create, handle_config_refresh_cache,
     handle_config_show, handle_config_status_set, handle_config_status_unset,
     handle_configure_shell, handle_init, handle_list, handle_merge, handle_rebase, handle_remove,
-    handle_squash, handle_standalone_ask_approvals, handle_standalone_clear_approvals,
+    handle_squash, handle_standalone_add_approvals, handle_standalone_clear_approvals,
     handle_standalone_commit, handle_standalone_run_hook, handle_switch, handle_unconfigure_shell,
 };
 use output::{execute_user_command, handle_remove_output, handle_switch_output};
@@ -479,7 +479,7 @@ fn main() {
                 StatusAction::Unset { target } => handle_config_status_unset(target),
             },
             ConfigCommand::Approvals { action } => match action {
-                ApprovalsCommand::Ask { force, all } => handle_standalone_ask_approvals(force, all),
+                ApprovalsCommand::Add { force, all } => handle_standalone_add_approvals(force, all),
                 ApprovalsCommand::Clear { global } => handle_standalone_clear_approvals(global),
             },
         },

@@ -19,7 +19,7 @@ wt config approvals - Manage command approvals
 Usage: wt config approvals [OPTIONS] <COMMAND>
 
 Commands:
-  ask    Store approvals in config
+  add    Store approvals in config
   clear  Clear approved commands from config
 
 Options:
@@ -58,7 +58,7 @@ commands.
 [32mExamples[0m
 
 Pre-approve all commands for current project:
-  [2mwt config approvals ask[0m
+  [2mwt config approvals add[0m
 
 Clear approvals for current project:
   [2mwt config approvals clear[0m

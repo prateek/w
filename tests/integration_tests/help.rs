@@ -97,10 +97,10 @@ fn help_config_approvals() {
 }
 
 #[test]
-fn help_config_approvals_ask() {
+fn help_config_approvals_add() {
     snapshot_help(
-        "help_config_approvals_ask",
-        &["config", "approvals", "ask", "--help"],
+        "help_config_approvals_add",
+        &["config", "approvals", "add", "--help"],
     );
 }
 

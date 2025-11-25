@@ -254,7 +254,7 @@ pub enum ApprovalsCommand {
 By default, shows only unapproved commands. Use `--all` to review all commands
 including previously approved ones. Use `--force` to approve without prompts."#
     )]
-    Ask {
+    Add {
         /// Skip approval prompts
         #[arg(short, long)]
         force: bool,
@@ -344,7 +344,7 @@ commands.
 
 Pre-approve all commands for current project:
 ```console
-wt config approvals ask
+wt config approvals add
 ```
 
 Clear approvals for current project:

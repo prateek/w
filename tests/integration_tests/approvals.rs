@@ -1,15 +1,15 @@
-//! Integration tests for ask-approvals and clear-approvals commands
+//! Integration tests for add-approvals and clear-approvals commands
 
 use crate::common::{TestRepo, make_snapshot_cmd, setup_snapshot_settings};
 use insta_cmd::assert_cmd_snapshot;
 use worktrunk::config::WorktrunkConfig;
 
-/// Helper to snapshot ask-approvals command
-fn snapshot_ask_approvals(test_name: &str, repo: &TestRepo, args: &[&str]) {
+/// Helper to snapshot add-approvals command
+fn snapshot_add_approvals(test_name: &str, repo: &TestRepo, args: &[&str]) {
     let settings = setup_snapshot_settings(repo);
     settings.bind(|| {
         let mut cmd = make_snapshot_cmd(repo, "config", &[], None);
-        cmd.arg("approvals").arg("ask").args(args);
+        cmd.arg("approvals").arg("add").args(args);
         assert_cmd_snapshot!(test_name, cmd);
     });
 }
@@ -25,45 +25,45 @@ fn snapshot_clear_approvals(test_name: &str, repo: &TestRepo, args: &[&str]) {
 }
 
 // ============================================================================
-// ask-approvals tests
+// add-approvals tests
 // ============================================================================
 
 #[test]
-fn test_ask_approvals_no_config() {
+fn test_add_approvals_no_config() {
     let repo = TestRepo::new();
     repo.commit("Initial commit");
 
-    snapshot_ask_approvals("ask_approvals_no_config", &repo, &[]);
+    snapshot_add_approvals("add_approvals_no_config", &repo, &[]);
 }
 
 #[test]
-fn test_ask_approvals_force() {
-    let repo = TestRepo::new();
-    repo.commit("Initial commit");
-    repo.write_project_config(r#"post-create = "echo 'test'""#);
-    repo.commit("Add config");
-
-    snapshot_ask_approvals("ask_approvals_force", &repo, &["--force"]);
-}
-
-#[test]
-fn test_ask_approvals_all_with_none_approved() {
+fn test_add_approvals_force() {
     let repo = TestRepo::new();
     repo.commit("Initial commit");
     repo.write_project_config(r#"post-create = "echo 'test'""#);
     repo.commit("Add config");
 
-    snapshot_ask_approvals("ask_approvals_all_none_approved", &repo, &["--all"]);
+    snapshot_add_approvals("add_approvals_force", &repo, &["--force"]);
 }
 
 #[test]
-fn test_ask_approvals_empty_config() {
+fn test_add_approvals_all_with_none_approved() {
+    let repo = TestRepo::new();
+    repo.commit("Initial commit");
+    repo.write_project_config(r#"post-create = "echo 'test'""#);
+    repo.commit("Add config");
+
+    snapshot_add_approvals("add_approvals_all_none_approved", &repo, &["--all"]);
+}
+
+#[test]
+fn test_add_approvals_empty_config() {
     let repo = TestRepo::new();
     repo.commit("Initial commit");
     repo.write_project_config("");
     repo.commit("Add empty config");
 
-    snapshot_ask_approvals("ask_approvals_empty_config", &repo, &[]);
+    snapshot_add_approvals("add_approvals_empty_config", &repo, &[]);
 }
 
 // ============================================================================

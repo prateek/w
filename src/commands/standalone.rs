@@ -346,8 +346,8 @@ pub fn handle_rebase(target: Option<&str>) -> anyhow::Result<RebaseResult> {
     Ok(RebaseResult::Rebased)
 }
 
-/// Handle `wt config approvals ask` command - approve all commands in the project
-pub fn handle_standalone_ask_approvals(force: bool, show_all: bool) -> anyhow::Result<()> {
+/// Handle `wt config approvals add` command - approve all commands in the project
+pub fn handle_standalone_add_approvals(force: bool, show_all: bool) -> anyhow::Result<()> {
     use super::command_approval::approve_command_batch;
     use worktrunk::config::WorktrunkConfig;
 

@@ -48,10 +48,8 @@ Three commands:
 
 ```console
 $ cargo install worktrunk
-$ wt config shell install  # Bash, Zsh, Fish
+$ wt config shell install  # allows commands to change directories
 ```
-
-Shell integration lets `wt switch` and `wt merge` change directories.
 
 ### 2. Create a worktree
 

@@ -991,13 +991,28 @@ Preview tabs (toggle with `1`/`2`/`3`):
 
 Single-line status for shell prompts, starship, or editor integrations.
 
+**Claude Code integration** (`--claude-code`): Reads workspace context from
+stdin, outputs directory, branch status, and model name.
+
 ```
-branch  status  ±working  commits  upstream  ci
+~/w/myproject.feature-auth  !🤖  ±+42 -8  ↑3  ⇡1  ●  | Opus
 ```
 
-**Claude Code integration** (`--claude-code`): Reads workspace context from
-stdin, outputs directory, branch status, and model name. Can be used by Claude
-Code hooks to show worktree state in the status line.
+<details>
+<summary>Claude Code configuration</summary>
+
+Add to `~/.claude/settings.json`:
+
+```json
+{
+  "statusLine": {
+    "type": "command",
+    "command": "wt beta statusline --claude-code"
+  }
+}
+```
+
+</details>
 
 ## Project Status
 

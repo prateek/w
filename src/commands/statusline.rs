@@ -147,19 +147,45 @@ pub fn run(claude_code: bool) -> Result<()> {
     let mut output = String::new();
 
     // Directory (claude-code mode only)
-    if claude_code {
-        output = format_directory_fish_style(&cwd.display().to_string());
-    }
+    let dir_str = if claude_code {
+        let formatted = format_directory_fish_style(&cwd.display().to_string());
+        output = formatted.clone();
+        Some(formatted)
+    } else {
+        None
+    };
 
     // Git status
     let repo = Repository::at(&cwd);
     if repo.git_dir().is_ok()
         && let Some(status_line) = get_git_status(&repo, &cwd)?
     {
-        if !output.is_empty() {
-            output.push_str("  ");
+        // In claude-code mode, skip branch name if directory matches worktrunk template
+        // TODO: Use actual configured template from config instead of hardcoding ".{branch}"
+        // Template: {repo}.{branch} - so directory should end with ".{branch}"
+        let status_to_show = if let Some(ref dir) = dir_str {
+            // status_line format: "branch  rest..." - check if dir ends with .branch
+            if let Some((branch, rest)) = status_line.split_once("  ") {
+                let pattern = format!(".{branch}");
+                if dir.ends_with(&pattern) {
+                    // Directory already shows branch via worktrunk template, skip it
+                    rest.to_string()
+                } else {
+                    status_line
+                }
+            } else {
+                status_line
+            }
+        } else {
+            status_line
+        };
+
+        if !status_to_show.is_empty() {
+            if !output.is_empty() {
+                output.push_str("  ");
+            }
+            output.push_str(&status_to_show);
         }
-        output.push_str(&status_line);
     }
 
     // Model name (claude-code mode only)

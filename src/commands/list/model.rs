@@ -155,9 +155,10 @@ impl AheadBehind {
         upstream: &UpstreamStatus,
     ) -> (MainDivergence, UpstreamDivergence) {
         let main_divergence = MainDivergence::from_counts(self.ahead, self.behind);
-        let (upstream_ahead, upstream_behind) =
-            upstream.active().map(|(_, a, b)| (a, b)).unwrap_or((0, 0));
-        let upstream_divergence = UpstreamDivergence::from_counts(upstream_ahead, upstream_behind);
+        let upstream_divergence = match upstream.active() {
+            None => UpstreamDivergence::None,
+            Some((_, ahead, behind)) => UpstreamDivergence::from_counts_with_remote(ahead, behind),
+        };
 
         (main_divergence, upstream_divergence)
     }
@@ -643,9 +644,11 @@ impl MainDivergence {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, strum::IntoStaticStr)]
 pub enum UpstreamDivergence {
     #[strum(serialize = "")]
-    /// Up to date with remote
+    /// No remote tracking branch configured
     #[default]
     None,
+    /// In sync with remote (has remote, 0 ahead, 0 behind)
+    InSync,
     /// Ahead of remote (has commits remote doesn't have)
     Ahead,
     /// Behind remote (missing commits from remote)
@@ -658,6 +661,7 @@ impl std::fmt::Display for UpstreamDivergence {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             Self::None => Ok(()),
+            Self::InSync => write!(f, "║"),
             Self::Ahead => write!(f, "⇡"),
             Self::Behind => write!(f, "⇣"),
             Self::Diverged => write!(f, "⇅"),
@@ -676,10 +680,13 @@ impl serde::Serialize for UpstreamDivergence {
 }
 
 impl UpstreamDivergence {
-    /// Compute divergence state from ahead/behind counts.
-    pub fn from_counts(ahead: usize, behind: usize) -> Self {
+    /// Compute divergence state from ahead/behind counts when a remote exists.
+    ///
+    /// Returns `InSync` for 0/0 since we know a remote tracking branch exists.
+    /// For cases where there's no remote, use `UpstreamDivergence::None` directly.
+    pub fn from_counts_with_remote(ahead: usize, behind: usize) -> Self {
         match (ahead, behind) {
-            (0, 0) => Self::None,
+            (0, 0) => Self::InSync,
             (_, 0) => Self::Ahead,
             (0, _) => Self::Behind,
             _ => Self::Diverged,

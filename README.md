@@ -86,7 +86,7 @@ After doing some work:
 $ wt list
   Branch       Status         HEAD±    main↕  Path                Remote⇅  Commit    Age   Message
 @ feature-api  +   ↑        +3        ↑4      ./repo.feature-api           5b01afca  30m   Add API tests
-^ main             ^∥                         ./repo                 ∥     b834638e  1d    Initial commit
+^ main             ^|                         ./repo                 |     b834638e  1d    Initial commit
 + fix-auth        _                           ./repo.fix-auth              b834638e  1d    Initial commit
 
 ⚪ Showing 3 worktrees, 1 with changes, 1 ahead

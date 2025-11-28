@@ -19,7 +19,7 @@ switch`.
 ## December 2025 Project Status
 
 I've been using Worktrunk as my daily driver while building it for the past
-couple of months, and am releasing it as Open Source now. It's built with love
+couple of months, and am releasing it as Open Source this week. It's built with love
 (no slop!). If some social proof is helpful: I also created
 [PRQL](https://github.com/PRQL/prql) (10k stars) and am a maintainer of
 [Xarray](https://github.com/pydata/xarray) (4k stars),
@@ -29,13 +29,15 @@ couple of months, and am releasing it as Open Source now. It's built with love
 Currently, Worktrunk:
 
 - simplifies standard worktree workflows — an easier way to create / navigate /
-  list / clean up worktrees.
+  list / clean up git worktrees.
 - can be used for more advanced workflows, such as [LLM commit
-  messages](#llm-commit-messages), or [local merging](#local-merging-with-wt-merge) of worktrees gated on CI-like checks
+  messages](#llm-commit-messages), or [local merging of worktrees gated on
+  CI-like checks](#local-merging-with-wt-merge)
 - also comes with optional QoL features, such as listing branches' CI status or
-  Claude Code status, or having a [Claude Code statusline](#wt-list-statusline).
+  Claude Code status, or a great [Claude Code statusline](#wt-list-statusline).
 
-...so there's no need to use the more advanced features to get the simpler benefits.
+...there's no need to use the more advanced features to get the simpler
+benefits, and everything is fully compatible with standard git worktrees.
 
 ## Demo
 

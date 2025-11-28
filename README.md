@@ -776,6 +776,10 @@ wt remove  # (when already in main worktree)
 ```text
 wt list — List worktrees and optionally branches
 Usage: wt list [OPTIONS]
+       wt list <COMMAND>
+
+Commands:
+  statusline  Single-line status for shell prompts
 
 Options:
       --format <FORMAT>
@@ -1095,7 +1099,7 @@ When using Claude:
 
 </details>
 
-### `wt beta select`
+### `wt select`
 
 Interactive worktree selector with fuzzy search and diff preview. Unix only.
 
@@ -1105,7 +1109,7 @@ Preview tabs (toggle with `1`/`2`/`3`):
 - **Tab 2**: History (commits not on main highlighted)
 - **Tab 3**: Branch diff (changes ahead of main)
 
-### `wt beta statusline`
+### `wt list statusline`
 
 Single-line status for shell prompts, starship, or editor integrations.
 
@@ -1125,7 +1129,7 @@ Add to `~/.claude/settings.json`:
 {
   "statusLine": {
     "type": "command",
-    "command": "wt beta statusline --claude-code"
+    "command": "wt list statusline --claude-code"
   }
 }
 ```

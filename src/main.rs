@@ -35,8 +35,8 @@ use commands::{
 use output::{execute_user_command, handle_remove_output, handle_switch_output};
 
 use cli::{
-    ApprovalsCommand, BetaCommand, CacheCommand, Cli, Commands, ConfigCommand, ConfigShellCommand,
-    StatusAction, StepCommand,
+    ApprovalsCommand, CacheCommand, Cli, Commands, ConfigCommand, ConfigShellCommand,
+    ListSubcommand, StatusAction, StepCommand,
 };
 use worktrunk::HookType;
 
@@ -580,60 +580,63 @@ fn main() {
                 handle_standalone_run_hook(HookType::PostMerge, force)
             }
         },
-        Commands::Beta { action } => match action {
-            #[cfg(unix)]
-            BetaCommand::Select => handle_select(cli.internal),
-            BetaCommand::Statusline { claude_code } => commands::statusline::run(claude_code),
-        },
+        #[cfg(unix)]
+        Commands::Select => handle_select(cli.internal),
         Commands::List {
+            subcommand,
             format,
             branches,
             remotes,
             full,
             progressive,
             no_progressive,
-        } => {
-            use commands::list::progressive::RenderMode;
+        } => match subcommand {
+            Some(ListSubcommand::Statusline { claude_code }) => {
+                commands::statusline::run(claude_code)
+            }
+            None => {
+                use commands::list::progressive::RenderMode;
 
-            // Load config and merge with CLI flags (CLI flags take precedence)
-            WorktrunkConfig::load()
-                .context("Failed to load config")
-                .and_then(|config| {
-                    // Get config values from global list config
-                    let (show_branches_config, show_remotes_config, show_full_config) = config
-                        .list
-                        .as_ref()
-                        .map(|l| {
-                            (
-                                l.branches.unwrap_or(false),
-                                l.remotes.unwrap_or(false),
-                                l.full.unwrap_or(false),
-                            )
-                        })
-                        .unwrap_or((false, false, false));
+                // Load config and merge with CLI flags (CLI flags take precedence)
+                WorktrunkConfig::load()
+                    .context("Failed to load config")
+                    .and_then(|config| {
+                        // Get config values from global list config
+                        let (show_branches_config, show_remotes_config, show_full_config) = config
+                            .list
+                            .as_ref()
+                            .map(|l| {
+                                (
+                                    l.branches.unwrap_or(false),
+                                    l.remotes.unwrap_or(false),
+                                    l.full.unwrap_or(false),
+                                )
+                            })
+                            .unwrap_or((false, false, false));
 
-                    // CLI flags override config
-                    let show_branches = branches || show_branches_config;
-                    let show_remotes = remotes || show_remotes_config;
-                    let show_full = full || show_full_config;
+                        // CLI flags override config
+                        let show_branches = branches || show_branches_config;
+                        let show_remotes = remotes || show_remotes_config;
+                        let show_full = full || show_full_config;
 
-                    // Convert two bools to Option<bool>: Some(true), Some(false), or None
-                    let progressive_opt = match (progressive, no_progressive) {
-                        (true, _) => Some(true),
-                        (_, true) => Some(false),
-                        _ => None,
-                    };
-                    let render_mode = RenderMode::detect(progressive_opt, cli.internal);
-                    handle_list(
-                        format,
-                        show_branches,
-                        show_remotes,
-                        show_full,
-                        render_mode,
-                        &config,
-                    )
-                })
-        }
+                        // Convert two bools to Option<bool>: Some(true), Some(false), or None
+                        let progressive_opt = match (progressive, no_progressive) {
+                            (true, _) => Some(true),
+                            (_, true) => Some(false),
+                            _ => None,
+                        };
+                        let render_mode = RenderMode::detect(progressive_opt, cli.internal);
+                        handle_list(
+                            format,
+                            show_branches,
+                            show_remotes,
+                            show_full,
+                            render_mode,
+                            &config,
+                        )
+                    })
+            }
+        },
         Commands::Switch {
             branch,
             create,

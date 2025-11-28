@@ -1,4 +1,4 @@
-//! TUI snapshot tests for `wt beta select`
+//! TUI snapshot tests for `wt select`
 //!
 //! These tests use PTY execution combined with vt100 terminal emulation to capture
 //! what the user actually sees on screen, enabling meaningful snapshot testing of
@@ -315,7 +315,7 @@ fn test_select_abort_with_escape() {
     let env_vars = repo.test_env_vars();
     let (raw_output, exit_code) = exec_in_pty_with_input(
         get_cargo_bin("wt").to_str().unwrap(),
-        &["beta", "select"],
+        &["select"],
         repo.root_path(),
         &env_vars,
         "\x1b", // Escape key to abort
@@ -339,7 +339,7 @@ fn test_select_with_multiple_worktrees() {
     let env_vars = repo.test_env_vars();
     let (raw_output, exit_code) = exec_in_pty_with_input(
         get_cargo_bin("wt").to_str().unwrap(),
-        &["beta", "select"],
+        &["select"],
         repo.root_path(),
         &env_vars,
         "\x1b", // Escape to abort after viewing
@@ -368,7 +368,7 @@ fn test_select_with_branches() {
     let env_vars = repo.test_env_vars();
     let (raw_output, exit_code) = exec_in_pty_with_input(
         get_cargo_bin("wt").to_str().unwrap(),
-        &["beta", "select"],
+        &["select"],
         repo.root_path(),
         &env_vars,
         "\x1b", // Escape to abort
@@ -419,7 +419,7 @@ fn test_select_preview_panel_uncommitted() {
     // Type "feature" to filter to just the feature worktree, press 1 for HEAD± panel
     let (raw_output, exit_code) = exec_in_pty_with_input_sequence(
         get_cargo_bin("wt").to_str().unwrap(),
-        &["beta", "select"],
+        &["select"],
         repo.root_path(),
         &env_vars,
         &["feature", "1", "\x1b"], // Type "feature" to filter, 1, Escape
@@ -469,7 +469,7 @@ fn test_select_preview_panel_history() {
     // Type "feature" to filter, press 2 for history panel
     let (raw_output, exit_code) = exec_in_pty_with_input_sequence(
         get_cargo_bin("wt").to_str().unwrap(),
-        &["beta", "select"],
+        &["select"],
         repo.root_path(),
         &env_vars,
         &["feature", "2", "\x1b"], // Type "feature", 2, Escape
@@ -550,7 +550,7 @@ fn test_new_feature() {
     // Type "feature" to filter, press 3 for main…± panel
     let (raw_output, exit_code) = exec_in_pty_with_input_sequence(
         get_cargo_bin("wt").to_str().unwrap(),
-        &["beta", "select"],
+        &["select"],
         repo.root_path(),
         &env_vars,
         &["feature", "3", "\x1b"], // Type "feature", 3, Escape

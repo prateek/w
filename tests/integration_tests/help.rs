@@ -114,11 +114,6 @@ fn help_config_shell() {
 }
 
 #[test]
-fn help_beta() {
-    snapshot_help("help_beta", &["beta", "--help"]);
-}
-
-#[test]
 fn help_config_create() {
     snapshot_help("help_config_create", &["config", "create", "--help"]);
 }

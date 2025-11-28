@@ -1,4 +1,4 @@
-//! Snapshot tests for `wt beta statusline` command.
+//! Snapshot tests for `wt list statusline` command.
 //!
 //! Tests the statusline output for shell prompts and Claude Code integration.
 
@@ -16,7 +16,7 @@ fn run_statusline_from_dir(
 ) -> String {
     let mut cmd = wt_command();
     cmd.current_dir(cwd);
-    cmd.args(["beta", "statusline"]);
+    cmd.args(["list", "statusline"]);
     cmd.args(args);
 
     // Apply repo's git environment
@@ -215,7 +215,7 @@ fn test_statusline_directive_mode() {
 
     let mut cmd = wt_command();
     cmd.current_dir(repo.root_path());
-    cmd.args(["--internal", "beta", "statusline"]);
+    cmd.args(["--internal", "list", "statusline"]);
     repo.clean_cli_env(&mut cmd);
 
     let output = cmd.output().expect("failed to run command");

@@ -283,12 +283,13 @@ fn test_complete_list_command() {
         let output = repo.completion_cmd(&["wt", "list", ""]).output().unwrap();
         assert!(output.status.success());
         let stdout = String::from_utf8_lossy(&output.stdout);
+        // wt list suggests flags (--format, --branches, etc.) and subcommands (statusline)
         assert!(
             stdout
                 .lines()
                 .filter(|line| !line.trim().is_empty())
-                .all(|line| line.starts_with('-')),
-            "wt list should only suggest flags, got:\n{stdout}"
+                .all(|line| line.starts_with('-') || line == "statusline"),
+            "wt list should only suggest flags or 'statusline' subcommand, got:\n{stdout}"
         );
     });
 }

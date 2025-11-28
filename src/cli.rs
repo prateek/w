@@ -499,15 +499,9 @@ pub enum StepCommand {
     },
 }
 
-/// Experimental commands
+/// Subcommands for `wt list`
 #[derive(Subcommand)]
-pub enum BetaCommand {
-    /// Interactive worktree selector
-    ///
-    /// Toggle preview tabs with 1/2/3 keys.
-    #[cfg(unix)]
-    Select,
-
+pub enum ListSubcommand {
     /// Single-line status for shell prompts
     ///
     /// Format: `branch  status  ±working  commits  upstream  ci`
@@ -606,12 +600,11 @@ Docs: <https://llm.datasette.io/> | <https://github.com/sigoden/aichat>
         action: StepCommand,
     },
 
-    /// Experimental commands
-    #[command(name = "beta", hide = true)]
-    Beta {
-        #[command(subcommand)]
-        action: BetaCommand,
-    },
+    /// Interactive worktree selector
+    ///
+    /// Toggle preview tabs with 1/2/3 keys.
+    #[cfg(unix)]
+    Select,
 
     /// List worktrees and optionally branches
     #[command(after_long_help = "## Columns
@@ -705,7 +698,11 @@ jq '.[] | select(.locked != null)'
 # Get current worktree info (useful for statusline tools)
 jq '.[] | select(.is_current == true)'
 ```")]
+    #[command(args_conflicts_with_subcommands = true)]
     List {
+        #[command(subcommand)]
+        subcommand: Option<ListSubcommand>,
+
         /// Output format (table, json)
         #[arg(long, value_enum, default_value = "table", hide_possible_values = true)]
         format: OutputFormat,

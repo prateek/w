@@ -1,4 +1,4 @@
-//! Helper binary to setup a test environment for debugging `wt beta select`
+//! Helper binary to setup a test environment for debugging `wt select`
 //!
 //! This creates a temporary git repository with a known state:
 //! - main branch with 3 commits
@@ -7,7 +7,7 @@
 //! - Some uncommitted changes in the feature worktree
 //!
 //! Run with: cargo run --bin setup-select-test
-//! Then cd into the printed path and run: wt beta select
+//! Then cd into the printed path and run: wt select
 
 use std::fs;
 use std::io::{self, Write};
@@ -15,7 +15,7 @@ use std::path::PathBuf;
 use std::process::Command;
 
 fn main() {
-    println!("Setting up test environment for `wt beta select`...\n");
+    println!("Setting up test environment for `wt select`...\n");
 
     // Create temp directory in /tmp
     let temp_base = std::env::temp_dir().join("wt-select-test");
@@ -135,10 +135,10 @@ fn main() {
     println!();
     println!("Method 1 - Using cd:");
     println!("  cd {}", root.display());
-    println!("  cargo run --quiet -- beta select");
+    println!("  cargo run --quiet -- select");
     println!();
     println!("Method 2 - Using -C flag:");
-    println!("  cargo run --quiet -- -C {} beta select", root.display());
+    println!("  cargo run --quiet -- -C {} select", root.display());
     println!();
     println!("Expected behavior:");
     println!("  - Navigate with arrow keys through 8 items");

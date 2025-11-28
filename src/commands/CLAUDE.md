@@ -1,6 +1,6 @@
 # Debugging Interactive Terminal Commands
 
-When debugging TUI commands like `wt beta select`, use the `tmux-cli` skill (preferred) or MCP's `node-terminal` tools to test interactively.
+When debugging TUI commands like `wt select`, use the `tmux-cli` skill (preferred) or MCP's `node-terminal` tools to test interactively.
 
 ## Debugging Workflow
 
@@ -25,7 +25,7 @@ tmux-cli send "cd /tmp/wt-select-test/test-repo" --pane=$pane
 tmux-cli wait_idle --pane=$pane
 
 # Run with debug logging
-tmux-cli send "RUST_LOG=worktrunk=debug cargo run --quiet -- beta select 2> debug.log" --pane=$pane
+tmux-cli send "RUST_LOG=worktrunk=debug cargo run --quiet -- select 2> debug.log" --pane=$pane
 tmux-cli wait_idle --pane=$pane
 
 # Test interaction (e.g., select option 3)
@@ -49,7 +49,7 @@ mcp__node-terminal__terminal_send_key({ sessionId: "test", key: "enter" })
 // Run with debug logging
 mcp__node-terminal__terminal_write({
   sessionId: "test",
-  input: "RUST_LOG=worktrunk=debug cargo run --quiet -- beta select 2> debug.log"
+  input: "RUST_LOG=worktrunk=debug cargo run --quiet -- select 2> debug.log"
 })
 mcp__node-terminal__terminal_send_key({ sessionId: "test", key: "enter" })
 
@@ -71,10 +71,10 @@ tail -100 debug.log | grep -E "error|hang|stuck"
 
 ```console
 # Testing with cargo run (already uses local source):
-cargo run --quiet -- -C /path/to/repo beta select
+cargo run --quiet -- -C /path/to/repo select
 
 # Testing with installed wt:
-wt --source -C /path/to/repo beta select
+wt --source -C /path/to/repo select
 ```
 
 ## Shell Completion for CLI Arguments

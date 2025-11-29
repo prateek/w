@@ -422,22 +422,23 @@ git config worktrunk.status.feature "💬"    # Direct git config
 
 </details>
 
-### `wt select`
+### Interactive Worktree Picker
 
-Interactive worktree selector with fuzzy search and diff preview. Unix only.
+`wt select` opens a fuzzy-search worktree picker with diff preview. Unix only.
 
 Preview tabs (toggle with `1`/`2`/`3`):
 
 - **Tab 1**: Working tree changes (uncommitted)
-- **Tab 2**: History (commits not on main highlighted)
+- **Tab 2**: Commit history (commits not on main highlighted)
 - **Tab 3**: Branch diff (changes ahead of main)
 
-### `wt list statusline`
+### Statusline Integration
 
-Single-line status for shell prompts, starship, or editor integrations.
+`wt list statusline` outputs a single-line status for shell prompts, starship,
+or editor integrations.
 
-**Claude Code integration** (`--claude-code`): Reads workspace context from
-stdin, outputs directory, branch status, and model name.
+**Claude Code** (`--claude-code`): Reads workspace context from stdin, outputs
+directory, branch status, and model.
 
 ```text
 ~/w/myproject.feature-auth  !🤖  ±+42 -8  ↑3  ⇡1  ●  | Opus

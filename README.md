@@ -198,6 +198,54 @@ args = ["-m", "claude-haiku-4-5-20251001"]
 
 For custom prompt templates: `wt config --help`.
 
+### Project hooks
+
+Automate setup and validation at worktree lifecycle events:
+
+| Hook            | When                                | Example                      |
+| --------------- | ----------------------------------- | ---------------------------- |
+| **post-create** | After worktree created              | `cp -r .cache`, `ln -s`      |
+| **post-start**  | After worktree created (background) | `npm install`, `cargo build` |
+| **pre-commit**  | Before squash commit created        | `pre-commit run`             |
+| **pre-merge**   | After squash, before push           | `cargo test`, `pytest`       |
+| **post-merge**  | After successful merge              | `cargo install --path .`     |
+
+Project commands require approval on first run; use `--force` to skip prompts
+or `--no-verify` to skip hooks entirely. Configure in `.config/wt.toml`:
+
+```toml
+# Install dependencies, build setup
+[post-create]
+"install" = "uv sync"
+
+# Dev servers, file watchers (runs in background)
+[post-start]
+"dev" = "uv run dev"
+
+# Tests and lints before merging (blocks on failure)
+[pre-merge]
+"test" = "uv run pytest"
+"lint" = "uv run ruff check"
+```
+
+Example output:
+
+<!-- ⚠️ AUTO-GENERATED from tests/integration_tests/snapshots/integration__integration_tests__shell_wrapper__tests__readme_example_hooks_post_create.snap — edit source to update -->
+
+```console
+$ wt switch --create feature-x
+🔄 Running post-create install:
+   uv sync
+
+  Resolved 24 packages in 145ms
+  Installed 24 packages in 1.2s
+✅ Created new worktree for feature-x from main at ../repo.feature-x
+🔄 Running post-start dev:
+   uv run dev
+```
+
+<!-- END AUTO-GENERATED -->
+
 ### Local merging with `wt merge`
 
 `wt merge` handles the full merge workflow: stage, commit, squash, rebase,
@@ -278,95 +326,6 @@ test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fin
 ```
 
 <!-- END AUTO-GENERATED -->
-
-### Project hooks
-
-Configure hooks in project config (`.config/wt.toml`):
-
-| Hook            | When                                | Example                      |
-| --------------- | ----------------------------------- | ---------------------------- |
-| **post-create** | After worktree created              | `cp -r .cache`, `ln -s`      |
-| **post-start**  | After worktree created (background) | `npm install`, `cargo build` |
-| **pre-commit**  | Before squash commit created        | `pre-commit run`             |
-| **pre-merge**   | After squash, before push           | `cargo test`, `pytest`       |
-| **post-merge**  | After successful merge              | `cargo install --path .`     |
-
-```toml
-# Install dependencies, build setup
-[post-create]
-"install" = "uv sync"
-
-# Dev servers, file watchers (runs in background)
-[post-start]
-"dev" = "uv run dev"
-
-# Tests and lints before merging (blocks on failure)
-[pre-merge]
-"test" = "uv run pytest"
-"lint" = "uv run ruff check"
-```
-
-<!-- ⚠️ AUTO-GENERATED from tests/integration_tests/snapshots/integration__integration_tests__shell_wrapper__tests__readme_example_hooks_post_create.snap — edit source to update -->
-
-```console
-$ wt switch --create feature-x
-🔄 Running post-create install:
-   uv sync
-
-  Resolved 24 packages in 145ms
-  Installed 24 packages in 1.2s
-✅ Created new worktree for feature-x from main at ../repo.feature-x
-🔄 Running post-start dev:
-   uv run dev
-```
-
-<!-- END AUTO-GENERATED -->
-
-<details>
-<summary>Merging with pre-merge hooks</summary>
-
-<!-- ⚠️ AUTO-GENERATED from tests/integration_tests/snapshots/integration__integration_tests__shell_wrapper__tests__readme_example_hooks_pre_merge.snap — edit source to update -->
-
-```console
-$ wt merge
-🔄 Squashing 3 commits into a single commit (2 files, +45)...
-🔄 Generating squash commit message...
-   feat(api): Add user authentication endpoints
-
-   Implement login and token refresh endpoints with JWT validation.
-   Includes comprehensive test coverage and input validation.
-✅ Squashed @ a1b2c3d
-🔄 Running pre-merge test:
-   uv run pytest
-
-============================= test session starts ==============================
-collected 3 items
-
-tests/test_auth.py::test_login_success PASSED                            [ 33%]
-tests/test_auth.py::test_login_invalid_password PASSED                   [ 66%]
-tests/test_auth.py::test_token_validation PASSED                         [100%]
-
-============================== 3 passed in 0.8s ===============================
-
-🔄 Running pre-merge lint:
-   uv run ruff check
-
-All checks passed!
-
-🔄 Merging 1 commit to main @ a1b2c3d (no rebase needed)
-   * a1b2c3d feat(api): Add user authentication endpoints
-    api/auth.py        | 31 +++++++++++++++++++++++++++++++
-    tests/test_auth.py | 14 ++++++++++++++
-    2 files changed, 45 insertions(+)
-✅ Merged to main (1 commit, 2 files, +45)
-🔄 Removing feature-auth worktree & branch in background (ancestor of main)
-```
-
-<!-- END AUTO-GENERATED -->
-
-</details>
-
-See `wt switch --help` and `wt merge --help` for skipping hooks, template variables, security details.
 
 ### Claude Code Status Tracking
 

@@ -9,7 +9,7 @@ use worktrunk::git::GitError;
 use worktrunk::git::Repository;
 use worktrunk::path::format_path_for_display;
 use worktrunk::shell::Shell;
-use worktrunk::styling::format_with_gutter;
+use worktrunk::styling::{HINT_EMOJI, format_with_gutter};
 
 /// Format a switch success message with a consistent location phrase
 ///
@@ -145,6 +145,9 @@ fn handle_branch_deletion_result(
             // Branch not integrated - we chose not to delete (not a failure)
             super::info(cformat!(
                 "Branch <bold>{branch_name}</> retained; has unmerged changes"
+            ))?;
+            super::print(cformat!(
+                "{HINT_EMOJI} <dim>Use </>wt remove -D<dim> to delete unmerged branches</>"
             ))?;
             Ok(None)
         }
@@ -532,6 +535,13 @@ fn handle_removed_worktree_output(
             )
         };
         super::progress(action)?;
+
+        // Show hint for unmerged branches (same as synchronous path)
+        if !no_delete_branch && !should_delete_branch {
+            super::print(cformat!(
+                "{HINT_EMOJI} <dim>Use </>wt remove -D<dim> to delete unmerged branches</>"
+            ))?;
+        }
 
         // Build command with the decision we already made
         let remove_command =

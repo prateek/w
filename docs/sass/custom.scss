@@ -275,6 +275,7 @@ table {
 .toc-sticky {
     position: sticky;
     top: calc(var(--wt-header-height) + var(--wt-main-padding-top)); // Definitionally matches natural position
+    box-sizing: border-box; // Include padding/border in max-height calculation
     border-radius: 0.5rem;
     background-color: var(--wt-color-bg-elevated);
     border: 1px solid var(--wt-color-border-subtle);

@@ -186,9 +186,13 @@ fn handle_help_page(args: &[String]) {
 
     // Get the after_long_help content
     // Transform ```console to ```bash for Zola compatibility
+    // Add HTML colors for CI status dots
     let after_help = sub
         .get_after_long_help()
-        .map(|s| s.to_string().replace("```console\n", "```bash\n"))
+        .map(|s| {
+            let text = s.to_string().replace("```console\n", "```bash\n");
+            colorize_ci_status_for_html(&text)
+        })
         .unwrap_or_default();
 
     // Get the help reference block
@@ -273,6 +277,21 @@ fn handle_help_page(args: &[String]) {
     print!("{}", reference_block.trim());
     println!();
     println!("```");
+}
+
+/// Add HTML color spans for CI status dots in help page output.
+///
+/// Transforms plain text like "`●` green" into colored HTML spans for web rendering.
+/// This is the web-docs counterpart to md_help::colorize_status_symbols() which
+/// produces ANSI codes for terminal output.
+fn colorize_ci_status_for_html(text: &str) -> String {
+    text
+        // CI status colors (in table cells)
+        .replace("`●` green", "<span style='color:#0a0'>●</span> green")
+        .replace("`●` blue", "<span style='color:#00a'>●</span> blue")
+        .replace("`●` red", "<span style='color:#a00'>●</span> red")
+        .replace("`●` yellow", "<span style='color:#a60'>●</span> yellow")
+        .replace("`●` gray", "<span style='color:#888'>●</span> gray")
 }
 
 /// Enhance clap errors with command-specific hints, then exit.

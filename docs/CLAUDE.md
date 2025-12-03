@@ -95,7 +95,7 @@ When adding new positioned elements:
 
 ## Command Documentation
 
-Command pages (e.g., `switch.md`, `merge.md`) are **generated from the CLI source code**.
+Command pages (e.g., `switch.md`, `merge.md`, `list.md`) are **generated from the CLI source code**. The **entire file** is generated — manual edits will be overwritten.
 
 ### Generation Mechanism
 
@@ -106,16 +106,16 @@ wt <command> --help-page > docs/content/<command>.md
 ```
 
 The output combines:
-1. **Zola frontmatter** - title, weight, group metadata
-2. **Conceptual documentation** - from `after_long_help` in `src/cli.rs`
-3. **Command Reference section** - the standard `--help` output
+1. **Zola frontmatter** — title, weight, group metadata
+2. **Conceptual documentation** — from `after_long_help` in `src/cli.rs`
+3. **Command Reference section** — the standard `--help` output
 
 ### Editing Command Docs
 
 **To update command documentation, edit `src/cli.rs`**, not the markdown files directly.
 
-- **Conceptual content** - Edit the `after_long_help` attribute on the command
-- **Usage/options/examples** - Edit the clap attributes (`about`, `long_about`, doc comments on args)
+- **Conceptual content** — Edit the `after_long_help` attribute on the command
+- **Usage/options/examples** — Edit the clap attributes (`about`, `long_about`, doc comments on args)
 
 After editing, run the sync test (which auto-updates out-of-sync pages):
 
@@ -123,7 +123,33 @@ After editing, run the sync test (which auto-updates out-of-sync pages):
 cargo test --test integration test_command_pages_are_in_sync
 ```
 
-The generated files contain this warning comment:
+### CLI and Web Compatibility
+
+Content in `after_long_help` must work in **both** the terminal (`--help`) and the web docs:
+
+- **Tables** — Work in both. Prefer tables over bullet lists for structured data.
+- **Markdown links** — Work in both (`[text](/path/)`)
+- **Code blocks** — Work in both
+- **Raw HTML** — Avoid. Renders as raw text in terminal help.
+
+### Post-Processing for Web Docs
+
+The `--help-page` generator in `src/main.rs` applies post-processing to transform CLI-friendly content into web-friendly HTML:
+
+| CLI Source | Web Output |
+|------------|------------|
+| `` ```console `` | `` ```bash `` |
+| `` `●` green `` | `<span style='color:#0a0'>●</span> green` |
+| `` `●` blue `` | `<span style='color:#00a'>●</span> blue` |
+| `` `●` red `` | `<span style='color:#a00'>●</span> red` |
+| `` `●` yellow `` | `<span style='color:#a60'>●</span> yellow` |
+| `` `●` gray `` | `<span style='color:#888'>●</span> gray` |
+
+To add web-only styling for new content, edit `colorize_ci_status_for_html()` in `src/main.rs` — not the markdown files.
+
+Similarly, `md_help::colorize_status_symbols()` applies ANSI colors for terminal `--help` output.
+
+The generated files contain this warning comment in the Command Reference section:
 ```html
 <!-- ⚠️ AUTO-GENERATED from `wt <command> --help-page` — edit cli.rs to update -->
 ```

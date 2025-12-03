@@ -823,6 +823,8 @@ Toggle between views with number keys:
     #[command(
         after_long_help = r#"Show all worktrees with their status. The table includes uncommitted changes, divergence from main and remote, and optional CI status.
 
+The table renders progressively: branch names, paths, and commit hashes appear immediately, then status, divergence, and other columns fill in as background git operations complete. CI status (with `--full`) requires network requests and may take longer.
+
 ## Examples
 
 List all worktrees:
@@ -849,46 +851,12 @@ Output as JSON for scripting:
 wt list --format=json
 ```
 
-## Status Symbols
-
-Symbols appear in the Status column in this order:
-
-**Working tree state:**
-- `+` — Staged files
-- `!` — Modified files (unstaged)
-- `?` — Untracked files
-- `✖` — Merge conflicts
-- `↻` — Rebase in progress
-- `⋈` — Merge in progress
-
-**Branch state:**
-- `⊘` — Would conflict if merged to main (`--full` only)
-- `≡` — Matches main (identical contents)
-- `_` — No commits (empty branch)
-
-**Divergence from main:**
-- `↑` — Ahead of main
-- `↓` — Behind main
-- `↕` — Diverged from main
-
-**Remote tracking:**
-- `⇡` — Ahead of remote
-- `⇣` — Behind remote
-- `⇅` — Diverged from remote
-
-**Other:**
-- `⎇` — Branch without worktree
-- `⌫` — Prunable (directory missing)
-- `⊠` — Locked worktree
-
-Rows are dimmed when the branch has no marginal contribution (`≡` matches main or `_` no commits).
-
 ## Columns
 
 | Column | Shows |
 |--------|-------|
 | Branch | Branch name |
-| Status | Compact symbols (see above) |
+| Status | Compact symbols (see below) |
 | HEAD± | Uncommitted changes: +added -deleted lines |
 | main↕ | Commits ahead/behind main |
 | main…± | Line diffs in commits ahead of main (`--full`) |
@@ -900,13 +868,44 @@ Rows are dimmed when the branch has no marginal contribution (`≡` matches main
 | Message | Last commit message (truncated) |
 
 The CI column shows GitHub/GitLab pipeline status:
-- `●` green — All checks passed
-- `●` blue — Checks running
-- `●` red — Checks failed
-- `●` yellow — Merge conflicts with base
-- `●` gray — No checks configured
-- blank — No PR/MR found
-- dimmed — Stale (unpushed local changes)
+
+| Indicator | Meaning |
+|-----------|---------|
+| `●` green | All checks passed |
+| `●` blue | Checks running |
+| `●` red | Checks failed |
+| `●` yellow | Merge conflicts with base |
+| `●` gray | No checks configured |
+| blank | No PR/MR found |
+
+Any CI dot appears dimmed when there are unpushed local changes (stale status).
+
+## Status Symbols
+
+Symbols appear in the Status column in this order:
+
+| Category | Symbol | Meaning |
+|----------|--------|---------|
+| Working tree | `+` | Staged files |
+| | `!` | Modified files (unstaged) |
+| | `?` | Untracked files |
+| | `✖` | Merge conflicts |
+| | `↻` | Rebase in progress |
+| | `⋈` | Merge in progress |
+| Branch state | `⊘` | Would conflict if merged to main (`--full` only) |
+| | `≡` | Matches main (identical contents) |
+| | `_` | No commits (empty branch) |
+| Divergence | `↑` | Ahead of main |
+| | `↓` | Behind main |
+| | `↕` | Diverged from main |
+| Remote | `⇡` | Ahead of remote |
+| | `⇣` | Behind remote |
+| | `⇅` | Diverged from remote |
+| Other | `⎇` | Branch without worktree |
+| | `⌫` | Prunable (directory missing) |
+| | `⊠` | Locked worktree |
+
+Rows are dimmed when the branch has no marginal contribution (`≡` matches main or `_` no commits).
 
 ## JSON Output
 

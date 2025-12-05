@@ -43,29 +43,17 @@ wt switch --create temp --no-verify      # Skip hooks
 
 ## Shortcuts
 
-| Symbol | Meaning |
-|--------|---------|
-| `-` | Previous worktree |
-| `@` | Current branch's worktree |
-| `^` | Default branch worktree |
+| Shortcut | Meaning |
+|----------|---------|
+| `^` | Default branch (main/master) |
+| `@` | Current branch/worktree |
+| `-` | Previous worktree (like `cd -`) |
 
 ```bash
 wt switch -                      # Back to previous
 wt switch ^                      # Main worktree
 wt switch --create fix --base=@  # Branch from current HEAD
 ```
-
-## Path-first lookup
-
-Arguments resolve by checking the filesystem before git branches:
-
-1. Compute expected path from argument (using configured path template)
-2. If worktree exists at that path, switch to it
-3. Otherwise, treat argument as branch name
-
-**Edge case**: If `repo.foo/` exists but tracks branch `bar`:
-- `wt switch foo` → switches to `repo.foo/` (the `bar` worktree)
-- `wt switch bar` → also works (branch lookup finds same worktree)
 
 ## See also
 

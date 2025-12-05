@@ -6,7 +6,7 @@ weight = 23
 group = "Reference"
 +++
 
-Worktrunk includes a Claude Code plugin for tracking agent status across worktrees.
+Worktrunk includes a Claude Code plugin that automatically tracks which worktrees have active Claude sessions. When Claude starts working in a worktree, the plugin sets a status marker; when Claude waits for input, the marker updates. This makes it easy to monitor multiple parallel agents from `wt list`.
 
 ## Status tracking
 

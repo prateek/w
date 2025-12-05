@@ -76,8 +76,8 @@ Manual merge workflow with review between steps:
 
 [1mHooks[0m — run project commands defined in `.config/wt.toml`:
 
-- [2mpost-create[0m — After worktree creation
-- [2mpost-start[0m — After switching to a worktree
+- [2mpost-create[0m — After worktree creation (blocking)
+- [2mpost-start[0m — After worktree creation (background)
 - [2mpre-commit[0m — Before committing
 - [2mpre-merge[0m — Before pushing to target
 - [2mpost-merge[0m — After merge cleanup

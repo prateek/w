@@ -45,8 +45,8 @@ wt step push
 
 **Hooks** — run project commands defined in [`.config/wt.toml`](@/hooks.md):
 
-- `post-create` — After worktree creation
-- `post-start` — After switching to a worktree
+- `post-create` — After worktree creation (blocking)
+- `post-start` — After worktree creation (background)
 - `pre-commit` — Before committing
 - `pre-merge` — Before pushing to target
 - `post-merge` — After merge cleanup

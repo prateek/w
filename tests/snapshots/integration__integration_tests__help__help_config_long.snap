@@ -83,6 +83,15 @@ Personal settings like LLM commit generation, path templates, and default behavi
 
 Project-specific hooks: post-create, post-start, pre-commit, pre-merge, post-merge. See Hooks for details.
 
+[32mCommand approvals[0m
+
+Project hooks require approval on first run. Manage saved approvals with:
+
+  [2mwt config approvals list           # Show all approved commands[0m
+  [2mwt config approvals clear <repo>   # Remove approvals for a repository[0m
+
+See Hooks for how approvals work.
+
 [32mLLM commit messages[0m
 
 Worktrunk can generate commit messages using an LLM. Enable in user config:

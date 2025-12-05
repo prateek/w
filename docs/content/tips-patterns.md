@@ -97,9 +97,9 @@ Special arguments work across all commands:
 
 | Shortcut | Meaning |
 |----------|---------|
-| `^` | default branch (main/master) |
-| `@` | current branch/worktree |
-| `-` | previous worktree (like `cd -`) |
+| `^` | Default branch (main/master) |
+| `@` | Current branch/worktree |
+| `-` | Previous worktree (like `cd -`) |
 
 Examples:
 

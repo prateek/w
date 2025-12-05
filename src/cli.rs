@@ -712,6 +712,17 @@ Personal settings like LLM commit generation, path templates, and default behavi
 
 Project-specific hooks: post-create, post-start, pre-commit, pre-merge, post-merge. See [Hooks](@/hooks.md) for details.
 
+## Command approvals
+
+Project hooks require approval on first run. Manage saved approvals with:
+
+```console
+wt config approvals list           # Show all approved commands
+wt config approvals clear <repo>   # Remove approvals for a repository
+```
+
+See [Hooks](@/hooks.md#security--approval) for how approvals work.
+
 ## LLM commit messages
 
 Worktrunk can generate commit messages using an LLM. Enable in user config:
@@ -769,8 +780,8 @@ wt step push
 
 **Hooks** — run project commands defined in [`.config/wt.toml`](@/hooks.md):
 
-- `post-create` — After worktree creation
-- `post-start` — After switching to a worktree
+- `post-create` — After worktree creation (blocking)
+- `post-start` — After worktree creation (background)
 - `pre-commit` — Before committing
 - `pre-merge` — Before pushing to target
 - `post-merge` — After merge cleanup
@@ -806,9 +817,9 @@ wt select
 
 Toggle between views with number keys:
 
-1. **HEAD±** — Uncommitted changes
+1. **HEAD±** — Diff of uncommitted changes
 2. **history** — Recent commits on the branch
-3. **main…±** — Changes relative to main branch
+3. **main…±** — Diff of all changes vs main branch
 
 ## Keybindings
 
@@ -1025,29 +1036,17 @@ wt switch --create temp --no-verify      # Skip hooks
 
 ## Shortcuts
 
-| Symbol | Meaning |
-|--------|---------|
-| `-` | Previous worktree |
-| `@` | Current branch's worktree |
-| `^` | Default branch worktree |
+| Shortcut | Meaning |
+|----------|---------|
+| `^` | Default branch (main/master) |
+| `@` | Current branch/worktree |
+| `-` | Previous worktree (like `cd -`) |
 
 ```console
 wt switch -                      # Back to previous
 wt switch ^                      # Main worktree
 wt switch --create fix --base=@  # Branch from current HEAD
 ```
-
-## Path-first lookup
-
-Arguments resolve by checking the filesystem before git branches:
-
-1. Compute expected path from argument (using configured path template)
-2. If worktree exists at that path, switch to it
-3. Otherwise, treat argument as branch name
-
-**Edge case**: If `repo.foo/` exists but tracks branch `bar`:
-- `wt switch foo` → switches to `repo.foo/` (the `bar` worktree)
-- `wt switch bar` → also works (branch lookup finds same worktree)
 
 ## See also
 

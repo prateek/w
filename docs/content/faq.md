@@ -43,7 +43,7 @@ Use `--force` to bypass prompts (useful for CI/automation).
 
 ### vs. branch switching
 
-Branch switching uses one directory, so only one agent can work at a time. Worktrees give each agent its own directory.
+Branch switching uses one directory: uncommitted changes from one agent get mixed with the next agent's work, or block switching entirely. Worktrees give each agent its own directory with independent files and index.
 
 ### vs. Plain `git worktree`
 
@@ -88,6 +88,15 @@ These tools can be used together—run git-machete or git-town inside individual
 
 Git TUIs operate on a single repository. Worktrunk manages multiple worktrees, runs automation hooks, and aggregates status across branches. TUIs work inside each worktree directory.
 
+## How does wt switch resolve branch names?
+
+Arguments resolve by checking the filesystem before git branches:
+
+1. Compute expected path from argument (using configured path template)
+2. If worktree exists at that path, switch to it
+3. Otherwise, look up as branch name
+4. If the path and branch resolve to different worktrees (e.g., `repo.foo/` tracks branch `bar`), the path takes precedence
+
 ## Installation fails with C compilation errors
 
 Errors related to tree-sitter or C compilation (C99 mode, `le16toh` undefined) can be avoided by installing without syntax highlighting:
@@ -110,13 +119,12 @@ This disables bash syntax highlighting in command output but keeps all core func
 ### Quick tests
 
 ```bash
-$ cargo test --lib --bins           # Unit tests (~200 tests)
-$ cargo test --test integration     # Integration tests (~300 tests)
+$ cargo test
 ```
 
 ### Full integration tests
 
-Requires bash, zsh, and fish:
+Shell integration tests require bash, zsh, and fish:
 
 ```bash
 $ cargo test --test integration --features shell-integration-tests

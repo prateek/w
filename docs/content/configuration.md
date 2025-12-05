@@ -13,6 +13,10 @@ Worktrunk uses two configuration files:
 | **User config** | `~/.config/worktrunk/config.toml` | Personal settings, command defaults, approved project commands |
 | **Project config** | `.config/wt.toml` | Lifecycle hooks, checked into version control |
 
+## Shell integration
+
+Worktrunk needs shell integration to change directories when switching worktrees. Install with `wt config shell install`. See [wt config](@/config.md#shell-integration) for manual installation options.
+
 ## User config
 
 The user config stores personal preferences that apply across all repositories. Create it with:
@@ -81,9 +85,15 @@ Configure automatic commit message generation. Requires an external tool like [l
 [commit-generation]
 command = "llm"
 args = ["-m", "claude-haiku-4.5"]
+
+# Optional: custom prompt templates (inline or from files)
+template = "Write a commit message for: {{ git_diff }}"
+squash-template = "Summarize these commits: {{ commits }}"
+template-file = "~/.config/worktrunk/commit.txt"
+squash-template-file = "~/.config/worktrunk/squash.txt"
 ```
 
-See [LLM Commit Messages](@/llm-commits.md) for setup details and template customization.
+See [LLM Commit Messages](@/llm-commits.md) for setup details and template variables.
 
 ### Approved commands
 
@@ -98,6 +108,10 @@ approved-commands = [
 ```
 
 Manage approvals with `wt config approvals list` and `wt config approvals clear <repo>`.
+
+### Statusline
+
+`wt list statusline` outputs a compact single-line status for shell prompts or editor statuslines. See [Claude Code Integration](@/claude-code.md#statusline) for Claude Code configuration.
 
 ## Project config
 
@@ -115,26 +129,6 @@ lint = "npm run lint"
 ```
 
 See [Hooks](@/hooks.md) for complete documentation on hook types, execution order, and template variables.
-
-## Shell integration
-
-Worktrunk needs shell integration to change directories when switching worktrees. Install with:
-
-```bash
-wt config shell install
-```
-
-Or manually add to the shell config:
-
-```bash
-# bash/zsh
-eval "$(wt config shell init bash)"
-
-# fish
-wt config shell init fish | source
-```
-
-Without shell integration, `wt switch` prints the target directory but cannot `cd` into it.
 
 ## Environment variables
 

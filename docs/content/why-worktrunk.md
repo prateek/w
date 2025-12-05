@@ -105,9 +105,9 @@ $ wt config shell install
 
 ## Next steps
 
-- Learn the core commands: [wt switch](@/switch.md), [wt list](@/list.md), [wt remove](@/remove.md)
+- Learn the core commands: [wt switch](@/switch.md), [wt list](@/list.md), [wt merge](@/merge.md), [wt remove](@/remove.md)
 - Set up [project hooks](@/hooks.md) for automated setup
-- Explore [LLM commit messages](@/llm-commits.md), [local merging](@/merge.md), [fzf-like picker](@/select.md), [Claude Code integration](@/claude-code.md)
+- Explore [LLM commit messages](@/llm-commits.md), [fzf-like picker](@/select.md), [Claude Code integration](@/claude-code.md)
 
 ## Further reading
 

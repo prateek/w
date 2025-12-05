@@ -69,7 +69,7 @@ See [Claude Code Integration](@/claude-code.md#installation) for plugin installa
 wt list --full --branches
 ```
 
-Shows PR/CI status for all branches, including those without worktrees. The CI column links to PR pages in terminals with hyperlink support.
+Shows PR/CI status for all branches, including those without worktrees. CI indicators are clickable links to the PR page.
 
 ## JSON API
 

@@ -75,8 +75,6 @@ See all worktrees at a glance:
 
 <!-- END AUTO-GENERATED -->
 
-The `--full` flag adds CI status and conflict detection.
-
 Clean up when done:
 
 <!-- ⚠️ AUTO-GENERATED-HTML from tests/integration_tests/snapshots/integration__integration_tests__shell_wrapper__tests__readme_example_remove.snap — edit source to update -->

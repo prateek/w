@@ -39,6 +39,7 @@ Type "clear"
 Enter
 Sleep 500ms
 Show
+Set KeyStrokes Show
 Sleep 500ms
 
 # Launch wt select

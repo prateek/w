@@ -422,8 +422,6 @@ impl ListItem {
     /// It will recompute with the latest available data.
     ///
     /// Branches get a subset of status symbols (no working tree changes or worktree attrs).
-    // TODO(status-indicator): show a status glyph when a worktree's checked-out branch
-    // differs from the branch name we associate with it (e.g., worktree exists but on another branch).
     pub(crate) fn compute_status_symbols(
         &mut self,
         default_branch: Option<&str>,

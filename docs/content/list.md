@@ -114,13 +114,16 @@ Symbols appear in the Status column in this order:
 | Branch state | `⊘` | Would conflict if merged to main (`--full` only) |
 | | `≡` | Matches main (identical contents) |
 | | `_` | No commits ahead, clean working tree |
-| Divergence | `↑` | Ahead of main |
+| Main divergence | `^` | Is the main branch |
+| | `↑` | Ahead of main |
 | | `↓` | Behind main |
 | | `↕` | Diverged from main |
-| Remote | `⇡` | Ahead of remote |
+| Remote divergence | `\|` | In sync with remote |
+| | `⇡` | Ahead of remote |
 | | `⇣` | Behind remote |
 | | `⇅` | Diverged from remote |
-| Other | `/` | Branch without worktree |
+| Worktree state | `/` | Branch without worktree |
+| | `⚑` | Path doesn't match template |
 | | `⌫` | Prunable (directory missing) |
 | | `⊠` | Locked worktree |
 

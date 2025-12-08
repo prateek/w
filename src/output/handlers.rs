@@ -462,6 +462,23 @@ fn handle_removed_worktree_output(
 
     let repo = worktrunk::git::Repository::current();
 
+    // Execute pre-remove hooks in the worktree being removed
+    // Non-zero exit aborts removal (FailFast strategy)
+    // For detached HEAD, branch expands to empty string in templates
+    if verify && let Ok(config) = WorktrunkConfig::load() {
+        let target_repo = Repository::at(worktree_path);
+        let hook_branch = branch_name.unwrap_or("");
+        let ctx = CommandContext::new(
+            &target_repo,
+            &config,
+            hook_branch,
+            worktree_path,
+            main_path,
+            false, // force=false, prompt for approval
+        );
+        execute_pre_remove_commands(&ctx, false)?;
+    }
+
     // Handle detached HEAD case (no branch known)
     let Some(branch_name) = branch_name else {
         // No branch associated - just remove the worktree
@@ -494,21 +511,6 @@ fn handle_removed_worktree_output(
         super::flush()?;
         return Ok(());
     };
-
-    // Execute pre-remove hooks in the worktree being removed
-    // Non-zero exit aborts removal (FailFast strategy)
-    if verify && let Ok(config) = WorktrunkConfig::load() {
-        let target_repo = Repository::at(worktree_path);
-        let ctx = CommandContext::new(
-            &target_repo,
-            &config,
-            branch_name,
-            worktree_path,
-            main_path,
-            false, // force=false, prompt for approval
-        );
-        execute_pre_remove_commands(&ctx, false)?;
-    }
 
     if background {
         // Background mode: spawn detached process

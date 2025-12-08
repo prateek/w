@@ -1023,3 +1023,105 @@ approved-commands = ["echo 'hook ran' > {}"]
         "Worktree should be removed even with --no-verify"
     );
 }
+
+/// Test that pre-remove hook runs for detached HEAD worktrees.
+///
+/// Even when a worktree is in detached HEAD state (no branch), the pre-remove
+/// hook should still execute. The `{{ branch }}` template variable expands to empty string.
+#[test]
+fn test_pre_remove_hook_runs_for_detached_head() {
+    let mut repo = TestRepo::new();
+    repo.commit("Initial commit");
+
+    // Create marker file path in the repo root
+    let marker_file = repo.root_path().join("detached-hook-marker.txt");
+    let branch_file = repo.root_path().join("detached-hook-branch.txt");
+
+    // Create project config with pre-remove hook that creates marker files
+    let marker_path = marker_file.to_string_lossy().replace('\\', "/");
+    let branch_path = branch_file.to_string_lossy().replace('\\', "/");
+    repo.write_project_config(&format!(
+        r#"pre-remove = "touch {marker_path} && echo 'branch={{{{ branch }}}}' > {branch_path}""#,
+    ));
+    repo.commit("Add config");
+
+    // Pre-approve the commands
+    repo.write_test_config(&format!(
+        r#"worktree-path = "../{{{{ main_worktree }}}}.{{{{ branch }}}}"
+
+[projects."repo"]
+approved-commands = ["touch {marker_path} && echo 'branch={{{{ branch }}}}' > {branch_path}"]
+"#,
+    ));
+
+    // Create a worktree and detach HEAD
+    let worktree_path = repo.add_worktree("feature-detached-hook");
+    repo.detach_head_in_worktree("feature-detached-hook");
+
+    // Remove with --no-background to ensure synchronous execution
+    snapshot_remove(
+        "pre_remove_hook_runs_for_detached_head",
+        &repo,
+        &["--no-background"],
+        Some(&worktree_path),
+    );
+
+    // Marker file should exist - hook ran
+    assert!(
+        marker_file.exists(),
+        "Pre-remove hook should run for detached HEAD worktrees"
+    );
+
+    // Check that {{ branch }} expanded to empty string
+    let branch_content = std::fs::read_to_string(&branch_file).unwrap();
+    assert_eq!(
+        branch_content.trim(),
+        "branch=",
+        "{{ branch }} should expand to empty string for detached HEAD worktrees"
+    );
+}
+
+/// Test that pre-remove hook runs for detached HEAD worktrees in background mode.
+///
+/// This complements `test_pre_remove_hook_runs_for_detached_head` by verifying
+/// the hook also runs when removal happens in background (the default).
+#[test]
+fn test_pre_remove_hook_runs_for_detached_head_background() {
+    let mut repo = TestRepo::new();
+    repo.commit("Initial commit");
+
+    // Create marker file path in the repo root
+    let marker_file = repo.root_path().join("detached-bg-hook-marker.txt");
+
+    // Create project config with pre-remove hook that creates a marker file
+    let marker_path = marker_file.to_string_lossy().replace('\\', "/");
+    repo.write_project_config(&format!(r#"pre-remove = "touch {marker_path}""#,));
+    repo.commit("Add config");
+
+    // Pre-approve the commands
+    repo.write_test_config(&format!(
+        r#"worktree-path = "../{{{{ main_worktree }}}}.{{{{ branch }}}}"
+
+[projects."repo"]
+approved-commands = ["touch {marker_path}"]
+"#,
+    ));
+
+    // Create a worktree and detach HEAD
+    let worktree_path = repo.add_worktree("feature-detached-bg");
+    repo.detach_head_in_worktree("feature-detached-bg");
+
+    // Remove in background mode (default)
+    snapshot_remove(
+        "pre_remove_hook_runs_for_detached_head_background",
+        &repo,
+        &[],
+        Some(&worktree_path),
+    );
+
+    // Marker file should exist - hook ran before background spawn
+    assert!(
+        marker_file.exists(),
+        "Pre-remove hook should run for detached HEAD worktrees in background mode"
+    );
+}

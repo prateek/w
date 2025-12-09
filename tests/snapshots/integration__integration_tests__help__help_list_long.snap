@@ -124,13 +124,13 @@ The Status column has multiple subcolumns. Within each, only the first matching 
                      [2m·[0m       Same commit                                         
                      [2m⊂[0m       Content integrated ([2m--full[0m detects additional cases)
   Main divergence    [2m^[0m       Is the main branch                                  
+                     [2m↕[0m       Diverged from main                                  
                      [2m↑[0m       Ahead of main                                       
                      [2m↓[0m       Behind main                                         
-                     [2m↕[0m       Diverged from main                                  
   Remote divergence  [2m|[0m       In sync with remote                                 
+                     [2m⇅[0m       Diverged from remote                                
                      [2m⇡[0m       Ahead of remote                                     
                      [2m⇣[0m       Behind remote                                       
-                     [2m⇅[0m       Diverged from remote                                
   Worktree state     [2m/[0m       Branch without worktree                             
                      [31m⚑[0m       Path doesn't match template                         
                      [33m⌫[0m       Prunable (directory missing)                        

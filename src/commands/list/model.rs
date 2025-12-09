@@ -1033,8 +1033,8 @@ impl PositionMask {
 /// Symbols are categorized to enable vertical alignment in table output:
 /// - Working tree: +, !, ? (staged, modified, untracked - priority order)
 /// - Branch/op state: ✖, ↻, ⋈, ⚔, ·, ⊂ (combined position with priority)
-/// - Main divergence: ^, ↑, ↓, ↕
-/// - Upstream divergence: ⇡, ⇣, ⇅
+/// - Main divergence: ^, ↕, ↑, ↓
+/// - Upstream divergence: ⇅, ⇡, ⇣
 /// - Worktree state: / for branches, ⚑⌫⊠ for worktrees (priority-only)
 /// - User marker: custom labels, emoji
 ///
@@ -1050,8 +1050,8 @@ impl PositionMask {
 /// - ⊂: Content integrated (removable)
 ///
 /// **Mutually exclusive (enforced by type system):**
-/// - ^ vs ↑ vs ↓ vs ↕: Main divergence (MainDivergence enum)
-/// - ⇡ vs ⇣ vs ⇅: Upstream divergence (UpstreamDivergence enum)
+/// - ^ vs ↕ vs ↑ vs ↓: Main divergence (MainDivergence enum)
+/// - ⇅ vs ⇡ vs ⇣: Upstream divergence (UpstreamDivergence enum)
 ///
 /// **Priority-only (can co-occur but only highest priority shown):**
 /// - ⚑ vs ⌫ vs ⊠: Worktree attrs (priority: path_mismatch ⚑ > prunable ⌫ > locked ⊠)

@@ -115,13 +115,13 @@ The Status column has multiple subcolumns. Within each, only the first matching 
 | | `·` | Same commit |
 | | `⊂` | Content integrated (`--full` detects additional cases) |
 | Main divergence | `^` | Is the main branch |
+| | `↕` | Diverged from main |
 | | `↑` | Ahead of main |
 | | `↓` | Behind main |
-| | `↕` | Diverged from main |
 | Remote divergence | `\|` | In sync with remote |
+| | `⇅` | Diverged from remote |
 | | `⇡` | Ahead of remote |
 | | `⇣` | Behind remote |
-| | `⇅` | Diverged from remote |
 | Worktree state | `/` | Branch without worktree |
 | | `⚑` | Path doesn't match template |
 | | `⌫` | Prunable (directory missing) |

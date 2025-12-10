@@ -381,7 +381,7 @@ impl SkimItem for WorktreeSkimItem {
 
         // Build preview: tabs header + content
         let mut result = Self::render_preview_tabs(mode);
-        result.push_str(&self.preview_for_mode(mode, context.width));
+        result.push_str(&self.preview_for_mode(mode, context.width, context.height));
 
         ItemPreview::AnsiText(result)
     }
@@ -424,11 +424,11 @@ impl WorktreeSkimItem {
         format!("{} | {} | {}\n{}\n\n", tab1, tab2, tab3, controls)
     }
 
-    /// Render preview for the given mode with specified width
-    fn preview_for_mode(&self, mode: PreviewMode, width: usize) -> String {
+    /// Render preview for the given mode with specified dimensions
+    fn preview_for_mode(&self, mode: PreviewMode, width: usize, height: usize) -> String {
         match mode {
             PreviewMode::WorkingTree => self.render_working_tree_preview(width),
-            PreviewMode::Log => self.render_log_preview(width),
+            PreviewMode::Log => self.render_log_preview(width, height),
             PreviewMode::BranchDiff => self.render_branch_diff_preview(width),
         }
     }
@@ -516,11 +516,18 @@ impl WorktreeSkimItem {
     }
 
     /// Render Tab 2: Log preview
-    fn render_log_preview(&self, _width: usize) -> String {
+    fn render_log_preview(&self, width: usize, height: usize) -> String {
         use worktrunk::styling::INFO_EMOJI;
-        const LOG_LIMIT: &str = "10";
+        // Minimum preview width to show timestamps (adds ~7 chars: space + 4-char time + space)
+        // Note: preview is typically 50% of terminal width, so 50 = 100-col terminal
+        const TIMESTAMP_WIDTH_THRESHOLD: usize = 50;
+        // Tab header takes 3 lines (tabs + controls + blank)
+        const HEADER_LINES: usize = 3;
 
         let mut output = String::new();
+        let show_timestamps = width >= TIMESTAMP_WIDTH_THRESHOLD;
+        // Calculate how many log lines fit in preview (height minus header)
+        let log_limit = height.saturating_sub(HEADER_LINES).max(1);
         let repo = Repository::current();
         let head = self.item.head();
         let branch = self.item.branch_name();
@@ -547,48 +554,136 @@ impl WorktreeSkimItem {
         let merge_base = merge_base_output.trim();
         let is_default_branch = branch == default_branch;
 
+        // Format strings for git log
+        // Without timestamps: hash (colored/dimmed), then message
+        // Dim format: only hash is dimmed, message stays normal (matches upstream style)
+        let no_timestamp_format = "--format=%C(auto)%h%C(auto)%d%C(reset) %s";
+        let dim_no_timestamp_format = "--format=%C(dim)%h%C(reset) %s";
+
+        // With timestamps, we use \x1f (unit separator) as delimiter to separate fields
+        // Format: hash \x1f unix_timestamp \x1f rest
+        // We compute terse relative time (e.g., "2h", "3d") from unix timestamp
+        // Note: \x00 doesn't work as git strips null bytes from format output
+        const TIMESTAMP_WIDTH: usize = 4; // "12mo" is the longest
+        const DELIM: char = '\x1f';
+        let timestamp_format = "--format=%C(auto)%h\x1f%ct\x1f%C(auto)%d%C(reset) %s";
+        // Dim format: hash is dimmed, timestamp will also be dimmed by format_timestamps
+        let dim_timestamp_format = "--format=%C(dim)%h%C(reset)\x1f%ct\x1f %s";
+
+        // Helper to format timestamps in git log output
+        // Parses delimiter-separated fields and inserts padded relative time
+        let format_timestamps = |log_output: &str| -> String {
+            use crate::display::format_relative_time_short;
+            let dim_style = anstyle::Style::new().dimmed();
+            let reset = anstyle::Reset;
+            log_output
+                .lines()
+                .map(|line| {
+                    // Line format: "* hash{DELIM}timestamp{DELIM}rest"
+                    // Split on first delimiter to get graph+hash, then on second for timestamp
+                    if let Some(first_delim) = line.find(DELIM)
+                        && let Some(second_delim) = line[first_delim + 1..].find(DELIM)
+                    {
+                        let graph_hash = &line[..first_delim];
+                        let timestamp_str = &line[first_delim + 1..first_delim + 1 + second_delim];
+                        let rest = &line[first_delim + 1 + second_delim + 1..];
+                        // Parse unix timestamp and format as terse relative time
+                        let time = timestamp_str
+                            .parse::<i64>()
+                            .map(format_relative_time_short)
+                            .unwrap_or_default();
+                        // Timestamp is always dimmed (secondary info)
+                        // Format: hash + timestamp (right-aligned) + rest
+                        // rest includes leading space from %d (decoration) or ` %s` (no decoration)
+                        return format!(
+                            "{}{dim_style}{:>width$}{reset}{}",
+                            graph_hash,
+                            time,
+                            rest,
+                            width = TIMESTAMP_WIDTH
+                        );
+                    }
+                    line.to_string()
+                })
+                .collect::<Vec<_>>()
+                .join("\n")
+        };
+
+        let log_limit_str = log_limit.to_string();
         if is_default_branch {
             // Viewing default branch itself - show history without dimming
+            let format = if show_timestamps {
+                timestamp_format
+            } else {
+                no_timestamp_format
+            };
             if let Ok(log_output) = repo.run_command(&[
                 "log",
                 "--graph",
-                "--decorate",
-                "--oneline",
+                format,
                 "--color=always",
                 "-n",
-                LOG_LIMIT,
+                &log_limit_str,
                 head,
             ]) {
-                output.push_str(&log_output);
+                if show_timestamps {
+                    output.push_str(&format_timestamps(&log_output));
+                } else {
+                    output.push_str(&log_output);
+                }
             }
         } else {
             // Not on default branch - show bright commits unique to this branch, dimmed commits on default
+            // Total commits shown is capped at log_limit (based on preview height)
 
             // Part 1: Bright commits (merge-base..HEAD)
             let range = format!("{}..{}", merge_base, head);
-            if let Ok(log_output) = repo.run_command(&[
-                "log",
-                "--graph",
-                "--decorate",
-                "--oneline",
-                "--color=always",
-                &range,
-            ]) {
-                output.push_str(&log_output);
+            let format = if show_timestamps {
+                timestamp_format
+            } else {
+                no_timestamp_format
+            };
+            let mut bright_count = 0;
+            if let Ok(log_output) =
+                repo.run_command(&["log", "--graph", format, "--color=always", &range])
+                && !log_output.is_empty()
+            {
+                bright_count = log_output.lines().count();
+                if show_timestamps {
+                    output.push_str(&format_timestamps(&log_output));
+                } else {
+                    output.push_str(&log_output);
+                }
+                // Ensure newline between bright and dim sections
+                if !output.ends_with('\n') {
+                    output.push('\n');
+                }
             }
 
             // Part 2: Dimmed commits on default branch (history before merge-base)
-            if let Ok(log_output) = repo.run_command(&[
-                "log",
-                "--graph",
-                "--oneline",
-                "--format=%C(dim)%h%C(reset) %s",
-                "--color=always",
-                "-n",
-                LOG_LIMIT,
-                merge_base,
-            ]) {
-                output.push_str(&log_output);
+            // Only show enough to reach LOG_LIMIT total
+            let dim_limit = log_limit.saturating_sub(bright_count);
+            if dim_limit > 0 {
+                let format = if show_timestamps {
+                    dim_timestamp_format
+                } else {
+                    dim_no_timestamp_format
+                };
+                if let Ok(log_output) = repo.run_command(&[
+                    "log",
+                    "--graph",
+                    format,
+                    "--color=always",
+                    "-n",
+                    &dim_limit.to_string(),
+                    merge_base,
+                ]) {
+                    if show_timestamps {
+                        output.push_str(&format_timestamps(&log_output));
+                    } else {
+                        output.push_str(&log_output);
+                    }
+                }
             }
         }
 

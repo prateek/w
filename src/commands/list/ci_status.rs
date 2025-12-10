@@ -549,7 +549,14 @@ impl PrStatus {
     ///
     /// # Arguments
     /// * `repo_path` - Repository root path from `Repository::worktree_root()`
-    pub fn detect(branch: &str, local_head: &str, repo_path: &std::path::Path) -> Option<Self> {
+    /// * `has_upstream` - Whether the branch has upstream tracking configured.
+    ///   PR/MR detection always runs. Workflow/pipeline fallback only runs if true.
+    pub fn detect(
+        branch: &str,
+        local_head: &str,
+        repo_path: &std::path::Path,
+        has_upstream: bool,
+    ) -> Option<Self> {
         // We run gh/glab commands from the repo directory to let them auto-detect the correct repo
         // (including upstream repos for forks)
         let repo_root = repo_path.to_str()?;
@@ -579,7 +586,7 @@ impl PrStatus {
         }
 
         // Cache miss or expired - fetch fresh status
-        let status = Self::detect_uncached(branch, local_head, repo_root);
+        let status = Self::detect_uncached(branch, local_head, repo_root, has_upstream);
 
         // Cache the result (including None - means no CI found for this branch)
         let cached = CachedCiStatus {
@@ -593,19 +600,33 @@ impl PrStatus {
     }
 
     /// Detect CI status without caching (internal implementation)
-    fn detect_uncached(branch: &str, local_head: &str, repo_root: &str) -> Option<Self> {
-        // Try GitHub PR first
+    ///
+    /// PR/MR detection always runs. Workflow/pipeline fallback only runs if `has_upstream`.
+    fn detect_uncached(
+        branch: &str,
+        local_head: &str,
+        repo_root: &str,
+        has_upstream: bool,
+    ) -> Option<Self> {
+        // Try GitHub PR first (always, regardless of upstream)
         if let Some(status) = Self::detect_github(branch, local_head, repo_root) {
             return Some(status);
         }
 
-        // Try GitHub workflow runs (for branches without PRs)
-        if let Some(status) = Self::detect_github_workflow(branch, local_head, repo_root) {
+        // Try GitLab MR (always, regardless of upstream)
+        if let Some(status) = Self::detect_gitlab(branch, local_head, repo_root) {
             return Some(status);
         }
 
-        // Try GitLab MR
-        if let Some(status) = Self::detect_gitlab(branch, local_head, repo_root) {
+        // Workflow/pipeline fallback only if upstream is configured.
+        // This prevents false matches from similarly-named branches on the remote
+        // that aren't actually related to the local branch.
+        if !has_upstream {
+            return None;
+        }
+
+        // Try GitHub workflow runs (for branches without PRs)
+        if let Some(status) = Self::detect_github_workflow(branch, local_head, repo_root) {
             return Some(status);
         }
 

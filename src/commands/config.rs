@@ -544,7 +544,8 @@ pub fn handle_var_get(key: &str, refresh: bool, branch: Option<String>) -> anyho
                 let _ = repo.run_command(&["config", "--unset", &config_key]);
             }
 
-            match PrStatus::detect(&branch_name, &head, &repo_root) {
+            let has_upstream = repo.upstream_branch(&branch_name).ok().flatten().is_some();
+            match PrStatus::detect(&branch_name, &head, &repo_root, has_upstream) {
                 Some(status) => {
                     // Output the CI status as a simple string for piping
                     let status_str = match status.ci_status {

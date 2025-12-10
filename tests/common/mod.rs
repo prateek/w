@@ -47,6 +47,10 @@ pub const HOUR: i64 = 60 * MINUTE;
 pub const DAY: i64 = 24 * HOUR;
 pub const WEEK: i64 = 7 * DAY;
 
+/// The epoch used for deterministic timestamps in tests (2025-01-01T00:00:00Z).
+/// Use this when creating test data with timestamps (cache entries, etc.).
+pub const TEST_EPOCH: u64 = 1735776000;
+
 /// Create a `wt` CLI command with standardized test environment settings.
 ///
 /// The command has the following guarantees:
@@ -125,9 +129,7 @@ pub fn configure_cli_command(cmd: &mut Command) {
     // but correctness (isolating from host WORKTRUNK_* vars) trumps snapshot aesthetics.
     cmd.env("WORKTRUNK_CONFIG_PATH", "/nonexistent/test/config.toml");
     cmd.env("CLICOLOR_FORCE", "1");
-    // Jan 2, 2025 - 1 day after default commit date (2025-01-01)
-    // for deterministic "1d" in Age column
-    cmd.env("SOURCE_DATE_EPOCH", "1735776000");
+    cmd.env("SOURCE_DATE_EPOCH", TEST_EPOCH.to_string());
     cmd.env("COLUMNS", "150");
 }
 
@@ -219,8 +221,7 @@ impl TestRepo {
         cmd.env("GIT_COMMITTER_DATE", "2025-01-01T00:00:00Z");
         cmd.env("LC_ALL", "C");
         cmd.env("LANG", "C");
-        // Jan 2, 2025 - 1 day after commit date for deterministic "1d" in Age column
-        cmd.env("SOURCE_DATE_EPOCH", "1735776000");
+        cmd.env("SOURCE_DATE_EPOCH", TEST_EPOCH.to_string());
     }
 
     /// Get standard test environment variables as a vector
@@ -231,7 +232,6 @@ impl TestRepo {
         vec![
             ("CLICOLOR_FORCE".to_string(), "1".to_string()),
             ("COLUMNS".to_string(), "150".to_string()),
-            // Use test git config file with advice settings disabled
             (
                 "GIT_CONFIG_GLOBAL".to_string(),
                 self.git_config_path.display().to_string(),
@@ -247,7 +247,7 @@ impl TestRepo {
             ),
             ("LC_ALL".to_string(), "C".to_string()),
             ("LANG".to_string(), "C".to_string()),
-            ("SOURCE_DATE_EPOCH".to_string(), "1735776000".to_string()),
+            ("SOURCE_DATE_EPOCH".to_string(), TEST_EPOCH.to_string()),
             (
                 "WORKTRUNK_CONFIG_PATH".to_string(),
                 self.test_config_path().display().to_string(),
@@ -391,10 +391,7 @@ impl TestRepo {
     /// repo.commit_with_age("Add feature", 600);       // Shows "10m"
     /// ```
     pub fn commit_with_age(&self, message: &str, age_seconds: i64) {
-        // SOURCE_DATE_EPOCH used in tests - must match configure_git_cmd/test_env_vars
-        // This is Jan 2, 2025 00:00:00 UTC
-        const SOURCE_DATE_EPOCH: i64 = 1735776000;
-        let commit_time = SOURCE_DATE_EPOCH - age_seconds;
+        let commit_time = TEST_EPOCH as i64 - age_seconds;
         // Use ISO 8601 format for consistent behavior across git versions
         let timestamp = unix_to_iso8601(commit_time);
 
@@ -431,8 +428,7 @@ impl TestRepo {
     /// repo.commit_staged_with_age("Add feature", 2 * HOUR, &wt);
     /// ```
     pub fn commit_staged_with_age(&self, message: &str, age_seconds: i64, dir: &Path) {
-        const SOURCE_DATE_EPOCH: i64 = 1735776000;
-        let commit_time = SOURCE_DATE_EPOCH - age_seconds;
+        let commit_time = TEST_EPOCH as i64 - age_seconds;
         let timestamp = unix_to_iso8601(commit_time);
 
         let mut cmd = Command::new("git");

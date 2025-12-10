@@ -393,15 +393,11 @@ See `src/commands/list/render.rs` for advanced usage.
 
 ### Gutter Formatting for Quoted Content
 
-Use `format_with_gutter()` for quoted content. Gutter content displays external output (git errors, command output) in a visually distinct block.
+Use `format_with_gutter()` for **external data** — anything read from outside the application: git output, shell commands, commit messages, config values, cached data. Gutter visually quotes this content to distinguish it from application-generated output.
 
-```rust
-// Show warning message, then external error in gutter
-output::print(warning_message(cformat!("Could not delete branch <bold>{branch_name}</>")))?;
-output::gutter(format_with_gutter(&e.to_string(), "", None))?;
-```
+**Gutter vs Table:** Tabular data structured by the application should use `output::table()` with markdown formatting via `render_markdown_in_help()`. Tables are artifacts; gutter is for quoting external data.
 
-**Linebreaks:** Gutter content requires a single newline before it, never double newlines. The `output::print()` function uses `println!()` internally, adding a trailing newline. Messages passed to it should not include `\n`:
+**Linebreaks:** Gutter requires a single newline before it, never double. `output::print()` adds a trailing newline, so messages should not include `\n`:
 
 ```rust
 // ✅ GOOD - no trailing \n

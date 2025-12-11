@@ -47,6 +47,13 @@ repos:
           - --config=.config/lychee.toml
   - repo: local
     hooks:
+      - id: cargo-lock
+        name: cargo-lock
+        description: Ensure Cargo.lock is in sync with Cargo.toml
+        language: system
+        entry: cargo check --locked
+        pass_filenames: false
+        files: (Cargo\.toml|Cargo\.lock)$
       - id: no-dbg
         name: no-dbg
         description: We shouldn't merge code with `dbg!` in

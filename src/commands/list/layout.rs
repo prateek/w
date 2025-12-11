@@ -231,13 +231,11 @@ fn try_allocate(
 }
 
 /// Width information for two-part columns: diffs ("+128 -147") and arrows ("↑6 ↓1")
-/// - For diff columns: added_digits/deleted_digits refer to line change counts
-/// - For arrow columns: added_digits/deleted_digits refer to ahead/behind commit counts
 #[derive(Clone, Copy, Debug)]
 pub struct DiffWidths {
     pub total: usize,
-    pub added_digits: usize,   // First part: + for diffs, ↑ for arrows
-    pub deleted_digits: usize, // Second part: - for diffs, ↓ for arrows
+    pub positive_digits: usize, // First part: +/↑/⇡
+    pub negative_digits: usize, // Second part: -/↓/⇣
 }
 
 #[derive(Clone, Debug)]
@@ -359,8 +357,8 @@ pub enum ColumnFormat {
 
 #[derive(Clone, Copy, Debug)]
 pub struct DiffColumnConfig {
-    pub added_digits: usize,
-    pub deleted_digits: usize,
+    pub positive_digits: usize,
+    pub negative_digits: usize,
     pub total_width: usize,
     pub display: DiffDisplayConfig,
 }
@@ -410,8 +408,8 @@ impl ColumnIdeal {
         Some(Self {
             width: widths.total,
             format: ColumnFormat::Diff(DiffColumnConfig {
-                added_digits: widths.added_digits,
-                deleted_digits: widths.deleted_digits,
+                positive_digits: widths.positive_digits,
+                negative_digits: widths.negative_digits,
                 total_width: widths.total,
                 display,
             }),
@@ -471,25 +469,25 @@ fn build_estimated_widths(max_branch: usize, skip_tasks: &HashSet<TaskKind>) -> 
         // Commit counts (Arrows): compact notation, 2 digits covers up to 99
         ahead_behind: DiffWidths {
             total: ahead_behind_fixed,
-            added_digits: 2,
-            deleted_digits: 2,
+            positive_digits: 2,
+            negative_digits: 2,
         },
         // Line diffs (Signs): show full numbers, 3 digits covers up to 999
         working_diff: DiffWidths {
             total: working_diff_fixed,
-            added_digits: 3,
-            deleted_digits: 3,
+            positive_digits: 3,
+            negative_digits: 3,
         },
         branch_diff: DiffWidths {
             total: branch_diff_fixed,
-            added_digits: 3,
-            deleted_digits: 3,
+            positive_digits: 3,
+            negative_digits: 3,
         },
         // Upstream (Arrows): compact notation, 2 digits covers up to 99
         upstream: DiffWidths {
             total: upstream_fixed,
-            added_digits: 2,
-            deleted_digits: 2,
+            positive_digits: 2,
+            negative_digits: 2,
         },
     };
 
@@ -761,12 +759,12 @@ mod tests {
             "Working diff should pre-allocate for '+999 -999' (9 chars)"
         );
         assert_eq!(
-            widths.working_diff.added_digits, 3,
-            "Pre-allocated for 3-digit added count"
+            widths.working_diff.positive_digits, 3,
+            "Pre-allocated for 3-digit positive count"
         );
         assert_eq!(
-            widths.working_diff.deleted_digits, 3,
-            "Pre-allocated for 3-digit deleted count"
+            widths.working_diff.negative_digits, 3,
+            "Pre-allocated for 3-digit negative count"
         );
 
         // Branch diff also uses Signs variant when show_full=true
@@ -776,12 +774,12 @@ mod tests {
             "Branch diff should pre-allocate for '+999 -999' (9 chars)"
         );
         assert_eq!(
-            widths.branch_diff.added_digits, 3,
-            "Pre-allocated for 3-digit added count"
+            widths.branch_diff.positive_digits, 3,
+            "Pre-allocated for 3-digit positive count"
         );
         assert_eq!(
-            widths.branch_diff.deleted_digits, 3,
-            "Pre-allocated for 3-digit deleted count"
+            widths.branch_diff.negative_digits, 3,
+            "Pre-allocated for 3-digit negative count"
         );
 
         // Commit counts (Arrows variant: ↑↓) use compact notation, allocate 2 digits
@@ -791,12 +789,12 @@ mod tests {
             "Ahead/behind should pre-allocate for '↑99 ↓99' (7 chars)"
         );
         assert_eq!(
-            widths.ahead_behind.added_digits, 2,
-            "Pre-allocated for 2-digit ahead count (uses compact notation)"
+            widths.ahead_behind.positive_digits, 2,
+            "Pre-allocated for 2-digit positive count (uses compact notation)"
         );
         assert_eq!(
-            widths.ahead_behind.deleted_digits, 2,
-            "Pre-allocated for 2-digit behind count (uses compact notation)"
+            widths.ahead_behind.negative_digits, 2,
+            "Pre-allocated for 2-digit negative count (uses compact notation)"
         );
 
         // Upstream also uses Arrows variant
@@ -806,12 +804,12 @@ mod tests {
             "Upstream should pre-allocate for '↑99 ↓99' (7 chars)"
         );
         assert_eq!(
-            widths.upstream.added_digits, 2,
-            "Pre-allocated for 2-digit ahead count"
+            widths.upstream.positive_digits, 2,
+            "Pre-allocated for 2-digit positive count"
         );
         assert_eq!(
-            widths.upstream.deleted_digits, 2,
-            "Pre-allocated for 2-digit behind count"
+            widths.upstream.negative_digits, 2,
+            "Pre-allocated for 2-digit negative count"
         );
     }
 

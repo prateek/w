@@ -42,8 +42,8 @@ impl DisplayFields {
         });
 
         let upstream_display = upstream.as_ref().and_then(|u| {
-            u.active().and_then(|(_, upstream_ahead, upstream_behind)| {
-                ColumnKind::Upstream.format_diff_plain(upstream_ahead, upstream_behind)
+            u.active().and_then(|active| {
+                ColumnKind::Upstream.format_diff_plain(active.ahead, active.behind)
             })
         });
 
@@ -164,11 +164,20 @@ pub struct UpstreamStatus {
     pub(super) behind: usize,
 }
 
+/// Active upstream tracking information
+pub struct ActiveUpstream<'a> {
+    pub remote: &'a str,
+    pub ahead: usize,
+    pub behind: usize,
+}
+
 impl UpstreamStatus {
-    pub fn active(&self) -> Option<(&str, usize, usize)> {
-        self.remote
-            .as_deref()
-            .map(|remote| (remote, self.ahead, self.behind))
+    pub fn active(&self) -> Option<ActiveUpstream<'_>> {
+        self.remote.as_deref().map(|remote| ActiveUpstream {
+            remote,
+            ahead: self.ahead,
+            behind: self.behind,
+        })
     }
 
     #[cfg(test)]
@@ -392,8 +401,9 @@ impl ListItem {
 
         // 6. Upstream status
         if let Some(ref upstream) = self.upstream
-            && let Some((_, ahead, behind)) = upstream.active()
-            && let Some(formatted) = ColumnKind::Upstream.format_diff_plain(ahead, behind)
+            && let Some(active) = upstream.active()
+            && let Some(formatted) =
+                ColumnKind::Upstream.format_diff_plain(active.ahead, active.behind)
         {
             parts.push(formatted);
         }
@@ -449,7 +459,7 @@ impl ListItem {
         let upstream = self.upstream.as_ref().unwrap_or(&default_upstream);
         let upstream_divergence = match upstream.active() {
             None => Divergence::None,
-            Some((_, ahead, behind)) => Divergence::from_counts_with_remote(ahead, behind),
+            Some(active) => Divergence::from_counts_with_remote(active.ahead, active.behind),
         };
 
         match &self.kind {

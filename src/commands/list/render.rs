@@ -218,16 +218,16 @@ impl DiffColumnConfig {
         let mut segment = StyledLine::new();
 
         // Check for overflow
-        let positive_overflow = Self::exceeds_width(positive, self.added_digits);
-        let negative_overflow = Self::exceeds_width(negative, self.deleted_digits);
+        let positive_overflow = Self::exceeds_width(positive, self.positive_digits);
+        let negative_overflow = Self::exceeds_width(negative, self.negative_digits);
 
         if positive == 0 && negative == 0 && !self.display.always_show_zeros {
             segment.push_raw(" ".repeat(self.total_width));
             return segment;
         }
 
-        let positive_width = 1 + self.added_digits;
-        let negative_width = 1 + self.deleted_digits;
+        let positive_width = 1 + self.positive_digits;
+        let negative_width = 1 + self.negative_digits;
 
         // Fixed content width ensures vertical alignment of subcolumns
         let content_width = positive_width + 1 + negative_width;
@@ -608,13 +608,13 @@ impl ColumnLayout {
                 cell.truncate_to_width(self.width)
             }
             ColumnKind::Upstream => {
-                let Some((_, ahead, behind)) = ctx.upstream.active() else {
+                let Some(active) = ctx.upstream.active() else {
                     return StyledLine::new();
                 };
                 // Show centered | when in sync instead of ⇡0  ⇣0
                 // Note: This duplicates the InSync check from Divergence::Special, but
                 // checking counts directly is simpler than threading the enum through.
-                if ahead == 0 && behind == 0 {
+                if active.ahead == 0 && active.behind == 0 {
                     let mut cell = StyledLine::new();
                     // Center the symbol in the column width
                     let padding_left = (self.width.saturating_sub(1)) / 2;
@@ -622,7 +622,7 @@ impl ColumnLayout {
                     cell.push_styled("|", Style::new().dimmed());
                     return cell;
                 }
-                self.render_diff_cell(ahead, behind)
+                self.render_diff_cell(active.ahead, active.behind)
             }
             ColumnKind::Time => {
                 let mut cell = StyledLine::new();
@@ -717,8 +717,8 @@ mod tests {
             1,
             1,
             DiffColumnConfig {
-                added_digits: 1,
-                deleted_digits: 1,
+                positive_digits: 1,
+                negative_digits: 1,
                 total_width: total,
                 display: DiffDisplayConfig {
                     variant: DiffVariant::Signs,
@@ -740,8 +740,8 @@ mod tests {
             10,
             50,
             DiffColumnConfig {
-                added_digits: 2,
-                deleted_digits: 2,
+                positive_digits: 2,
+                negative_digits: 2,
                 total_width: total,
                 display: DiffDisplayConfig {
                     variant: DiffVariant::Signs,
@@ -763,8 +763,8 @@ mod tests {
             100,
             50,
             DiffColumnConfig {
-                added_digits: 3,
-                deleted_digits: 2,
+                positive_digits: 3,
+                negative_digits: 2,
                 total_width: total,
                 display: DiffDisplayConfig {
                     variant: DiffVariant::Signs,
@@ -786,8 +786,8 @@ mod tests {
             0,
             0,
             DiffColumnConfig {
-                added_digits: 1,
-                deleted_digits: 1,
+                positive_digits: 1,
+                negative_digits: 1,
                 total_width: total,
                 display: DiffDisplayConfig {
                     variant: DiffVariant::Signs,
@@ -811,8 +811,8 @@ mod tests {
             1,
             1,
             DiffColumnConfig {
-                added_digits: 1,
-                deleted_digits: 1,
+                positive_digits: 1,
+                negative_digits: 1,
                 total_width: total,
                 display: DiffDisplayConfig {
                     variant: DiffVariant::Signs,
@@ -948,8 +948,8 @@ mod tests {
                 ahead,
                 behind,
                 DiffColumnConfig {
-                    added_digits: 2,
-                    deleted_digits: 2,
+                    positive_digits: 2,
+                    negative_digits: 2,
                     total_width: total,
                     display: DiffDisplayConfig {
                         variant: DiffVariant::Arrows,
@@ -976,8 +976,8 @@ mod tests {
             0,
             0,
             DiffColumnConfig {
-                added_digits: 0,
-                deleted_digits: 2,
+                positive_digits: 0,
+                negative_digits: 2,
                 total_width: total,
                 display: DiffDisplayConfig {
                     variant: DiffVariant::Arrows,
@@ -993,8 +993,8 @@ mod tests {
             0,
             50,
             DiffColumnConfig {
-                added_digits: 0,
-                deleted_digits: 2,
+                positive_digits: 0,
+                negative_digits: 2,
                 total_width: total,
                 display: DiffDisplayConfig {
                     variant: DiffVariant::Arrows,
@@ -1021,8 +1021,8 @@ mod tests {
             0,
             0,
             DiffColumnConfig {
-                added_digits: 1,
-                deleted_digits: 1,
+                positive_digits: 1,
+                negative_digits: 1,
                 total_width: total,
                 display: DiffDisplayConfig {
                     variant: DiffVariant::Arrows,
@@ -1042,8 +1042,8 @@ mod tests {
             0,
             0,
             DiffColumnConfig {
-                added_digits: 1,
-                deleted_digits: 1,
+                positive_digits: 1,
+                negative_digits: 1,
                 total_width: total,
                 display: DiffDisplayConfig {
                     variant: DiffVariant::Arrows,
@@ -1136,8 +1136,8 @@ mod tests {
             53,
             7,
             DiffColumnConfig {
-                added_digits: 2, // Allocates 3 chars: "+NN"
-                deleted_digits: 2,
+                positive_digits: 2, // Allocates 3 chars: "+NN"
+                negative_digits: 2,
                 total_width: total,
                 display: DiffDisplayConfig {
                     variant: DiffVariant::Signs,
@@ -1156,8 +1156,8 @@ mod tests {
             33,
             23,
             DiffColumnConfig {
-                added_digits: 2,
-                deleted_digits: 2,
+                positive_digits: 2,
+                negative_digits: 2,
                 total_width: total,
                 display: DiffDisplayConfig {
                     variant: DiffVariant::Signs,
@@ -1176,8 +1176,8 @@ mod tests {
             2,
             2,
             DiffColumnConfig {
-                added_digits: 2,
-                deleted_digits: 2,
+                positive_digits: 2,
+                negative_digits: 2,
                 total_width: total,
                 display: DiffDisplayConfig {
                     variant: DiffVariant::Signs,
@@ -1228,8 +1228,8 @@ mod tests {
             999,
             999,
             DiffColumnConfig {
-                added_digits: 3,
-                deleted_digits: 3,
+                positive_digits: 3,
+                negative_digits: 3,
                 total_width: total,
                 display: DiffDisplayConfig {
                     variant: DiffVariant::Signs,
@@ -1248,8 +1248,8 @@ mod tests {
             1000,
             500,
             DiffColumnConfig {
-                added_digits: 3,
-                deleted_digits: 3,
+                positive_digits: 3,
+                negative_digits: 3,
                 total_width: total,
                 display: DiffDisplayConfig {
                     variant: DiffVariant::Signs,
@@ -1278,8 +1278,8 @@ mod tests {
             500,
             1000,
             DiffColumnConfig {
-                added_digits: 3,
-                deleted_digits: 3,
+                positive_digits: 3,
+                negative_digits: 3,
                 total_width: total,
                 display: DiffDisplayConfig {
                     variant: DiffVariant::Signs,
@@ -1307,8 +1307,8 @@ mod tests {
             100_000,
             200_000,
             DiffColumnConfig {
-                added_digits: 3,
-                deleted_digits: 3,
+                positive_digits: 3,
+                negative_digits: 3,
                 total_width: total,
                 display: DiffDisplayConfig {
                     variant: DiffVariant::Signs,
@@ -1344,8 +1344,8 @@ mod tests {
             1000, // Use larger value to show K suffix
             50,
             DiffColumnConfig {
-                added_digits: 2,
-                deleted_digits: 2,
+                positive_digits: 2,
+                negative_digits: 2,
                 total_width: arrow_total,
                 display: DiffDisplayConfig {
                     variant: DiffVariant::Arrows,
@@ -1374,8 +1374,8 @@ mod tests {
             50,
             1000, // Use larger value to show K suffix
             DiffColumnConfig {
-                added_digits: 2,
-                deleted_digits: 2,
+                positive_digits: 2,
+                negative_digits: 2,
                 total_width: arrow_total,
                 display: DiffDisplayConfig {
                     variant: DiffVariant::Arrows,

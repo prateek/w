@@ -356,14 +356,14 @@ impl JsonItem {
 
 /// Convert UpstreamStatus to JsonRemote
 fn upstream_to_json(upstream: &UpstreamStatus, branch: &Option<String>) -> Option<JsonRemote> {
-    upstream.active().map(|(remote, ahead, behind)| {
+    upstream.active().map(|active| {
         // Use local branch name since UpstreamStatus only stores the remote name,
         // not the full tracking refspec. In most cases these match (e.g., feature -> origin/feature).
         JsonRemote {
-            name: remote.to_string(),
+            name: active.remote.to_string(),
             branch: branch.clone().unwrap_or_default(),
-            ahead,
-            behind,
+            ahead: active.ahead,
+            behind: active.behind,
         }
     })
 }

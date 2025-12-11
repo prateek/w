@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.1.19
+
+### Added
+
+- **`wt step for-each` command**: Run commands across all worktrees sequentially. Supports template variables (`{{ branch }}`, `{{ worktree }}`, etc.) and JSON context on stdin. Example: `wt step for-each -- git pull --autostash`. ([#138](https://github.com/max-sixty/worktrunk/pull/138))
+
+### Changed
+
+- **Content integration detection always enabled**: The `⊂` (content integrated) symbol now appears without requiring `--full`. Squash-merged branches are detected automatically. ([f39c442](https://github.com/max-sixty/worktrunk/commit/f39c4428))
+- **SIGINT forwarding**: Ctrl+C now properly terminates child processes in hooks, preventing orphaned background commands. ([#136](https://github.com/max-sixty/worktrunk/pull/136))
+
+### Fixed
+
+- **Windows path handling**: Fixed path canonicalization issues on Windows that caused worktree detection failures. Uses `dunce` to handle Windows verbatim paths (`\\?\`) that git cannot process. ([#125](https://github.com/max-sixty/worktrunk/pull/125))
+
 ## 0.1.18
 
 ### Added

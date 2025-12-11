@@ -496,7 +496,7 @@ impl<'a> ListRowContext<'a> {
             None
         };
 
-        if self.item.is_potentially_removable() {
+        if self.item.should_dim() {
             Some(base_style.unwrap_or_default().dimmed())
         } else {
             base_style

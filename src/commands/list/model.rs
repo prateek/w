@@ -311,9 +311,12 @@ impl ListItem {
 
     /// Determine if the item contains no unique work and can likely be removed.
     ///
-    /// Returns true when any of these conditions indicate the branch content
-    /// is already integrated into main:
+    /// Returns:
+    /// - `Some(true)` - confirmed removable (branch integrated into main)
+    /// - `Some(false)` - confirmed not removable (has unique work)
+    /// - `None` - data still loading, cannot determine yet
     ///
+    /// Checks (in order):
     /// 1. **Same commit** - branch HEAD is ancestor of main or same commit.
     ///    The branch is already part of main's history.
     /// 2. **No file changes** - three-dot diff (`main...branch`) is empty.
@@ -324,67 +327,21 @@ impl ListItem {
     ///    tree. Catches squash-merged branches where main has advanced.
     /// 5. **Working tree matches main** (worktrees only) - uncommitted changes
     ///    don't diverge from main.
-    pub(crate) fn is_potentially_removable(&self) -> bool {
-        if self.is_main() {
-            return false;
-        }
+    pub(crate) fn is_potentially_removable(&self) -> Option<bool> {
+        // Use already-computed status_symbols if available
+        let main_state = self.status_symbols.as_ref()?.main_state;
+        Some(matches!(
+            main_state,
+            MainState::SameCommit | MainState::Integrated(_)
+        ))
+    }
 
-        // Helper: check if working tree is clean
-        let is_working_tree_clean = || {
-            self.worktree_data()
-                .map(|data| {
-                    data.working_tree_diff
-                        .as_ref()
-                        .map(|d| d.is_empty())
-                        .unwrap_or(true)
-                })
-                .unwrap_or(true) // Branches without worktrees are "clean"
-        };
-
-        // Check 1: Branch is ancestor of main (same commit or already merged)
-        if self.is_ancestor == Some(true) && is_working_tree_clean() {
-            return true;
-        }
-
-        // Check 2: No file changes beyond merge-base (three-dot diff empty)
-        // This is the primary integration check - catches most cases including
-        // squash-merged branches where commits exist but don't add file changes.
-        if self.has_file_changes == Some(false) && is_working_tree_clean() {
-            return true;
-        }
-
-        // Check 3: Tree SHA matches main (handles squash merge/rebase)
-        if self.committed_trees_match == Some(true) && is_working_tree_clean() {
-            return true;
-        }
-
-        // Check 4: Merge simulation
-        // Merging branch into main wouldn't add changes - content already integrated.
-        // This catches cases where main has advanced past the squash-merge point.
-        if self.would_merge_add == Some(false) && is_working_tree_clean() {
-            return true;
-        }
-
-        let counts = self.counts();
-
-        // Check 5 (worktrees): Working tree matches main
-        if let Some(data) = self.worktree_data() {
-            let no_commits_and_clean = counts.ahead == 0
-                && data
-                    .working_tree_diff
-                    .as_ref()
-                    .map(|d| d.is_empty())
-                    .unwrap_or(true);
-            let matches_main = data
-                .working_tree_diff_with_main
-                .and_then(|opt_diff| opt_diff)
-                .map(|diff| diff.is_empty())
-                .unwrap_or(false);
-            no_commits_and_clean || matches_main
-        } else {
-            // Branch without worktree: fallback to ahead == 0
-            counts.ahead == 0
-        }
+    /// Whether the branch/path text should be dimmed in list output.
+    ///
+    /// Returns true only when we have confirmed the item is removable.
+    /// Returns false when data is still loading (prevents UI flash).
+    pub(crate) fn should_dim(&self) -> bool {
+        self.is_potentially_removable() == Some(true)
     }
 
     /// Format this item as a single-line statusline string.
@@ -639,7 +596,9 @@ fn determine_integration_state(
         return (false, None);
     }
 
-    let is_clean = working_tree_diff.map(|d| d.is_empty()).unwrap_or(true);
+    // Require working_tree_diff to be loaded and empty. Don't assume clean when unknown
+    // to avoid premature integration state (which would cause UI flash during progressive loading).
+    let is_clean = working_tree_diff.is_some_and(|d| d.is_empty());
 
     // Priority 1: Branch is exactly the same commit as main (ancestor with 0 behind)
     if is_ancestor == Some(true) && behind_main == Some(0) && is_clean {

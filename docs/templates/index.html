@@ -56,7 +56,7 @@
   }
 </style>
 <section class="text-center welcome">
-  <h1 class="heading-text" style="font-size: 50px">Worktrunk</h1>
+  <h1 class="heading-text" style="font-size: 50px"><a href="#worktrunk" class="heading-anchor">Worktrunk</a></h1>
   <h3 class="title-text">
     Git worktree management for <b style="white-space: nowrap">parallel AI agent workflows</b>
   </h3>
@@ -75,10 +75,12 @@
 {{ macros::toc_nav(docs_section=docs_section) }}
 {% endblock toc %}
 
+{% block content_id %}worktrunk{% endblock content_id %}
+
 {% block content %}
 {# Display worktrunk content directly on homepage #}
 {% set docs_section = get_section(path="_index.md") %}
 {% set worktrunk = docs_section.pages | filter(attribute="slug", value="worktrunk") | first %}
-<div class="heading-text">{{ worktrunk.title }}</div>
+<h1 class="heading-text"><a href="#worktrunk" class="heading-anchor">{{ worktrunk.title }}</a></h1>
 {{ worktrunk.content | safe }}
 {% endblock content %}

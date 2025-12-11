@@ -68,17 +68,26 @@ h2 {
     position: relative;
     display: inline-block;
 
-    // Hand-drawn underline - slightly irregular width
-    &::after {
-        content: "";
-        position: absolute;
-        left: 0;
-        bottom: -0.3rem;
-        width: 45%;
-        height: 2px;
-        background: var(--wt-color-craft-brown);
-        opacity: 0.5;
-        border-radius: 1px;
+    // Anchor inside h2 gets the underline (aligns with text)
+    > a {
+        // Hand-drawn underline - turns gold on hover
+        &::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            bottom: -0.3rem;
+            width: 45%;
+            height: 2px;
+            background: var(--wt-color-craft-brown);
+            opacity: 0.5;
+            border-radius: 1px;
+            transition: background 150ms ease-out, opacity 150ms ease-out;
+        }
+
+        &:hover::after {
+            background: var(--wt-color-accent);
+            opacity: 1;
+        }
     }
 }
 
@@ -95,7 +104,31 @@ h4 {
     font-weight: 550;
 }
 
-// Page title heading (used on content pages)
+// Heading anchor links - entire heading is clickable
+// .heading-anchor = custom anchors in templates, .zola-anchor = Zola-generated
+h1 > a.heading-anchor,
+h2 > a.zola-anchor,
+h3 > a.zola-anchor,
+h4 > a.zola-anchor {
+    color: inherit;
+    text-decoration: none;
+
+    &:hover {
+        text-decoration: none;
+    }
+}
+
+// h3/h4 hover: color shift to accent (h1/h2 have underline intensify via ::after)
+h3 > a.zola-anchor,
+h4 > a.zola-anchor {
+    transition: color 150ms ease-out;
+
+    &:hover {
+        color: var(--wt-color-accent);
+    }
+}
+
+// Page title heading (used on content pages and hero)
 .heading-text {
     font-family: var(--wt-font-head);
     font-size: 1.75rem;
@@ -305,6 +338,8 @@ main {
     border-radius: 12px;
     border: 1px solid var(--wt-color-border-subtle);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    // Account for sticky header when scrolling to page anchor (e.g., /#worktrunk)
+    scroll-margin-top: calc(var(--wt-header-height) + var(--wt-main-padding-top));
 }
 
 // Paragraphs
@@ -1150,7 +1185,7 @@ input:focus-visible {
 }
 
 // Content links - animated underline
-.content a:not(.button) {
+.content a:not(.button):not(.heading-anchor):not(.zola-anchor) {
     position: relative;
 
     &::after {

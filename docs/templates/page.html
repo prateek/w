@@ -7,8 +7,10 @@
 {{ macros::toc_nav(docs_section=docs_section, current_page=page) }}
 {% endblock toc %}
 
+{% block content_id %}{{ page.slug }}{% endblock content_id %}
+
 {% block content %}
-<div class="heading-text">{{ page.title }}</div>
+<h1 class="heading-text"><a href="#{{ page.slug }}" class="heading-anchor">{{ page.title }}</a></h1>
 {{ page.content | safe }}
 
 {# Calculate prev/next from section pages #}

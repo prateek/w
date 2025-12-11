@@ -154,7 +154,7 @@
         {{ macros::toc_nav(docs_section=docs_section) }}
         {% endblock toc %}
 
-        <div class="content">
+        <div class="content" id="{% block content_id %}{% endblock content_id %}">
             {% block content %}
             {{ section.content | safe }}
             {% endblock content %}

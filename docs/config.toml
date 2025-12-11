@@ -14,6 +14,7 @@ highlight_themes_css = [
     { theme = "base16-ocean-dark", filename = "syntax-dark.css" },
 ]
 error_on_missing_highlight = true
+insert_anchor_links = "heading"
 
 [extra]
 logo_name = "Worktrunk"

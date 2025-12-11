@@ -652,7 +652,7 @@ impl ColumnLayout {
                 // - None = not loaded yet (show spinner)
                 // - Some(None) = loaded, no CI (show nothing)
                 // - Some(Some(status)) = loaded with CI (show status)
-                match ctx.item.pr_status() {
+                match &ctx.item.pr_status {
                     None => {
                         // Not loaded yet - show spinner
                         let mut cell = StyledLine::new();

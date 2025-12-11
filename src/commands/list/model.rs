@@ -314,10 +314,6 @@ impl ListItem {
         self.worktree_data().map(|data| &data.path)
     }
 
-    pub fn pr_status(&self) -> Option<Option<&PrStatus>> {
-        self.pr_status.as_ref().map(|opt| opt.as_ref())
-    }
-
     /// Determine if the item contains no unique work and can likely be removed.
     ///
     /// Returns:

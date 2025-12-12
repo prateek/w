@@ -1541,6 +1541,8 @@ Toggle between views with number keys:
 | `Alt-p` | Toggle preview panel |
 | `Ctrl-u`/`Ctrl-d` | Scroll preview up/down |
 
+Branches without worktrees are included — selecting one creates a worktree. (`wt list` requires `--branches` to show them.)
+
 ## See also
 
 - [wt list](@/list.md) — Static table view with all worktree metadata

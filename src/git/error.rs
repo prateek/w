@@ -271,7 +271,7 @@ impl std::fmt::Display for GitError {
                     f,
                     "{}\n\n{}",
                     error_message(cformat!(
-                        "Ambiguous: <bold>{expected}</> has a worktree on a different branch, but branch <bold>{branch}</> exists at <bold>{actual}</>"
+                        "Ambiguous: <bold>{expected}</> has a worktree on a different branch, but branch <bold>{branch}</> exists @ <bold>{actual}</>"
                     )),
                     hint_message(cformat!(
                         "Use <bright-black>wt list</> to see worktree-branch mappings"
@@ -301,7 +301,7 @@ impl std::fmt::Display for GitError {
             } => {
                 let path_display = format_path_for_display(path);
                 let header = error_message(cformat!(
-                    "Failed to remove worktree for <bold>{branch}</> at <bold>{path_display}</>"
+                    "Failed to remove worktree for <bold>{branch}</> @ <bold>{path_display}</>"
                 ));
                 write!(f, "{}", format_error_block(header, error))
             }

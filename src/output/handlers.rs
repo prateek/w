@@ -21,7 +21,7 @@ use worktrunk::styling::{
 /// Format a switch success message with a consistent location phrase
 ///
 /// Both interactive and directive modes now use the human-friendly
-/// `"Created new worktree for {branch} from {base} at {path}"` wording so
+/// `"Created new worktree for {branch} from {base} @ {path}"` wording so
 /// users see the same message regardless of how worktrunk is invoked.
 fn format_switch_success_message(
     branch: &str,
@@ -42,11 +42,11 @@ fn format_switch_success_message(
 
     match source {
         Some(src) => cformat!(
-            "<green>{action} <bold>{branch}</> from <bold>{src}</> at <bold>{}</></>",
+            "<green>{action} <bold>{branch}</> from <bold>{src}</> @ <bold>{}</></>",
             format_path_for_display(path)
         ),
         None => cformat!(
-            "<green>{action} <bold>{branch}</> at <bold>{}</></>",
+            "<green>{action} <bold>{branch}</> @ <bold>{}</></>",
             format_path_for_display(path)
         ),
     }
@@ -358,7 +358,7 @@ pub fn handle_switch_output(
         SwitchResult::AlreadyAt(path) => {
             // Already at target - show info, no hint needed
             super::print(info_message(cformat!(
-                "Already on worktree for <bold>{branch}</> at <bold>{}</>",
+                "Already on worktree for <bold>{branch}</> @ <bold>{}</>",
                 format_path_for_display(path)
             )))?;
         }
@@ -373,12 +373,12 @@ pub fn handle_switch_output(
             } else if Shell::is_integration_configured().ok().flatten().is_some() {
                 // Shell configured but not active (ran binary directly, e.g. `command wt`)
                 super::print(warning_message(cformat!(
-                    "Worktree for <bold>{branch}</> at <bold>{path_display}</>; cannot cd (binary invoked directly)"
+                    "Worktree for <bold>{branch}</> @ <bold>{path_display}</>; cannot cd (binary invoked directly)"
                 )))?;
             } else {
                 // Shell integration not configured - show warning and setup hint
                 super::print(warning_message(cformat!(
-                    "Worktree for <bold>{branch}</> at <bold>{path_display}</>; cannot cd (no shell integration)"
+                    "Worktree for <bold>{branch}</> @ <bold>{path_display}</>; cannot cd (no shell integration)"
                 )))?;
                 super::shell_integration_hint(shell_integration_hint())?;
             }

@@ -20,7 +20,7 @@
 //!
 //! ```bash
 //! $ wt switch my-feature
-//! Created new branch and worktree for 'my-feature' at /path/to/worktree
+//! Created new branch and worktree for 'my-feature' @ /path/to/worktree
 //!
 //! Run `wt config shell install` to enable automatic cd
 //!
@@ -35,7 +35,7 @@
 //!
 //! ```bash
 //! $ wt switch my-feature
-//! Created new branch and worktree for 'my-feature' at /path/to/worktree
+//! Created new branch and worktree for 'my-feature' @ /path/to/worktree
 //!
 //! $ pwd
 //! /path/to/worktree  # ← Automatically changed!
@@ -567,7 +567,7 @@ pub fn handle_remove_by_path(
 
     if !background {
         crate::output::print(progress_message(cformat!(
-            "Removing worktree at <bold>{}</>...",
+            "Removing worktree @ <bold>{}</>...",
             worktrunk::path::format_path_for_display(path)
         )))?;
     }

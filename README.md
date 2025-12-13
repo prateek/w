@@ -14,7 +14,7 @@
 
 > **December 2025**: I've been using Worktrunk as my daily driver, and am releasing it as Open Source this week; I think folks will find it really helpful. It's built with love (there's no slop!). If social proof is helpful: I also created [PRQL](https://github.com/PRQL/prql) (10k stars) and am a maintainer of [Xarray](https://github.com/pydata/xarray) (4k stars), [Insta](https://github.com/mitsuhiko/insta), & [Numbagg](https://github.com/numbagg/numbagg).
 
-Worktrunk is a CLI for git worktree management, designed for parallel AI agent workflows. Git worktrees give each agent an isolated branch and directory; Worktrunk adds branch-based navigation, unified status, and lifecycle hooks. Creating a new agent workspace is as immediate as `git switch`.
+Worktrunk is a CLI for git worktree management, designed for parallel AI agent workflows. Git worktrees give each agent an isolated branch and directory; Worktrunk wraps them in a clean interface and extension points. Scaling agents becomes as simple as scaling git branches.
 
 Here's a quick demo:
 
@@ -22,30 +22,59 @@ Here's a quick demo:
 
 > ## 📚 Full documentation at [worktrunk.dev](https://worktrunk.dev) 📚
 
-<!-- ⚠️ AUTO-GENERATED from docs/content/worktrunk.md#git-worktrees-are-a-great-primitive..worktrunk-makes-git-worktrees-easy — edit source to update -->
+<!-- ⚠️ AUTO-GENERATED from docs/content/worktrunk.md#context-git-worktrees..worktrunk-makes-git-worktrees-easy — edit source to update -->
 
-## Git worktrees are a great primitive
+## Context: git worktrees
 
-For context, AI agents like Claude Code and Codex can increasingly handle longer tasks
-without supervision, and it's very practical to run several in parallel. Git
-worktrees provide each agent with its own working directory, avoiding agents
-stepping on each other's changes.
+AI agents like Claude Code and Codex can handle longer tasks without supervision,
+and running several in parallel is practical. Git worktrees give each agent its
+own working directory — no stepping on each other's changes.
 
-But the git worktree UX is clunky. Even something as simple as "start a new worktree" is verbose:
-`git worktree add -b feature ../repo.feature`, then `cd ../repo.feature`.
+But the git worktree UX is clunky. Even starting a new worktree means typing the
+branch name three times: `git worktree add -b feature ../repo.feature`, then
+`cd ../repo.feature`.
 
 ## Worktrunk makes git worktrees easy
 
-Worktrunk makes git worktrees easy to use — branch-based navigation, unified status, and workflow automation.
+Start with the core commands; add workflow automation as needed.
 
 **Core commands:**
 
-| Task                  | Worktrunk                        | Plain git                                                                     |
-| --------------------- | -------------------------------- | ----------------------------------------------------------------------------- |
-| Switch worktrees      | `wt switch feature`              | `cd ../repo.feature`                                                          |
-| Create + start Claude | `wt switch -c -x claude feature` | `git worktree add -b feature ../repo.feature && cd ../repo.feature && claude` |
-| Clean up              | `wt remove`                      | `cd ../repo && git worktree remove ../repo.feature && git branch -d feature`  |
-| List with status      | `wt list`                        | `git worktree list` (paths only)                                              |
+<table class="cmd-compare">
+  <thead>
+    <tr>
+      <th>Task</th>
+      <th>Worktrunk</th>
+      <th>Plain git</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Switch worktrees</td>
+      <td><code>wt switch feature</code></td>
+      <td><pre>cd ../repo.feature</pre></td>
+    </tr>
+    <tr>
+      <td>Create + start Claude</td>
+      <td><code>wt switch -c -x claude feature</code></td>
+      <td><pre>git worktree add -b feature ../repo.feature && \
+cd ../repo.feature && \
+claude</pre></td>
+    </tr>
+    <tr>
+      <td>Clean up</td>
+      <td><code>wt remove</code></td>
+      <td><pre>cd ../repo && \
+git worktree remove ../repo.feature && \
+git branch -d feature</pre></td>
+    </tr>
+    <tr>
+      <td>List with status</td>
+      <td><code>wt list</code></td>
+      <td><pre>git worktree list</pre> (paths only)</td>
+    </tr>
+  </tbody>
+</table>
 
 **Workflow automation:**
 
@@ -53,57 +82,6 @@ Worktrunk makes git worktrees easy to use — branch-based navigation, unified s
 - **[LLM commit messages](https://worktrunk.dev/llm-commits/)** — generate commit messages from diffs via [llm](https://llm.datasette.io/)
 - **[Merge workflow](https://worktrunk.dev/merge/)** — squash, rebase, merge, clean up in one command
 - ...and [lots more](#next-steps)
-
-<!-- END AUTO-GENERATED -->
-
-## Core commands in practice
-
-Create a worktree for a new task:
-
-<!-- ⚠️ AUTO-GENERATED from tests/integration_tests/snapshots/integration__integration_tests__shell_wrapper__tests__readme_example_simple_switch.snap — edit source to update -->
-
-```bash
-$ wt switch --create fix-auth
-✅ Created new worktree for fix-auth from main at ../repo.fix-auth
-```
-
-<!-- END AUTO-GENERATED -->
-
-Switch to an existing worktree:
-
-<!-- ⚠️ AUTO-GENERATED from tests/integration_tests/snapshots/integration__integration_tests__shell_wrapper__tests__readme_example_switch_back.snap — edit source to update -->
-
-```bash
-$ wt switch feature-api
-✅ Switched to worktree for feature-api at ../repo.feature-api
-```
-
-<!-- END AUTO-GENERATED -->
-
-See all worktrees at a glance:
-
-<!-- ⚠️ AUTO-GENERATED from tests/snapshots/integration__integration_tests__list__readme_example_list.snap — edit source to update -->
-
-```console
-$ wt list
-  Branch       Status        HEAD±    main↕  Path                Remote⇅  Commit    Age   Message
-@ feature-api  +   ↕⇡     +54   -5   ↑4  ↓1  ./repo.feature-api   ⇡3      ec97decc  30m   Add API tests
-^ main             ^⇅                        ./repo               ⇡1  ⇣1  6088adb3  4d    Merge fix-auth:…
-+ fix-auth         ↕|                ↑2  ↓1  ./repo.fix-auth        |     127407de  5h    Add secure token…
-
-⚪ Showing 3 worktrees, 1 with changes, 2 ahead
-```
-
-<!-- END AUTO-GENERATED -->
-
-Clean up when done:
-
-<!-- ⚠️ AUTO-GENERATED from tests/integration_tests/snapshots/integration__integration_tests__shell_wrapper__tests__readme_example_remove.snap — edit source to update -->
-
-```console
-$ wt remove
-🔄 Removing feature-api worktree & branch in background (same commit as main)
-```
 
 <!-- END AUTO-GENERATED -->
 

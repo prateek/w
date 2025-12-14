@@ -622,7 +622,7 @@ fn check_integration_state(
         .and_then(|opt| opt.as_ref())
         .is_some_and(|diff| diff.is_empty());
 
-    if working_tree_matches_main {
+    if working_tree_matches_main && is_clean {
         return Some(MainState::Integrated(IntegrationReason::TreesMatch));
     }
 
@@ -1482,5 +1482,60 @@ mod tests {
         assert_eq!(OperationState::Conflicts.as_json_str(), Some("conflicts"));
         assert_eq!(OperationState::Rebase.as_json_str(), Some("rebase"));
         assert_eq!(OperationState::Merge.as_json_str(), Some("merge"));
+    }
+
+    #[test]
+    fn test_check_integration_state_priority5_requires_clean() {
+        // Priority 5 checks if working tree matches main.
+        // It must also require is_clean to avoid marking worktrees with
+        // uncommitted changes as integrated (which would incorrectly suggest
+        // they're safe to remove).
+
+        let dirty_working_tree = LineDiff {
+            added: 5,
+            deleted: 3,
+        };
+        let clean_working_tree = LineDiff {
+            added: 0,
+            deleted: 0,
+        };
+        let working_tree_matches_main = Some(Some(LineDiff {
+            added: 0,
+            deleted: 0,
+        }));
+
+        // Dirty working tree: should NOT return Integrated even though working tree matches main
+        assert_eq!(
+            check_integration_state(
+                false,                      // not main
+                Some("main"),               // has default branch
+                Some(false),                // not an ancestor
+                None,                       // behind_main unknown
+                false,                      // committed trees don't match
+                None,                       // has_file_changes unknown
+                None,                       // would_merge_add unknown
+                Some(&dirty_working_tree),  // has uncommitted changes
+                &working_tree_matches_main, // working tree matches main
+            ),
+            None,
+            "Priority 5 should reject dirty working tree"
+        );
+
+        // Clean working tree: SHOULD return Integrated(TreesMatch)
+        assert_eq!(
+            check_integration_state(
+                false,
+                Some("main"),
+                Some(false),
+                None,
+                false,
+                None,
+                None,
+                Some(&clean_working_tree),
+                &working_tree_matches_main,
+            ),
+            Some(MainState::Integrated(IntegrationReason::TreesMatch)),
+            "Priority 5 should accept clean working tree"
+        );
     }
 }

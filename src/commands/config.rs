@@ -478,7 +478,7 @@ fn render_ci_tool_status(
                 out,
                 "{}",
                 warning_message(cformat!(
-                    "<bold>{tool}</> installed but not authenticated; run <bright-black>{tool} auth login</>"
+                    "<bold>{tool}</> installed but not authenticated; run <bold>{tool} auth login</>"
                 ))
             )?;
         }

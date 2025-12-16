@@ -629,7 +629,8 @@ impl std::error::Error for HookErrorWithHint {
 }
 
 /// Format an error with header and gutter content
-fn format_error_block(header: String, error: &str) -> String {
+fn format_error_block(header: impl Into<String>, error: &str) -> String {
+    let header = header.into();
     let trimmed = error.trim();
     if trimmed.is_empty() {
         header

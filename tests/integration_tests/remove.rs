@@ -120,6 +120,69 @@ fn test_remove_nonexistent_worktree(repo: TestRepo) {
     snapshot_remove("remove_nonexistent_worktree", &repo, &["nonexistent"], None);
 }
 
+/// Test removing a branch that exists but has no worktree, when expected path is occupied.
+///
+/// Regression test for bug where `wt remove npm` would show "Cannot create worktree for npm"
+/// when the expected path was occupied. The fix uses `ResolutionContext::Remove` which skips
+/// the path occupation check entirely, correctly treating this as a branch-only removal.
+///
+/// Setup:
+/// - Branch `npm` exists but has no worktree
+/// - The expected path for `npm` (repo.npm) is occupied by a different branch's worktree
+///
+/// Expected behavior:
+/// - Warning: "No worktree found for branch npm"
+/// - Success: Branch deleted (same commit as main)
+#[rstest]
+fn test_remove_branch_no_worktree_path_occupied(mut repo: TestRepo) {
+    // Create branch `npm` without a worktree
+    repo.git_command(&["branch", "npm"]).output().unwrap();
+
+    // Create a worktree for a different branch at the path where `npm` worktree would be
+    // (the path template puts worktrees at ../repo.branch, so ../repo.npm would be npm's path)
+    let _other_worktree = repo.add_worktree("other");
+
+    // Manually move the worktree to occupy npm's expected path
+    // First, get the expected path for npm
+    let npm_expected_path = repo.root_path().parent().unwrap().join(format!(
+        "{}.npm",
+        repo.root_path().file_name().unwrap().to_str().unwrap()
+    ));
+    let other_path = repo.root_path().parent().unwrap().join(format!(
+        "{}.other",
+        repo.root_path().file_name().unwrap().to_str().unwrap()
+    ));
+
+    // Remove the worktree metadata and move the directory
+    repo.git_command(&[
+        "worktree",
+        "remove",
+        "--force",
+        other_path.to_str().unwrap(),
+    ])
+    .output()
+    .unwrap();
+
+    // Create worktree at npm's expected path but for the "other" branch
+    repo.git_command(&[
+        "worktree",
+        "add",
+        npm_expected_path.to_str().unwrap(),
+        "other",
+    ])
+    .output()
+    .unwrap();
+
+    // Now: branch `npm` exists, no worktree for it, but npm's expected path has `other` branch
+    // Running `wt remove npm` should show "No worktree found" NOT "Cannot create worktree"
+    snapshot_remove(
+        "remove_branch_no_worktree_path_occupied",
+        &repo,
+        &["npm"],
+        None,
+    );
+}
+
 #[rstest]
 fn test_remove_multiple_nonexistent_force(repo: TestRepo) {
     // Try to force-remove multiple branches that don't exist

@@ -126,6 +126,17 @@ use super::command_executor::CommandContext;
 use super::hooks::{HookFailureStrategy, HookPipeline, HookSource};
 use super::repository_ext::RepositoryCliExt;
 
+/// Context for worktree resolution - determines which checks are performed.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ResolutionContext {
+    /// Creating or switching to a worktree - path occupation is an error
+    /// because we need to create a worktree at the expected path.
+    CreateOrSwitch,
+    /// Removing a worktree - we only care if the branch has a worktree,
+    /// path occupation is irrelevant since we're not creating anything.
+    Remove,
+}
+
 /// Resolve a worktree argument using branch-first lookup.
 ///
 /// Resolution order:
@@ -134,12 +145,16 @@ use super::repository_ext::RepositoryCliExt;
 /// 3. If branch has a worktree, return it
 /// 4. Otherwise, return branch-only (no worktree)
 ///
-/// If the branch has no worktree but expected path is occupied by another
-/// branch's worktree, an error is raised.
+/// For `CreateOrSwitch` context: If the branch has no worktree but expected
+/// path is occupied by another branch's worktree, an error is raised.
+///
+/// For `Remove` context: Path occupation is ignored since we're not creating
+/// a worktree - we just return `BranchOnly` if no worktree exists.
 pub fn resolve_worktree_arg(
     repo: &Repository,
     name: &str,
     config: &WorktrunkConfig,
+    context: ResolutionContext,
 ) -> anyhow::Result<ResolvedWorktree> {
     // Special symbols
     match name {
@@ -172,19 +187,21 @@ pub fn resolve_worktree_arg(
         });
     }
 
-    // No worktree for branch - check if expected path is occupied
-    let expected_path = compute_worktree_path(repo, name, config)?;
-    if let Some((_, occupant_branch)) = repo.worktree_at_path(&expected_path)? {
-        // Path is occupied by a different branch's worktree
-        return Err(GitError::WorktreePathOccupied {
-            branch,
-            path: expected_path,
-            occupant: occupant_branch,
+    // No worktree for branch - check if expected path is occupied (only for create/switch)
+    if context == ResolutionContext::CreateOrSwitch {
+        let expected_path = compute_worktree_path(repo, name, config)?;
+        if let Some((_, occupant_branch)) = repo.worktree_at_path(&expected_path)? {
+            // Path is occupied by a different branch's worktree
+            return Err(GitError::WorktreePathOccupied {
+                branch,
+                path: expected_path,
+                occupant: occupant_branch,
+            }
+            .into());
         }
-        .into());
     }
 
-    // No worktree for branch or at expected path
+    // No worktree for branch (and path not occupied, or we don't care about path)
     Ok(ResolvedWorktree::BranchOnly { branch })
 }
 

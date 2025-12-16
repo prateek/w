@@ -27,13 +27,13 @@ use commands::command_executor::CommandContext;
 use commands::handle_select;
 use commands::worktree::{SwitchResult, handle_push};
 use commands::{
-    ConfigAction, MergeOptions, RebaseResult, SquashResult, add_approvals, approve_hooks,
-    clear_approvals, compute_worktree_path, handle_config_create, handle_config_show,
-    handle_configure_shell, handle_hook_show, handle_init, handle_list, handle_merge,
-    handle_rebase, handle_remove, handle_remove_by_path, handle_remove_current, handle_show_theme,
-    handle_squash, handle_state_clear, handle_state_clear_all, handle_state_get, handle_state_set,
-    handle_state_show, handle_switch, handle_unconfigure_shell, resolve_worktree_arg, run_hook,
-    step_commit, step_for_each,
+    ConfigAction, MergeOptions, RebaseResult, ResolutionContext, SquashResult, add_approvals,
+    approve_hooks, clear_approvals, compute_worktree_path, handle_config_create,
+    handle_config_show, handle_configure_shell, handle_hook_show, handle_init, handle_list,
+    handle_merge, handle_rebase, handle_remove, handle_remove_by_path, handle_remove_current,
+    handle_show_theme, handle_squash, handle_state_clear, handle_state_clear_all, handle_state_get,
+    handle_state_set, handle_state_show, handle_switch, handle_unconfigure_shell,
+    resolve_worktree_arg, run_hook, step_commit, step_for_each,
 };
 use output::{execute_user_command, handle_remove_output, handle_switch_output};
 
@@ -1330,7 +1330,12 @@ fn main() {
                     let mut errors: Vec<anyhow::Error> = Vec::new();
 
                     for worktree_name in &worktrees {
-                        match resolve_worktree_arg(&repo, worktree_name, &config) {
+                        match resolve_worktree_arg(
+                            &repo,
+                            worktree_name,
+                            &config,
+                            ResolutionContext::Remove,
+                        ) {
                             Ok(ResolvedWorktree::Worktree { path, branch }) => {
                                 if Some(&path) == current_worktree.as_ref() {
                                     current = Some((path, branch));
@@ -1351,7 +1356,8 @@ fn main() {
                     // (resolution errors are fatal - we can't proceed with unknown names)
                     if !errors.is_empty() {
                         for e in &errors {
-                            output::print(error_message(e.to_string()))?;
+                            // GitError variants already include emoji via error_message() in Display
+                            output::print(e.to_string())?;
                         }
                         anyhow::bail!(
                             "Failed to resolve {} of {} specified names",

@@ -80,12 +80,84 @@ pub const INFO_EMOJI: &str = "⚪";
 pub const PROMPT_EMOJI: &str = "❓";
 
 // ============================================================================
+// Formatted Message Type
+// ============================================================================
+
+use std::fmt;
+
+/// A message that has already been formatted with emoji and styling.
+///
+/// This type provides compile-time prevention of double-formatting. Message
+/// functions like `error_message()` take `impl AsRef<str>` and return
+/// `FormattedMessage`. Since `FormattedMessage` does NOT implement `AsRef<str>`,
+/// passing it to a message function is a compile error.
+///
+/// # Type Safety
+///
+/// ```compile_fail
+/// use worktrunk::styling::{error_message, FormattedMessage};
+///
+/// let msg = error_message("first error");
+/// // This won't compile - FormattedMessage doesn't implement AsRef<str>
+/// let double = error_message(msg);
+/// ```
+///
+/// # Usage
+///
+/// ```
+/// use worktrunk::styling::error_message;
+///
+/// let msg = error_message("Something went wrong");
+/// println!("{}", msg);  // Uses Display
+/// ```
+#[derive(Debug, Clone)]
+pub struct FormattedMessage(String);
+
+impl FormattedMessage {
+    /// Create a formatted message from a pre-formatted string.
+    ///
+    /// Use this when implementing `Into<FormattedMessage>` for error types
+    /// that format themselves (like `GitError`).
+    pub fn new(content: String) -> Self {
+        Self(content)
+    }
+
+    /// Get the inner string for output.
+    pub fn into_inner(self) -> String {
+        self.0
+    }
+
+    /// Borrow the inner string for inspection (e.g., in tests).
+    ///
+    /// Note: This does NOT implement `AsRef<str>` to prevent accidentally
+    /// passing a `FormattedMessage` to message functions like `error_message()`.
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+impl fmt::Display for FormattedMessage {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl From<FormattedMessage> for String {
+    fn from(msg: FormattedMessage) -> String {
+        msg.0
+    }
+}
+
+// ============================================================================
 // Message Formatting Functions
 // ============================================================================
 //
 // These functions provide the canonical formatting for each message type.
 // Used by both the output system (output::error, etc.) and Display impls
 // (GitError, WorktrunkError) to ensure consistent styling.
+//
+// All functions take `impl AsRef<str>` (which FormattedMessage does NOT
+// implement) and return `FormattedMessage`, preventing double-formatting.
 
 use color_print::cformat;
 
@@ -99,33 +171,33 @@ use color_print::cformat;
 /// let name = "feature";
 /// println!("{}", error_message(cformat!("Branch <bold>{name}</> not found")));
 /// ```
-pub fn error_message(content: impl AsRef<str>) -> String {
-    cformat!("{ERROR_EMOJI} <red>{}</>", content.as_ref())
+pub fn error_message(content: impl AsRef<str>) -> FormattedMessage {
+    FormattedMessage(cformat!("{ERROR_EMOJI} <red>{}</>", content.as_ref()))
 }
 
 /// Format a hint message with emoji and dim styling
-pub fn hint_message(content: impl AsRef<str>) -> String {
-    cformat!("{HINT_EMOJI} <dim>{}</>", content.as_ref())
+pub fn hint_message(content: impl AsRef<str>) -> FormattedMessage {
+    FormattedMessage(cformat!("{HINT_EMOJI} <dim>{}</>", content.as_ref()))
 }
 
 /// Format a warning message with emoji and yellow styling
-pub fn warning_message(content: impl AsRef<str>) -> String {
-    cformat!("{WARNING_EMOJI} <yellow>{}</>", content.as_ref())
+pub fn warning_message(content: impl AsRef<str>) -> FormattedMessage {
+    FormattedMessage(cformat!("{WARNING_EMOJI} <yellow>{}</>", content.as_ref()))
 }
 
 /// Format a success message with emoji and green styling
-pub fn success_message(content: impl AsRef<str>) -> String {
-    cformat!("{SUCCESS_EMOJI} <green>{}</>", content.as_ref())
+pub fn success_message(content: impl AsRef<str>) -> FormattedMessage {
+    FormattedMessage(cformat!("{SUCCESS_EMOJI} <green>{}</>", content.as_ref()))
 }
 
 /// Format a progress message with emoji and cyan styling
-pub fn progress_message(content: impl AsRef<str>) -> String {
-    cformat!("{PROGRESS_EMOJI} <cyan>{}</>", content.as_ref())
+pub fn progress_message(content: impl AsRef<str>) -> FormattedMessage {
+    FormattedMessage(cformat!("{PROGRESS_EMOJI} <cyan>{}</>", content.as_ref()))
 }
 
 /// Format an info message with emoji (no color - neutral status)
-pub fn info_message(content: impl AsRef<str>) -> String {
-    cformat!("{INFO_EMOJI} {}", content.as_ref())
+pub fn info_message(content: impl AsRef<str>) -> FormattedMessage {
+    FormattedMessage(cformat!("{INFO_EMOJI} {}", content.as_ref()))
 }
 
 /// Format a section heading (cyan uppercase text, no emoji)
@@ -205,52 +277,52 @@ mod tests {
     #[test]
     fn test_error_message() {
         let msg = error_message("Something went wrong");
-        assert!(msg.contains("❌"));
-        assert!(msg.contains("Something went wrong"));
+        assert!(msg.as_str().contains("❌"));
+        assert!(msg.as_str().contains("Something went wrong"));
     }
 
     #[test]
     fn test_error_message_with_inner_styling() {
         let name = "feature";
         let msg = error_message(cformat!("Branch <bold>{name}</> not found"));
-        assert!(msg.contains("❌"));
-        assert!(msg.contains("Branch"));
-        assert!(msg.contains("feature"));
+        assert!(msg.as_str().contains("❌"));
+        assert!(msg.as_str().contains("Branch"));
+        assert!(msg.as_str().contains("feature"));
     }
 
     #[test]
     fn test_hint_message() {
         let msg = hint_message("Try running --help");
-        assert!(msg.contains("💡"));
-        assert!(msg.contains("Try running --help"));
+        assert!(msg.as_str().contains("💡"));
+        assert!(msg.as_str().contains("Try running --help"));
     }
 
     #[test]
     fn test_warning_message() {
         let msg = warning_message("Deprecated option");
-        assert!(msg.contains("🟡"));
-        assert!(msg.contains("Deprecated option"));
+        assert!(msg.as_str().contains("🟡"));
+        assert!(msg.as_str().contains("Deprecated option"));
     }
 
     #[test]
     fn test_success_message() {
         let msg = success_message("Operation completed");
-        assert!(msg.contains("✅"));
-        assert!(msg.contains("Operation completed"));
+        assert!(msg.as_str().contains("✅"));
+        assert!(msg.as_str().contains("Operation completed"));
     }
 
     #[test]
     fn test_progress_message() {
         let msg = progress_message("Loading data...");
-        assert!(msg.contains("🔄"));
-        assert!(msg.contains("Loading data..."));
+        assert!(msg.as_str().contains("🔄"));
+        assert!(msg.as_str().contains("Loading data..."));
     }
 
     #[test]
     fn test_info_message() {
         let msg = info_message("5 items found");
-        assert!(msg.contains("⚪"));
-        assert!(msg.contains("5 items found"));
+        assert!(msg.as_str().contains("⚪"));
+        assert!(msg.as_str().contains("5 items found"));
     }
 
     // ============================================================================

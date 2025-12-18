@@ -562,7 +562,7 @@ pub fn handle_switch(
             use anyhow::Context;
 
             // Generate timestamped backup path
-            let timestamp = crate::display::get_now();
+            let timestamp = worktrunk::utils::get_now() as i64;
             let datetime =
                 chrono::DateTime::from_timestamp(timestamp, 0).unwrap_or_else(chrono::Utc::now);
             let suffix = datetime.format("%Y%m%d-%H%M%S").to_string();

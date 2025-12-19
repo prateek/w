@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.5.2
+
+### Improved
+
+- **`--clobber` flag for `wt switch`**: When encountering a stale directory or file at the target worktree path, `--clobber` moves it to a timestamped `.bak` file instead of failing.
+- **Relative paths in `wt list`**: Paths are now shown relative to the main worktree (`.`, `./subdir`, `../repo.feature`) instead of a computed common prefix that could degenerate to `/`.
+- **Multiline error formatting**: Errors with context now show a header describing what worktrunk was trying to do, with the full error chain in a gutter block.
+- **Semantic switch messaging**: Switching to an existing worktree now shows ⚪ (info) instead of ✅ (success), reflecting that nothing was created.
+
+### Fixed
+
+- **Symbol styling in removal messages**: Integration symbols (`_`, `⊂`) now render in their canonical dim appearance instead of inheriting the message's cyan color.
+- **ConflictingChanges error formatting**: Fixed double newlines in the error message output.
+
 ## 0.5.1
 
 ### Improved

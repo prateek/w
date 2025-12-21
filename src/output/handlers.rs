@@ -788,6 +788,51 @@ fn handle_removed_worktree_output(
     }
 }
 
+#[cfg(unix)]
+fn process_group_alive(pgid: i32) -> bool {
+    match nix::sys::signal::killpg(nix::unistd::Pid::from_raw(pgid), None) {
+        Ok(_) => true,
+        Err(nix::errno::Errno::ESRCH) => false,
+        Err(_) => true,
+    }
+}
+
+#[cfg(unix)]
+fn wait_for_exit(pgid: i32, grace: std::time::Duration) -> bool {
+    std::thread::sleep(grace);
+    !process_group_alive(pgid)
+}
+
+#[cfg(unix)]
+fn forward_signal_with_escalation(pgid: i32, sig: i32) {
+    let pgid = nix::unistd::Pid::from_raw(pgid);
+    let initial_signal = match sig {
+        signal_hook::consts::SIGINT => nix::sys::signal::Signal::SIGINT,
+        signal_hook::consts::SIGTERM => nix::sys::signal::Signal::SIGTERM,
+        _ => return,
+    };
+
+    let _ = nix::sys::signal::killpg(pgid, initial_signal);
+
+    let grace = std::time::Duration::from_millis(200);
+    match sig {
+        signal_hook::consts::SIGINT => {
+            if !wait_for_exit(pgid.as_raw(), grace) {
+                let _ = nix::sys::signal::killpg(pgid, nix::sys::signal::Signal::SIGTERM);
+                if !wait_for_exit(pgid.as_raw(), grace) {
+                    let _ = nix::sys::signal::killpg(pgid, nix::sys::signal::Signal::SIGKILL);
+                }
+            }
+        }
+        signal_hook::consts::SIGTERM => {
+            if !wait_for_exit(pgid.as_raw(), grace) {
+                let _ = nix::sys::signal::killpg(pgid, nix::sys::signal::Signal::SIGKILL);
+            }
+        }
+        _ => {}
+    }
+}
+
 /// Execute a command with streaming output
 ///
 /// Uses Stdio::inherit for stderr to preserve TTY behavior - this ensures commands like cargo
@@ -814,23 +859,32 @@ fn handle_removed_worktree_output(
 ///
 /// ## Signal Handling (Unix)
 ///
-/// SIGINT (Ctrl-C) is handled by checking the child's exit status:
-/// - If the child was killed by a signal, we return exit code 128 + signal number
-/// - This follows Unix conventions (e.g., exit code 130 for SIGINT)
-///
-/// The child process receives SIGINT directly from the terminal (via Stdio::inherit for stderr).
+/// When `forward_signals` is true, the child is spawned in its own process group and
+/// SIGINT/SIGTERM received by the parent are forwarded to that group so we can abort
+/// the entire command tree without shell-wrapping. If the process group does not exit
+/// promptly, we escalate to SIGTERM/SIGKILL (SIGINT path) or SIGKILL (SIGTERM path).
+/// We still return exit code 128 + signal number (e.g., 130 for SIGINT) to match Unix conventions.
 pub(crate) fn execute_streaming(
     command: &str,
     working_dir: &std::path::Path,
     redirect_stdout_to_stderr: bool,
     stdin_content: Option<&str>,
     inherit_stdin: bool,
+    forward_signals: bool,
 ) -> anyhow::Result<()> {
     use std::io::Write;
     use worktrunk::git::WorktrunkError;
     use worktrunk::shell_exec::ShellConfig;
+    #[cfg(unix)]
+    use {
+        signal_hook::consts::{SIGINT, SIGTERM},
+        signal_hook::iterator::Signals,
+        std::os::unix::process::CommandExt,
+    };
 
     let shell = ShellConfig::get();
+    #[cfg(not(unix))]
+    let _ = forward_signals;
 
     // Determine stdout handling based on redirect flag
     // When redirecting, use Stdio::from(stderr) to redirect child stdout to our stderr at OS level.
@@ -851,7 +905,19 @@ pub(crate) fn execute_streaming(
         std::process::Stdio::null()
     };
 
+    #[cfg(unix)]
+    let mut signals = if forward_signals {
+        Some(Signals::new([SIGINT, SIGTERM])?)
+    } else {
+        None
+    };
+
     let mut cmd = shell.command(command);
+    #[cfg(unix)]
+    if forward_signals {
+        // Isolate the child in its own process group so we can signal the whole tree.
+        cmd.process_group(0);
+    }
     let mut child = cmd
         .current_dir(working_dir)
         .stdin(stdin_mode)
@@ -882,12 +948,52 @@ pub(crate) fn execute_streaming(
         // stdin is dropped here, closing the pipe
     }
 
-    // Wait for command to complete
+    #[cfg(unix)]
+    let (status, seen_signal) = if forward_signals {
+        let child_pgid = child.id() as i32;
+        let mut seen_signal: Option<i32> = None;
+        loop {
+            if let Some(status) = child.try_wait().map_err(|e| {
+                anyhow::Error::from(worktrunk::git::GitError::Other {
+                    message: format!("Failed to wait for command: {}", e),
+                })
+            })? {
+                break (status, seen_signal);
+            }
+            if let Some(signals) = signals.as_mut() {
+                for sig in signals.pending() {
+                    if seen_signal.is_none() {
+                        seen_signal = Some(sig);
+                        forward_signal_with_escalation(child_pgid, sig);
+                    }
+                }
+            }
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        }
+    } else {
+        let status = child.wait().map_err(|e| {
+            anyhow::Error::from(worktrunk::git::GitError::Other {
+                message: format!("Failed to wait for command: {}", e),
+            })
+        })?;
+        (status, None)
+    };
+
+    #[cfg(not(unix))]
     let status = child.wait().map_err(|e| {
         anyhow::Error::from(worktrunk::git::GitError::Other {
             message: format!("Failed to wait for command: {}", e),
         })
     })?;
+
+    #[cfg(unix)]
+    if let Some(sig) = seen_signal {
+        return Err(WorktrunkError::ChildProcessExited {
+            code: 128 + sig,
+            message: format!("terminated by signal {}", sig),
+        }
+        .into());
+    }
 
     // Check if child was killed by a signal (Unix only)
     // This handles Ctrl-C: when SIGINT is sent, the child receives it and terminates,
@@ -957,7 +1063,7 @@ pub fn execute_command_in_worktree(
 
     // Execute with stdout→stderr redirect for deterministic ordering
     // Hooks don't need stdin inheritance (inherit_stdin=false)
-    execute_streaming(command, worktree_path, true, stdin_content, false)?;
+    execute_streaming(command, worktree_path, true, stdin_content, false, true)?;
 
     // Flush to ensure all output appears before we continue
     super::flush()?;

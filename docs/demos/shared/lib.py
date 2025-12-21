@@ -1,6 +1,7 @@
 """Shared infrastructure for demo recording scripts."""
 
 import os
+import re
 import shutil
 import subprocess
 from dataclasses import dataclass
@@ -397,6 +398,36 @@ def build_shell_env(demo_env: "DemoEnv", repo_root: Path, extra: dict = None) ->
     if extra:
         env.update(extra)
     return env
+
+
+def clean_ansi_output(text: str) -> str:
+    """Strip ANSI escape codes and control characters from text."""
+    # Strip ANSI escape sequences
+    clean = re.sub(r"\x1B\[[0-9;?]*[A-Za-z]", "", text)
+    # Strip control characters (except newline, tab, carriage return)
+    clean = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", clean)
+    return clean
+
+
+def run_fish_script(
+    demo_env: "DemoEnv",
+    script: str,
+    env: dict,
+    cwd: Path = None,
+) -> str:
+    """Run a fish script and return cleaned output.
+
+    Automatically prepends shell init and cleans ANSI from output.
+    """
+    full_script = "wt config shell init fish | source\n" + script
+    result = subprocess.run(
+        ["fish", "-c", full_script],
+        cwd=cwd or demo_env.repo,
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+    return clean_ansi_output(result.stdout + result.stderr)
 
 
 def record_all_themes(

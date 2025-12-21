@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """Build script for wt-merge demo GIF."""
 
-import re
-import subprocess
 import sys
 from pathlib import Path
 
@@ -13,7 +11,7 @@ sys.path.insert(0, str(DEMOS_DIR))
 
 from shared import (
     DemoEnv, prepare_demo_repo,
-    check_dependencies, setup_demo_output, build_shell_env, record_all_themes,
+    check_dependencies, setup_demo_output, build_shell_env, run_fish_script, record_all_themes,
 )
 
 REPO_ROOT = DEMOS_DIR.parent.parent
@@ -60,26 +58,16 @@ def record_text(demo_env: DemoEnv):
         "NEXTEST_NO_FAIL_FAST": "1",
     })
 
-    # Run commands and capture output using fish with shell init
-    script = "wt config shell init fish | source\n"
+    # Build script with delays after merge commands
+    script_lines = []
     for cmd in commands:
-        script += f'{cmd}\n'
+        script_lines.append(cmd)
         if cmd.startswith("wt merge"):
-            script += 'sleep 2\n'
+            script_lines.append("sleep 2")
 
-    result = subprocess.run(
-        ["fish", "-c", script],
-        cwd=demo_env.repo, env=env,
-        capture_output=True, text=True
-    )
-    output = result.stdout + result.stderr
-
-    # Clean output
-    clean = re.sub(r"\x1B\[[0-9;?]*[A-Za-z]", "", output)  # Strip ANSI
-    clean = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", clean)  # Strip control chars
-    clean = clean.replace("^D", "")
-
-    (OUT_DIR / "run.txt").write_text(clean)
+    output = run_fish_script(demo_env, "\n".join(script_lines), env)
+    output = output.replace("^D", "")  # Clean EOF marker
+    (OUT_DIR / "run.txt").write_text(output)
 
 
 def main():

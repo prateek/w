@@ -17,6 +17,8 @@ from .lib import (
     check_dependencies,
     setup_demo_output,
     build_shell_env,
+    clean_ansi_output,
+    run_fish_script,
     record_all_themes,
 )
 from .themes import THEMES, format_theme_for_vhs
@@ -40,5 +42,7 @@ __all__ = [
     "check_dependencies",
     "setup_demo_output",
     "build_shell_env",
+    "clean_ansi_output",
+    "run_fish_script",
     "record_all_themes",
 ]

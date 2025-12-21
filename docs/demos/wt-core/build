@@ -10,8 +10,6 @@ This demo shows the core workflow with hooks:
 6. wt remove - remove worktree with pre-remove hook
 """
 
-import re
-import subprocess
 import sys
 from pathlib import Path
 
@@ -22,7 +20,7 @@ sys.path.insert(0, str(DEMOS_DIR))
 
 from shared import (
     DemoEnv, git, prepare_demo_repo,
-    check_dependencies, setup_demo_output, build_shell_env, record_all_themes,
+    check_dependencies, setup_demo_output, build_shell_env, run_fish_script, record_all_themes,
 )
 
 REPO_ROOT = DEMOS_DIR.parent.parent
@@ -100,24 +98,9 @@ def record_text(demo_env: DemoEnv):
     ]
 
     env = build_shell_env(demo_env, REPO_ROOT)
-
-    # Run commands and capture output using fish with shell init
-    script = "wt config shell init fish | source\n"
-    for cmd in commands:
-        script += f"echo '$ {cmd}'\n{cmd}\necho ''\n"
-
-    result = subprocess.run(
-        ["fish", "-c", script],
-        cwd=demo_env.repo, env=env,
-        capture_output=True, text=True
-    )
-    output = result.stdout + result.stderr
-
-    # Clean output
-    clean = re.sub(r"\x1B\[[0-9;?]*[A-Za-z]", "", output)  # Strip ANSI
-    clean = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", clean)  # Strip control chars
-
-    (OUT_DIR / "run.txt").write_text(clean)
+    script = "\n".join(f"echo '$ {cmd}'\n{cmd}\necho ''" for cmd in commands)
+    output = run_fish_script(demo_env, script, env)
+    (OUT_DIR / "run.txt").write_text(output)
 
 
 def main():

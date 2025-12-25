@@ -1745,6 +1745,33 @@ fn test_readme_example_list_branches(mut repo: TestRepo) {
     );
 }
 
+/// Generate tips-patterns.md example: dev server per worktree workflow
+///
+/// Uses the realistic README example repo and adds URL config.
+/// URLs appear dimmed (no servers running) - realistic for documentation.
+#[rstest]
+fn test_tips_dev_server_workflow(mut repo: TestRepo) {
+    // Set up the realistic README example repo
+    let _feature_api = setup_readme_example_repo(&mut repo);
+
+    // Add project config with URL template for dev servers
+    repo.write_project_config(
+        r#"[post-start]
+server = "npm run dev -- --port {{ branch | hash_port }} &"
+
+[list]
+url = "http://localhost:{{ branch | hash_port }}"
+"#,
+    );
+
+    // Run from main worktree (URLs dim since no servers running)
+    run_snapshot(
+        setup_snapshot_settings(&repo),
+        "tips_dev_server_workflow",
+        list_snapshots::command_readme(&repo, repo.root_path()),
+    );
+}
+
 #[rstest]
 fn test_list_progressive_flag(mut repo: TestRepo) {
     repo.add_worktree("feature-a");

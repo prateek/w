@@ -988,7 +988,10 @@ pub fn handle_push(
     // Check for merge commits unless allowed
     let has_merge_commits = repo.has_merge_commits(&target_branch, "HEAD")?;
     if !allow_merge_commits && has_merge_commits {
-        return Err(GitError::MergeCommitsFound.into());
+        return Err(GitError::MergeCommitsFound {
+            target_branch: target_branch.clone(),
+        }
+        .into());
     }
 
     // Check for conflicting changes in target worktree (auto-stash safe changes)
@@ -1085,6 +1088,7 @@ pub fn handle_push(
         }
         // CommandFailed contains raw git output, wrap in PushFailed for proper formatting
         return Err(GitError::PushFailed {
+            target_branch: target_branch.clone(),
             error: e.to_string(),
         }
         .into());

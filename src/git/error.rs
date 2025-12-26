@@ -92,6 +92,7 @@ pub enum GitError {
 
     // Merge/push errors
     ConflictingChanges {
+        target_branch: String,
         files: Vec<String>,
         worktree_path: PathBuf,
     },
@@ -100,7 +101,9 @@ pub enum GitError {
         commits_formatted: String,
         in_merge_context: bool,
     },
-    MergeCommitsFound,
+    MergeCommitsFound {
+        target_branch: String,
+    },
     RebaseConflict {
         target_branch: String,
         git_output: String,
@@ -109,6 +112,7 @@ pub enum GitError {
         target_branch: String,
     },
     PushFailed {
+        target_branch: String,
         error: String,
     },
 
@@ -318,13 +322,16 @@ impl std::fmt::Display for GitError {
             }
 
             GitError::ConflictingChanges {
+                target_branch,
                 files,
                 worktree_path,
             } => {
                 writeln!(
                     f,
                     "{}",
-                    error_message("Cannot push: conflicting uncommitted changes in:")
+                    error_message(cformat!(
+                        "Can't push to local <bold>{target_branch}</> branch: conflicting uncommitted changes"
+                    ))
                 )?;
                 if !files.is_empty() {
                     let joined_files = files.join("\n");
@@ -377,12 +384,14 @@ impl std::fmt::Display for GitError {
                 }
             }
 
-            GitError::MergeCommitsFound => {
+            GitError::MergeCommitsFound { target_branch } => {
                 let merge_cmd = suggest_command("merge", &[], &["--allow-merge-commits"]);
                 write!(
                     f,
                     "{}\n\n{}",
-                    error_message("Found merge commits in push range"),
+                    error_message(cformat!(
+                        "Can't push to local <bold>{target_branch}</> branch: found merge commits"
+                    )),
                     hint_message(cformat!(
                         "To push non-linear history, run <bright-black>{merge_cmd}</>"
                     ))
@@ -426,8 +435,13 @@ impl std::fmt::Display for GitError {
                 )
             }
 
-            GitError::PushFailed { error } => {
-                let header = error_message("Push failed");
+            GitError::PushFailed {
+                target_branch,
+                error,
+            } => {
+                let header = error_message(cformat!(
+                    "Can't push to local <bold>{target_branch}</> branch"
+                ));
                 write!(f, "{}", format_error_block(header, error))
             }
 
@@ -978,10 +992,13 @@ mod tests {
     #[test]
     fn test_git_error_conflicting_changes() {
         let err = GitError::ConflictingChanges {
+            target_branch: "main".into(),
             files: vec!["file1.rs".into(), "file2.rs".into()],
             worktree_path: PathBuf::from("/tmp/repo"),
         };
         let display = err.to_string();
+        assert!(display.contains("push to local"));
+        assert!(display.contains("main"));
         assert!(display.contains("conflicting"));
         assert!(display.contains("file1.rs"));
     }
@@ -1010,8 +1027,12 @@ mod tests {
 
     #[test]
     fn test_git_error_merge_commits_found() {
-        let err = GitError::MergeCommitsFound;
+        let err = GitError::MergeCommitsFound {
+            target_branch: "main".into(),
+        };
         let display = err.to_string();
+        assert!(display.contains("push to local"));
+        assert!(display.contains("main"));
         assert!(display.contains("merge commits"));
         assert!(display.contains("--allow-merge-commits"));
     }
@@ -1049,10 +1070,12 @@ mod tests {
     #[test]
     fn test_git_error_push_failed() {
         let err = GitError::PushFailed {
+            target_branch: "main".into(),
             error: "rejected".into(),
         };
         let display = err.to_string();
-        assert!(display.contains("Push failed"));
+        assert!(display.contains("push to local"));
+        assert!(display.contains("main"));
         assert!(display.contains("rejected"));
     }
 
@@ -1208,6 +1231,7 @@ mod tests {
     fn test_git_error_conflicting_changes_empty_files() {
         // Test with empty files list
         let err = GitError::ConflictingChanges {
+            target_branch: "main".into(),
             files: vec![],
             worktree_path: PathBuf::from("/tmp/repo"),
         };

@@ -101,6 +101,7 @@ static ZOLA_RAWCODE_PATTERN: LazyLock<Regex> =
 /// Regex to convert Zola figure/picture elements to simple markdown images
 /// Matches: <figure class="demo">...<img src="/assets/X.gif" alt="Y"...>...</figure>
 /// Extracts: src path and alt text from the <img> tag
+/// Note: Maps /assets/X to demos/X in the worktrunk-assets repo
 static ZOLA_FIGURE_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(
         r#"(?s)<figure class="demo">\s*<picture>.*?<img src="/assets/([^"]+)" alt="([^"]*)"[^>]*>.*?</picture>.*?</figure>"#,

@@ -10,8 +10,8 @@ group = "Commands"
 
 <figure class="demo">
 <picture>
-  <source srcset="/assets/wt-merge-dark.gif" media="(prefers-color-scheme: dark)">
-  <img src="/assets/wt-merge.gif" alt="wt merge demo" width="1600" height="900">
+  <source srcset="/assets/docs/dark/wt-merge.gif" media="(prefers-color-scheme: dark)">
+  <img src="/assets/docs/light/wt-merge.gif" alt="wt merge demo" width="1600" height="900">
 </picture>
 </figure>
 

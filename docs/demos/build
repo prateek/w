@@ -3,15 +3,19 @@
 
 Usage:
     ./build docs                    # Build doc site demos (light + dark, 1600x900)
-    ./build twitter                 # Build Twitter demos (light only, 1200x700)
+    ./build social                  # Build social media demos (light only, 1200x700)
     ./build docs --only wt-merge    # Build specific demo for docs
-    ./build twitter --only wt-zellij-omnibus --shell  # Debug shell for Twitter demo
+    ./build social --only wt-zellij-omnibus --shell  # Debug shell for social demo
+
+Output is written to docs/static/assets/{mode}/{theme}/, ensuring docs and social
+builds don't overwrite each other. The assets repo mirrors this structure.
 """
 
 import argparse
 import os
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 # Add docs/demos/ to path for shared library
@@ -20,20 +24,16 @@ sys.path.insert(0, str(SCRIPT_DIR))
 
 from shared import (
     VALIDATION_RS,
-    DemoEnv, DemoSize, git, prepare_demo_repo,
+    DemoEnv, git, prepare_demo_repo,
     setup_claude_code_config, setup_zellij_config, setup_fish_config,
     check_dependencies, setup_demo_output, record_all_themes,
-    SIZE_DOCS, SIZE_TWITTER,
+    SIZE_DOCS, SIZE_SOCIAL,
     is_interactive_tape, record_text, build_tape_replacements,
 )
 
 REPO_ROOT = SCRIPT_DIR.parent.parent
 OUT_DIR = SCRIPT_DIR.parent / "static" / "assets"
 TAPES_DIR = SCRIPT_DIR / "tapes"
-
-# Sizes
-SIZE_ZELLIJ = DemoSize(width=1200, height=700, fontsize=16)
-SIZE_DEVSERVER = DemoSize(width=1400, height=700, fontsize=24)  # Wider to show URL column
 
 # Custom VHS binary with keystroke overlay
 VHS_KEYSTROKES = os.environ.get(
@@ -252,39 +252,39 @@ echo "Add placeholder module for user profile settings."
 # Demo Registrations
 # =============================================================================
 
-# Format: (tape_file, output_name, setup_func, vhs_type, size_override)
-# size_override is optional - if None, uses target default
+# Format: (tape_file, output_name, setup_func, vhs_type)
+# All demos in a mode use that mode's default size.
 
 DOCS_DEMOS = [
-    ("wt-core.tape", "wt-core", prepare_with_hooks, "vhs", None),
-    ("wt-merge.tape", "wt-merge", prepare_with_llm_commit, "vhs", None),
-    ("wt-select.tape", "wt-select", prepare_basic, "vhs-keystrokes", None),
-    ("wt-zellij-omnibus.tape", "wt-zellij-omnibus", prepare_zellij_omnibus, "vhs", None),
+    ("wt-core.tape", "wt-core", prepare_with_hooks, "vhs"),
+    ("wt-merge.tape", "wt-merge", prepare_with_llm_commit, "vhs"),
+    ("wt-select.tape", "wt-select", prepare_basic, "vhs-keystrokes"),
+    ("wt-zellij-omnibus.tape", "wt-zellij-omnibus", prepare_zellij_omnibus, "vhs"),
 ]
 
-TWITTER_DEMOS = [
-    ("wt-switch.tape", "wt-switch", prepare_switch, "vhs", None),
-    ("wt-statusline.tape", "wt-statusline", prepare_switch, "vhs", None),
-    ("wt-list.tape", "wt-list", prepare_with_hooks, "vhs", None),
-    ("wt-list-remove.tape", "wt-list-remove", prepare_with_hooks, "vhs", None),
-    ("wt-hooks.tape", "wt-hooks", lambda env: prepare_with_hooks(env, include_deps=True), "vhs", None),
-    ("wt-devserver.tape", "wt-devserver", prepare_devserver, "vhs", SIZE_DEVSERVER),
-    ("wt-commit.tape", "wt-commit", prepare_with_llm_commit, "vhs", None),
-    ("wt-merge.tape", "wt-merge", prepare_merge_only, "vhs", None),
-    ("wt-select-short.tape", "wt-select-short", prepare_basic, "vhs-keystrokes", None),
-    ("wt-core.tape", "wt-core", prepare_with_hooks, "vhs", None),
-    ("wt-zellij-omnibus.tape", "wt-zellij-omnibus", prepare_zellij_omnibus, "vhs", SIZE_ZELLIJ),
+SOCIAL_DEMOS = [
+    ("wt-switch.tape", "wt-switch", prepare_switch, "vhs"),
+    ("wt-statusline.tape", "wt-statusline", prepare_switch, "vhs"),
+    ("wt-list.tape", "wt-list", prepare_with_hooks, "vhs"),
+    ("wt-list-remove.tape", "wt-list-remove", prepare_with_hooks, "vhs"),
+    ("wt-hooks.tape", "wt-hooks", lambda env: prepare_with_hooks(env, include_deps=True), "vhs"),
+    ("wt-devserver.tape", "wt-devserver", prepare_devserver, "vhs"),
+    ("wt-commit.tape", "wt-commit", prepare_with_llm_commit, "vhs"),
+    ("wt-merge.tape", "wt-merge", prepare_merge_only, "vhs"),
+    ("wt-select-short.tape", "wt-select-short", prepare_basic, "vhs-keystrokes"),
+    ("wt-core.tape", "wt-core", prepare_with_hooks, "vhs"),
+    ("wt-zellij-omnibus.tape", "wt-zellij-omnibus", prepare_zellij_omnibus, "vhs"),
 ]
 
 TARGETS = {
     "docs": {
         "demos": DOCS_DEMOS,
-        "default_size": SIZE_DOCS,
+        "size": SIZE_DOCS,
         "themes": ["light", "dark"],
     },
-    "twitter": {
-        "demos": TWITTER_DEMOS,
-        "default_size": SIZE_TWITTER,
+    "social": {
+        "demos": SOCIAL_DEMOS,
+        "size": SIZE_SOCIAL,
         "themes": ["light"],
     },
 }
@@ -322,13 +322,13 @@ def main():
         epilog="""
 Examples:
   ./build docs                    Build all doc site demos (light + dark)
-  ./build twitter                 Build all Twitter demos (light only)
+  ./build social                  Build all social media demos (light only)
   ./build docs --only wt-merge    Build specific demo for docs
   ./build docs --text             Build text output for non-interactive demos
-  ./build twitter --only wt-zellij-omnibus --shell   Debug shell for demo
+  ./build social --only wt-zellij-omnibus --shell   Debug shell for demo
 """
     )
-    parser.add_argument("target", choices=["docs", "twitter"],
+    parser.add_argument("target", choices=["docs", "social"],
                         help="Target to build demos for")
     parser.add_argument("--only", help="Only record specific demo (e.g., wt-switch)")
     parser.add_argument("--shell", action="store_true",
@@ -349,25 +349,27 @@ Examples:
     deps = ["wt", "vhs", "starship", "zellij"]
     check_dependencies(deps)
 
-    starship_config = setup_demo_output(OUT_DIR)
+    # Output goes to mode/theme subdirectories
+    mode_out_dir = OUT_DIR / args.target
+    starship_config = setup_demo_output(mode_out_dir)
 
     target_config = TARGETS[args.target]
     demos = target_config["demos"]
-    default_size = target_config["default_size"]
+    demo_size = target_config["size"]
     themes = target_config["themes"]
 
     # Filter demos if --only specified
     if args.only:
-        demos = [(t, n, s, v, sz) for t, n, s, v, sz in demos if n == args.only]
+        demos = [(t, n, s, v) for t, n, s, v in demos if n == args.only]
         if not demos:
-            all_names = [n for _, n, _, _, _ in target_config["demos"]]
+            all_names = [n for _, n, _, _ in target_config["demos"]]
             print(f"Unknown demo: {args.only}")
             print(f"Available for {args.target}: {', '.join(all_names)}")
             return
 
     # Check vhs-keystrokes availability
     vhs_keystrokes_available = Path(VHS_KEYSTROKES).exists()
-    needs_keystrokes = any(vhs_type == "vhs-keystrokes" for _, _, _, vhs_type, _ in demos)
+    needs_keystrokes = any(vhs_type == "vhs-keystrokes" for _, _, _, vhs_type in demos)
 
     if needs_keystrokes and not vhs_keystrokes_available:
         print(f"Error: vhs-keystrokes required but not found", file=sys.stderr)
@@ -376,7 +378,7 @@ Examples:
         sys.exit(1)
 
     # Record each demo
-    for tape_file, output_name, setup_func, vhs_type, size_override in demos:
+    for tape_file, output_name, setup_func, vhs_type in demos:
         tape_path = TAPES_DIR / tape_file
         if not tape_path.exists():
             print(f"Skipping {output_name}: {tape_file} not found")
@@ -388,17 +390,15 @@ Examples:
             continue
 
         vhs_binary = VHS_KEYSTROKES if vhs_type == "vhs-keystrokes" else "vhs"
-        demo_size = size_override or default_size
 
         print(f"\n{'='*60}")
         print(f"Recording {output_name} ({args.target}){' [text]' if args.text else ''}...")
         print(f"{'='*60}")
 
-        # Create fresh environment for each demo
-        # Use /private/tmp for Zellij demos to isolate Claude instances
-        demo_out_dir = Path("/private/tmp/wt-demos") if output_name.startswith("wt-zellij") else OUT_DIR
-        setup_demo_output(demo_out_dir)
-        env = DemoEnv(name=output_name, out_dir=demo_out_dir, repo_name="acme")
+        # Create fresh environment in temp directory (keeps output dir clean)
+        demo_env_dir = Path(tempfile.mkdtemp(prefix="wt-demo-"))
+        setup_demo_output(demo_env_dir)
+        env = DemoEnv(name=output_name, out_dir=demo_env_dir, repo_name="acme")
         setup_func(env)
 
         print(f"Demo repo: {env.repo}")
@@ -410,14 +410,17 @@ Examples:
         replacements = build_tape_replacements(env, REPO_ROOT)
 
         if args.text:
-            output_txt = OUT_DIR / f"{output_name}.txt"
+            # Text output goes to mode directory (not theme subdirectory)
+            output_txt = mode_out_dir / f"{output_name}.txt"
             record_text(env, tape_path, output_txt, replacements)
             print(f"Text saved to {output_txt}")
         else:
-            # Build output GIF paths based on themes
-            output_gifs = {"light": OUT_DIR / f"{output_name}.gif"}
-            if "dark" in themes:
-                output_gifs["dark"] = OUT_DIR / f"{output_name}-dark.gif"
+            # Build output GIF paths: mode/theme/name.gif
+            output_gifs = {}
+            for theme in themes:
+                theme_dir = mode_out_dir / theme
+                theme_dir.mkdir(parents=True, exist_ok=True)
+                output_gifs[theme] = theme_dir / f"{output_name}.gif"
 
             record_all_themes(env, tape_path, output_gifs, REPO_ROOT, vhs_binary=vhs_binary, size=demo_size)
 

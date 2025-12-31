@@ -807,8 +807,8 @@ class DemoSize:
 
 
 # Predefined sizes for different contexts
-SIZE_TWITTER = DemoSize(width=1200, height=700, fontsize=26)  # Big text for mobile
-SIZE_DOCS = DemoSize(width=1600, height=900, fontsize=24)     # More content for docs
+SIZE_SOCIAL = DemoSize(width=1200, height=700, fontsize=26)  # Big text for mobile
+SIZE_DOCS = DemoSize(width=1600, height=900, fontsize=24)    # More content for docs
 
 
 def build_tape_replacements(demo_env: DemoEnv, repo_root: Path) -> dict:

@@ -276,7 +276,7 @@ Demo GIFs (~2MB each) are stored in a separate `worktrunk-assets` repo to avoid 
 
 ```bash
 ./docs/demos/build docs      # Doc site demos (light + dark)
-./docs/demos/build twitter   # Twitter demos (light only)
+./docs/demos/build social    # Social media demos (light only)
 ./dev/publish-assets         # Publish to assets repo
 ```
 
@@ -290,8 +290,8 @@ In markdown, use `<picture>` with media queries:
 ```html
 <figure class="demo">
 <picture>
-  <source srcset="/assets/wt-select-dark.gif" media="(prefers-color-scheme: dark)">
-  <img src="/assets/wt-select.gif" alt="wt select demo" width="1600" height="800">
+  <source srcset="/assets/docs/dark/wt-select.gif" media="(prefers-color-scheme: dark)">
+  <img src="/assets/docs/light/wt-select.gif" alt="wt select demo" width="1600" height="800">
 </picture>
 </figure>
 ```

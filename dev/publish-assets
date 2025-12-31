@@ -27,22 +27,14 @@ if ! git pull --ff-only; then
     exit 1
 fi
 
-# Copy all GIFs
-echo "Copying assets..."
-copied=()
-for src in "$DEMOS_DIR"/*.gif; do
-    [[ -f "$src" ]] || continue
-    name="$(basename "$src")"
-    cp "$src" "$ASSETS_REPO/demos/"
-    copied+=("$name")
-    echo "  $name"
-done
-
-if [[ ${#copied[@]} -eq 0 ]]; then
-    echo "No demo GIFs found. Build them first:"
+# Copy demo assets
+if [[ ! -d "$DEMOS_DIR" ]] || [[ -z "$(ls -A "$DEMOS_DIR")" ]]; then
+    echo "No demo assets found. Build them first:"
     echo "  ./docs/demos/build docs"
     exit 1
 fi
+
+rsync -av --delete "$DEMOS_DIR/" "$ASSETS_REPO/demos/"
 
 # Check for changes
 if git diff --quiet demos/; then
@@ -50,23 +42,11 @@ if git diff --quiet demos/; then
     exit 0
 fi
 
-# Show what changed
-echo ""
-echo "Changes:"
-git diff --stat demos/
-
 # Commit and push
+git diff --stat demos/
 git add demos/
 git commit -m "Update demo assets"
 git push
 
 echo ""
-echo "Published:"
-for name in "${copied[@]}"; do
-    echo "  https://raw.githubusercontent.com/max-sixty/worktrunk-assets/main/demos/$name"
-done
-echo ""
-echo "CDN (~1 min to update):"
-for name in "${copied[@]}"; do
-    echo "  https://cdn.jsdelivr.net/gh/max-sixty/worktrunk-assets@main/demos/$name"
-done
+echo "Published: https://github.com/max-sixty/worktrunk-assets/tree/main/demos"

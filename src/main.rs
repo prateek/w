@@ -565,9 +565,9 @@ fn expand_demo_placeholders(text: &str) -> String {
 
             // Use figure.demo class for proper mobile styling (no shrink, horizontal scroll)
             // Generate <picture> element for light/dark theme switching
-            let dark_filename = filename.trim_end_matches(".gif").to_string() + "-dark.gif";
+            // Assets are organized as: /assets/docs/{light,dark}/filename.gif
             let replacement = format!(
-                "<figure class=\"demo\">\n<picture>\n  <source srcset=\"/assets/{dark_filename}\" media=\"(prefers-color-scheme: dark)\">\n  <img src=\"/assets/{filename}\" alt=\"{alt_text} demo\"{dim_attrs}>\n</picture>\n</figure>"
+                "<figure class=\"demo\">\n<picture>\n  <source srcset=\"/assets/docs/dark/{filename}\" media=\"(prefers-color-scheme: dark)\">\n  <img src=\"/assets/docs/light/{filename}\" alt=\"{alt_text} demo\"{dim_attrs}>\n</picture>\n</figure>"
             );
             let end = after_prefix + end_offset + SUFFIX.len();
             result.replace_range(start..end, &replacement);

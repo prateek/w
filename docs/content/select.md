@@ -12,8 +12,8 @@ Interactive worktree picker with live preview. Navigate worktrees with keyboard 
 
 <figure class="demo">
 <picture>
-  <source srcset="/assets/wt-select-dark.gif" media="(prefers-color-scheme: dark)">
-  <img src="/assets/wt-select.gif" alt="wt select demo" width="1600" height="800">
+  <source srcset="/assets/docs/dark/wt-select.gif" media="(prefers-color-scheme: dark)">
+  <img src="/assets/docs/light/wt-select.gif" alt="wt select demo" width="1600" height="800">
 </picture>
 </figure>
 

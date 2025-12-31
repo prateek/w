@@ -10,21 +10,26 @@ docs/demos/
   vhs-keystrokes/  # Custom VHS binary (gitignored, built on demand)
 
 docs/static/assets/  # Output GIFs (gitignored, shared with fetch-assets)
+  docs/            # Doc site demos (1600x900)
+    light/         # Light theme variants
+    dark/          # Dark theme variants
+  social/          # Social media demos (1200x700)
+    light/         # Light theme only
 ```
 
-Tape files use template variables (`{{FONTSIZE}}`, `{{WIDTH}}`, `{{HEIGHT}}`) so the same tape produces different sizes for docs vs Twitter.
+Tape files use template variables (`{{FONTSIZE}}`, `{{WIDTH}}`, `{{HEIGHT}}`) so the same tape produces different sizes for docs vs social.
 
 ## Regenerating demos
 
 ```bash
 ./docs/demos/build docs      # Doc site demos (1600x900, light + dark)
-./docs/demos/build twitter   # Twitter demos (1200x700, light only)
+./docs/demos/build social    # Social media demos (1200x700, light only)
 ```
 
 Regenerate a single demo:
 
 ```bash
-./docs/demos/build twitter --only wt-switch
+./docs/demos/build social --only wt-switch
 ./docs/demos/build docs --only wt-merge
 ```
 
@@ -33,7 +38,7 @@ Regenerate a single demo:
 | Target | Demos |
 |--------|-------|
 | docs | wt-core, wt-merge, wt-select, wt-zellij-omnibus |
-| twitter | wt-switch, wt-statusline, wt-list, wt-list-remove, wt-hooks, wt-devserver, wt-commit, wt-merge, wt-select-short, wt-core, wt-zellij-omnibus |
+| social | wt-switch, wt-statusline, wt-list, wt-list-remove, wt-hooks, wt-devserver, wt-commit, wt-merge, wt-select-short, wt-core, wt-zellij-omnibus |
 
 ## Publishing demos
 
@@ -43,7 +48,7 @@ After building, publish to the assets repo:
 ./dev/publish-assets
 ```
 
-This copies `docs/static/assets/*.gif` to the `worktrunk-assets` repo (sibling directory), commits, and pushes. The script clones the repo via `gh` if missing.
+This copies `docs/static/assets/{docs,social}/` to the `worktrunk-assets` repo (sibling directory), commits, and pushes. The script clones the repo via `gh` if missing.
 
 To fetch published assets (without rebuilding):
 
@@ -115,12 +120,12 @@ Branch setup (from shared infrastructure):
 
 ## Light/dark theme variants
 
-The docs build generates both light and dark GIF variants:
-- `wt-core.gif` / `wt-core-dark.gif`
-- `wt-merge.gif` / `wt-merge-dark.gif`
-- `wt-select.gif` / `wt-select-dark.gif`
+The docs build generates both light and dark GIF variants in separate directories:
+- `docs/light/wt-core.gif` / `docs/dark/wt-core.gif`
+- `docs/light/wt-merge.gif` / `docs/dark/wt-merge.gif`
+- `docs/light/wt-select.gif` / `docs/dark/wt-select.gif`
 
-Twitter build generates light only (Twitter doesn't support theme-switching media queries).
+Social build generates light only (social media doesn't support theme-switching media queries).
 
 Theme definitions are in `docs/demos/shared/themes.py`, matching the CSS variables in `_variables.html`.
 
@@ -129,7 +134,7 @@ Theme definitions are in `docs/demos/shared/themes.py`, matching the CSS variabl
 Use `--shell` to spawn an interactive fish shell with the demo environment:
 
 ```bash
-./docs/demos/build twitter --only wt-switch --shell
+./docs/demos/build social --only wt-switch --shell
 ```
 
 This builds the demo and drops you into a fish shell with `HOME`, `PATH`, starship, and wt shell integration all configured. You're already in the demo repo and ready to test:
@@ -193,17 +198,17 @@ Key fields in `.claude.json` for suppressing notifications:
 Inline viewing options:
 ```bash
 # Quick Look (macOS)
-qlmanage -p docs/static/assets/wt-select.gif
+qlmanage -p docs/static/assets/docs/light/wt-select.gif
 
 # iTerm2 inline images
-imgcat docs/static/assets/wt-select.gif
+imgcat docs/static/assets/docs/light/wt-select.gif
 ```
 
 ## Extracting frames from a GIF for inspection
 
 ```bash
 mkdir -p /tmp/frames
-magick docs/static/assets/wt-switch.gif -coalesce /tmp/frames/frame_%03d.png
+magick docs/static/assets/social/light/wt-switch.gif -coalesce /tmp/frames/frame_%03d.png
 
 # View a specific frame
 open /tmp/frames/frame_200.png

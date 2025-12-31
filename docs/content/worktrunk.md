@@ -14,8 +14,8 @@ Scaling agents becomes trivial. Here's a quick demo:
 
 <figure class="demo">
 <picture>
-  <source srcset="/assets/wt-core-dark.gif" media="(prefers-color-scheme: dark)">
-  <img src="/assets/wt-core.gif" alt="Worktrunk demo showing wt list, wt switch, and hooks" width="1600" height="900">
+  <source srcset="/assets/docs/dark/wt-core.gif" media="(prefers-color-scheme: dark)">
+  <img src="/assets/docs/light/wt-core.gif" alt="Worktrunk demo showing wt list, wt switch, and hooks" width="1600" height="900">
 </picture>
 <figcaption>Listing worktrees, switching, cleaning up</figcaption>
 </figure>
@@ -89,8 +89,8 @@ Here's a demo with some of the more advanced features:
 
 <figure class="demo">
 <picture>
-  <source srcset="/assets/wt-zellij-omnibus-dark.gif" media="(prefers-color-scheme: dark)">
-  <img src="/assets/wt-zellij-omnibus.gif" alt="Worktrunk omnibus demo: multiple Claude agents in Zellij tabs with hooks, LLM commits, and merge workflow" width="1600" height="900">
+  <source srcset="/assets/docs/dark/wt-zellij-omnibus.gif" media="(prefers-color-scheme: dark)">
+  <img src="/assets/docs/light/wt-zellij-omnibus.gif" alt="Worktrunk omnibus demo: multiple Claude agents in Zellij tabs with hooks, LLM commits, and merge workflow" width="1600" height="900">
 </picture>
 <figcaption>Multiple Claude agents in parallel with hooks, LLM commits, and merge</figcaption>
 </figure>

@@ -156,7 +156,7 @@ url = "http://localhost:{{{{ branch | hash_port }}}}"
     _write_user_config(env, [dev_cmd])
 
     # Override npm mock to start nc listener so URL appears active
-    npm_mock = env.home / "bin" / "npm"
+    npm_mock = env.home / ".local" / "bin" / "npm"
     npm_mock.write_text("""#!/bin/bash
 if [[ "$1" == "run" && "$2" == "dev" ]]; then
     PORT="$5"
@@ -197,7 +197,7 @@ url = "http://localhost:{{ branch | hash_port }}"
     git(["-C", str(env.repo), "config", "color.ui", "always"])
 
     # Override llm mock with different commit message for this demo
-    llm_mock = env.home / "bin" / "llm"
+    llm_mock = env.home / ".local" / "bin" / "llm"
     llm_mock.write_text("""#!/bin/bash
 sleep 0.5
 echo "feat: add user settings module"
@@ -229,7 +229,7 @@ echo "Add placeholder module for user profile settings."
     demo_env = {
         **os.environ,
         "HOME": str(env.home),
-        "PATH": f"{REPO_ROOT}/target/debug:{env.home}/bin:{os.environ.get('PATH', '')}"
+        "PATH": f"{REPO_ROOT}/target/debug:{env.home}/.local/bin:{os.environ.get('PATH', '')}"
     }
 
     def run_wt(args, cwd):
@@ -350,7 +350,7 @@ def spawn_debug_shell(env: DemoEnv, starship_config: Path):
         "HOME": str(env.home),
         "XDG_CONFIG_HOME": str(env.home / ".config"),
         "STARSHIP_CONFIG": str(starship_config),
-        "PATH": f"{REPO_ROOT / 'target' / 'debug'}:{env.home / 'bin'}:{os.environ.get('PATH', '')}",
+        "PATH": f"{REPO_ROOT / 'target' / 'debug'}:{env.home / '.local' / 'bin'}:{os.environ.get('PATH', '')}",
         # Keep real rustup/cargo for any rust tools
         "RUSTUP_HOME": str(Path.home() / ".rustup"),
         "CARGO_HOME": str(Path.home() / ".cargo"),

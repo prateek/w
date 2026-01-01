@@ -204,7 +204,7 @@ def prepare_base_repo(env: DemoEnv, repo_root: Path):
     git(["-C", str(env.repo), "push", "-q"])
 
     # Mock CLI tools
-    bin_dir = env.home / "bin"
+    bin_dir = env.home / ".local" / "bin"
     bin_dir.mkdir(parents=True, exist_ok=True)
 
     # bat wrapper for syntax highlighting (alias cat to bat for toml files)
@@ -290,6 +290,14 @@ def setup_claude_code_config(
         },
         "projects": projects_config
     }, indent=2))
+
+    # Copy claude binary to prevent "installMethod is native" warnings
+    # Claude Code detects native install by checking if ~/.local/bin/claude exists
+    local_bin = env.home / ".local" / "bin"
+    local_bin.mkdir(parents=True, exist_ok=True)
+    real_claude = REAL_HOME / ".local" / "bin" / "claude"
+    if real_claude.exists():
+        shutil.copy(real_claude.resolve(), local_bin / "claude")
 
     # Claude settings.json
     claude_dir = env.home / ".claude"
@@ -446,7 +454,7 @@ def setup_mock_clis(env: DemoEnv) -> None:
     Creates mocks for: npm, docker, flyctl, llm, cargo.
     Each mock handles all cases - demos just use the branches they need.
     """
-    bin_dir = env.home / "bin"
+    bin_dir = env.home / ".local" / "bin"
     bin_dir.mkdir(parents=True, exist_ok=True)
 
     # npm mock - handles install, build, dev (with optional port)
@@ -558,7 +566,7 @@ def prepare_demo_repo(env: DemoEnv, repo_root: Path, hooks_config: str = None):
     git(["-C", str(env.repo), "push", "-q"])
 
     # Mock gh CLI with varied CI status per branch
-    bin_dir = env.home / "bin"
+    bin_dir = env.home / ".local" / "bin"
     gh_mock = bin_dir / "gh"
     shutil.copy(FIXTURES_DIR / "gh-mock.sh", gh_mock)
     gh_mock.chmod(0o755)

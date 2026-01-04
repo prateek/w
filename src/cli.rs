@@ -129,7 +129,7 @@ pub enum OutputFormat {
 
 #[derive(Parser)]
 #[command(name = "wt")]
-#[command(about = "Git worktree management", long_about = None)]
+#[command(about = "Git worktree management for parallel AI agent workflows", long_about = None)]
 #[command(version = version_str())]
 #[command(disable_help_subcommand = true)]
 #[command(styles = help_styles())]
@@ -379,7 +379,7 @@ This tests:
         full: bool,
     },
 
-    /// Get, set, or clear stored state
+    /// Manage internal data and cache
     #[command(
         after_long_help = r#"State is stored in `.git/` (config entries and log files), separate from configuration files.
 Use `wt config show` to view file-based configuration.
@@ -917,9 +917,10 @@ pub enum StepCommand {
         show_prompt: bool,
     },
 
-    /// Push changes to local target branch
+    /// Fast-forward target to current branch
     ///
-    /// Fast-forwards the target branch to include current commits.
+    /// Updates the local target branch (e.g., main) to include current commits.
+    /// Equivalent to `git push . HEAD:main`.
     Push {
         /// Target branch
         ///
@@ -1466,7 +1467,7 @@ wt step push
 - `commit` — Stage and commit with [LLM-generated message](@/llm-commits.md)
 - `squash` — Squash all branch commits into one with [LLM-generated message](@/llm-commits.md)
 - `rebase` — Rebase onto target branch
-- `push` — Push to target branch (defaults to the default branch)
+- `push` — Fast-forward target to current branch
 - `for-each` — [experimental] Run a command in every worktree
 
 ## See also
@@ -2005,7 +2006,7 @@ Branches without worktrees are included — selecting one creates a worktree. (`
     )]
     Select,
 
-    /// List worktrees and optionally branches
+    /// List worktrees and their status
     #[command(
         after_long_help = r#"Show all worktrees with their status. The table includes uncommitted changes, divergence from the default branch and remote, and optional CI status.
 <!-- demo: wt-list.gif 1600x900 -->
@@ -2249,7 +2250,7 @@ Missing a field that would be generally useful? Open an issue at https://github.
         #[arg(long)]
         remotes: bool,
 
-        /// Show CI, merge-base diffstat, and working tree conflict check
+        /// Include CI status and diff analysis (slower)
         #[arg(long)]
         full: bool,
 

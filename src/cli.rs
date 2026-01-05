@@ -2492,7 +2492,7 @@ Removal runs in the background by default (returns immediately). Logs are writte
     ///
     /// Squash & rebase, fast-forward target, remove the worktree.
     #[command(
-        after_long_help = r#"Run from a feature worktree to merge into the default branch — like clicking "Merge pull request" on GitHub.
+        after_long_help = r#"Merge the current branch into the default branch — like clicking "Merge pull request" on GitHub.
 <!-- demo: wt-merge.gif 1600x900 -->
 
 ## Examples

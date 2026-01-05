@@ -8,7 +8,7 @@ group = "Commands"
 
 <!-- ⚠️ AUTO-GENERATED from `wt merge --help-page` — edit cli.rs to update -->
 
-Run from a feature worktree to merge into the default branch — like clicking "Merge pull request" on GitHub.
+Merge the current branch into the default branch — like clicking "Merge pull request" on GitHub.
 
 <figure class="demo">
 <picture>

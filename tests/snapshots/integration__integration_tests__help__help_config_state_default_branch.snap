@@ -13,6 +13,7 @@ info:
     GIT_EDITOR: ""
     RUST_LOG: warn
     SOURCE_DATE_EPOCH: "1735776000"
+    TERM: alacritty
     WORKTRUNK_CONFIG_PATH: /nonexistent/test/config.toml
     WORKTRUNK_TEST_SKIP_URL_HEALTH_CHECK: "1"
 ---
@@ -44,6 +45,12 @@ Usage: [1m[36mwt config state default-branch[0m [36m[OPTIONS][0m [36m[COMM
   [1m[36m-v[0m, [1m[36m--verbose
           Show commands and debug info
 
+Useful in scripts to avoid hardcoding [2mmain[0m or [2mmaster[0m:
+
+  [2mgit rebase $(wt config state default-branch)
+
+Without a subcommand, runs [2mget[0m. Use [2mset[0m to override, [2mget --refresh[0m to re-detect, or [2mclear[0m to reset.
+
 [32mDetection
 
 Worktrunk detects the default branch automatically:
@@ -60,15 +67,3 @@ The local inference fallback uses these heuristics in order:
 - For bare repos or empty repos, checks [2msymbolic-ref HEAD
 - Checks [2mgit config init.defaultBranch
 - Looks for common names: main, master, develop, trunk
-
-[32mWhen to use
-
-Most users never need this command — default branch detection is automatic.
-Use it to:
-
-- [1mDebug[0m — See what worktrunk thinks the default branch is
-- [1mOverride[0m — Set a non-standard default branch with [2mset
-- [1mRefresh[0m — Force re-query with [2mget --refresh[0m after remote changes
-- [1mClear[0m — Remove cached value with [2mclear
-
-Without a subcommand, runs [2mget[0m. For [2m--refresh[0m, use [2mget --refresh[0m.

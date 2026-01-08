@@ -116,14 +116,15 @@ Detects various forms of the integration pattern regardless of:
     },
 
     /// Show output theme samples
-    #[command(after_long_help = r#"## Output Theme
+    #[command(
+        after_long_help = r#"Displays samples of all output message types to preview how worktrunk output will appear in the terminal.
 
-Displays samples of all output message types:
+## Message types
+
 - Progress, success, error, warning, hint, info
 - Gutter formatting for quoted content
-- Prompts for user input
-
-Use this to preview how worktrunk output will appear in the terminal."#)]
+- Prompts for user input"#
+    )]
     ShowTheme,
 }
 
@@ -272,7 +273,15 @@ pub enum StateCommand {
     /// Default branch setting
     #[command(
         name = "default-branch",
-        after_long_help = r#"## Detection
+        after_long_help = r#"Useful in scripts to avoid hardcoding `main` or `master`:
+
+```bash
+git rebase $(wt config state default-branch)
+```
+
+Without a subcommand, runs `get`. Use `set` to override, `get --refresh` to re-detect, or `clear` to reset.
+
+## Detection
 
 Worktrunk detects the default branch automatically:
 
@@ -287,19 +296,7 @@ The local inference fallback uses these heuristics in order:
 - If only one local branch exists, uses it
 - For bare repos or empty repos, checks `symbolic-ref HEAD`
 - Checks `git config init.defaultBranch`
-- Looks for common names: main, master, develop, trunk
-
-## When to use
-
-Most users never need this command — default branch detection is automatic.
-Use it to:
-
-- **Debug** — See what worktrunk thinks the default branch is
-- **Override** — Set a non-standard default branch with `set`
-- **Refresh** — Force re-query with `get --refresh` after remote changes
-- **Clear** — Remove cached value with `clear`
-
-Without a subcommand, runs `get`. For `--refresh`, use `get --refresh`."#
+- Looks for common names: main, master, develop, trunk"#
     )]
     DefaultBranch {
         #[command(subcommand)]

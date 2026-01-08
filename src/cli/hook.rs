@@ -167,23 +167,8 @@ pub enum HookCommand {
     },
 
     /// Manage command approvals
-    #[command(after_long_help = r#"## How Approvals Work
-
-Commands from project hooks (`.config/wt.toml`) require approval on first run.
-This prevents untrusted projects from running arbitrary commands.
-
-**Approval flow:**
-1. Command is shown as a template (variables not expanded)
-2. User approves or denies
-3. Approved commands are saved to user config under `[projects."project-id"]`
-
-**When re-approval is required:**
-- Command template changes (not just variable values)
-- Project ID changes (repository moves)
-
-**Bypassing prompts:**
-- `--yes` flag on individual commands (e.g., `wt merge --yes`)
-- Useful for CI/automation where prompts aren't possible
+    #[command(
+        after_long_help = r#"Project hooks require approval on first run to prevent untrusted projects from running arbitrary commands.
 
 ## Examples
 
@@ -200,7 +185,12 @@ wt hook approvals clear
 Clear global approvals:
 ```console
 wt hook approvals clear --global
-```"#)]
+```
+
+## How approvals work
+
+Approved commands are saved to user config. Re-approval is required when the command template changes or the project moves. Use `--yes` to bypass prompts in CI."#
+    )]
     Approvals {
         #[command(subcommand)]
         action: ApprovalsCommand,

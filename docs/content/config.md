@@ -762,6 +762,14 @@ Usage: <b><span class=c>wt config state</span></b> <span class=c>[OPTIONS]</span
 
 ## wt config state default-branch
 
+Useful in scripts to avoid hardcoding `main` or `master`:
+
+```bash
+git rebase $(wt config state default-branch)
+```
+
+Without a subcommand, runs `get`. Use `set` to override, `get --refresh` to re-detect, or `clear` to reset.
+
 ### Detection
 
 Worktrunk detects the default branch automatically:
@@ -778,18 +786,6 @@ The local inference fallback uses these heuristics in order:
 - For bare repos or empty repos, checks `symbolic-ref HEAD`
 - Checks `git config init.defaultBranch`
 - Looks for common names: main, master, develop, trunk
-
-### When to use
-
-Most users never need this command — default branch detection is automatic.
-Use it to:
-
-- **Debug** — See what worktrunk thinks the default branch is
-- **Override** — Set a non-standard default branch with `set`
-- **Refresh** — Force re-query with `get --refresh` after remote changes
-- **Clear** — Remove cached value with `clear`
-
-Without a subcommand, runs `get`. For `--refresh`, use `get --refresh`.
 
 ### Command reference
 

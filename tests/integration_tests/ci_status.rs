@@ -250,3 +250,125 @@ fn test_list_full_filters_by_repo_owner(mut repo: TestRepo) {
 
     run_ci_status_test(&mut repo, "filters_by_repo_owner", &pr_json, "[]");
 }
+
+#[rstest]
+fn test_list_full_with_platform_override_github(mut repo: TestRepo) {
+    // Add a non-GitHub remote (bitbucket) - platform won't be auto-detected
+    repo.run_git(&[
+        "remote",
+        "add",
+        "origin",
+        "https://bitbucket.org/test-owner/test-repo.git",
+    ]);
+
+    // Set platform override in project config
+    repo.write_project_config(
+        r#"
+[ci]
+platform = "github"
+"#,
+    );
+
+    // Create a feature branch
+    repo.add_worktree("feature");
+
+    // Get actual commit SHA
+    let head_sha = get_branch_sha(&repo, "feature");
+
+    // Setup mock gh with PR data - this should work because platform is overridden to github
+    let pr_json = format!(
+        r#"[{{
+        "headRefOid": "{}",
+        "mergeStateStatus": "CLEAN",
+        "statusCheckRollup": [
+            {{"status": "COMPLETED", "conclusion": "SUCCESS"}}
+        ],
+        "url": "https://github.com/test-owner/test-repo/pull/1",
+        "headRepositoryOwner": {{"login": "test-owner"}}
+    }}]"#,
+        head_sha
+    );
+    let run_json = "[]";
+    repo.setup_mock_gh_with_ci_data(&pr_json, run_json);
+
+    let settings = setup_snapshot_settings(&repo);
+    settings.bind(|| {
+        let mut cmd = make_snapshot_cmd(&repo, "list", &["--full"], None);
+        repo.configure_mock_commands(&mut cmd);
+        // Platform override should force GitHub detection even with bitbucket remote
+        assert_cmd_snapshot!(cmd);
+    });
+}
+
+#[rstest]
+fn test_list_full_with_gitlab_remote(mut repo: TestRepo) {
+    // Add GitLab remote - tests get_gitlab_host_for_repo path
+    repo.run_git(&[
+        "remote",
+        "add",
+        "origin",
+        "https://gitlab.example.com/test-owner/test-repo.git",
+    ]);
+
+    // Create a feature branch
+    repo.add_worktree("feature");
+
+    // No mock glab setup - this tests the hint path when glab isn't available
+    // The get_gitlab_host_for_repo function is called to detect GitLab platform
+
+    let settings = setup_snapshot_settings(&repo);
+    settings.bind(|| {
+        let mut cmd = make_snapshot_cmd(&repo, "list", &["--full"], None);
+        // Don't configure mocks - we want to test the "no CI tool" hint path
+        // which exercises get_gitlab_host_for_repo
+        assert_cmd_snapshot!(cmd);
+    });
+}
+
+#[rstest]
+fn test_list_full_with_invalid_platform_override(mut repo: TestRepo) {
+    // Add GitHub remote
+    repo.run_git(&[
+        "remote",
+        "add",
+        "origin",
+        "https://github.com/test-owner/test-repo.git",
+    ]);
+
+    // Set INVALID platform override - should warn and fall back to URL detection
+    repo.write_project_config(
+        r#"
+[ci]
+platform = "invalid_platform"
+"#,
+    );
+
+    // Create a feature branch
+    repo.add_worktree("feature");
+    let head_sha = get_branch_sha(&repo, "feature");
+
+    // Setup mock gh - platform should fall back to GitHub via URL detection
+    let pr_json = format!(
+        r#"[{{
+        "headRefOid": "{}",
+        "mergeStateStatus": "CLEAN",
+        "statusCheckRollup": [
+            {{"status": "COMPLETED", "conclusion": "SUCCESS"}}
+        ],
+        "url": "https://github.com/test-owner/test-repo/pull/1",
+        "headRepositoryOwner": {{"login": "test-owner"}}
+    }}]"#,
+        head_sha
+    );
+    repo.setup_mock_gh_with_ci_data(&pr_json, "[]");
+
+    let mut settings = setup_snapshot_settings(&repo);
+    // Normalize worker thread ID prefix in log output (e.g., [n], [z], [A] -> [W])
+    settings.add_filter(r"\[[a-zA-Z]\]", "[W]");
+    settings.bind(|| {
+        let mut cmd = make_snapshot_cmd(&repo, "list", &["--full"], None);
+        repo.configure_mock_commands(&mut cmd);
+        // Invalid platform should fall back to URL detection (GitHub)
+        assert_cmd_snapshot!(cmd);
+    });
+}

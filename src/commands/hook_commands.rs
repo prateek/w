@@ -264,12 +264,16 @@ pub fn add_approvals(show_all: bool) -> anyhow::Result<()> {
     use super::command_approval::approve_command_batch;
     use worktrunk::config::WorktrunkConfig;
 
-    let repo = Repository::current();
+    let repo = Repository::current()?;
     let project_id = repo.project_identifier()?;
     let config = WorktrunkConfig::load().context("Failed to load config")?;
 
     // Load project config (error if missing - this command requires it)
-    let config_path = repo.worktree_root()?.join(".config").join("wt.toml");
+    let config_path = repo
+        .current_worktree()
+        .root()?
+        .join(".config")
+        .join("wt.toml");
     let project_config = repo
         .load_project_config()?
         .ok_or(GitError::ProjectConfigNotFound { config_path })?;
@@ -340,7 +344,7 @@ pub fn clear_approvals(global: bool) -> anyhow::Result<()> {
         )))?;
     } else {
         // Clear approvals for current project (default)
-        let repo = Repository::current();
+        let repo = Repository::current()?;
         let project_id = repo.project_identifier()?;
 
         // Check if project has any approvals
@@ -375,7 +379,7 @@ pub fn clear_approvals(global: bool) -> anyhow::Result<()> {
 pub fn handle_hook_show(hook_type_filter: Option<&str>, expanded: bool) -> anyhow::Result<()> {
     use crate::help_pager::show_help_in_pager;
 
-    let repo = Repository::current();
+    let repo = Repository::current()?;
     let config = WorktrunkConfig::load().context("Failed to load user config")?;
     let project_config = repo.load_project_config()?;
     let project_id = repo.project_identifier().ok();
@@ -493,7 +497,7 @@ fn render_project_hooks(
     filter: Option<HookType>,
     ctx: Option<&CommandContext>,
 ) -> anyhow::Result<()> {
-    let repo_root = repo.worktree_root()?;
+    let repo_root = repo.current_worktree().root()?;
     let config_path = repo_root.join(".config").join("wt.toml");
 
     writeln!(

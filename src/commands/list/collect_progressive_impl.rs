@@ -94,8 +94,10 @@ pub struct TaskContext {
 }
 
 impl TaskContext {
-    fn repo(&self) -> Repository {
-        Repository::at(&self.repo_path)
+    fn repo(&self, kind: TaskKind) -> Result<Repository, TaskError> {
+        // Background tasks need Repository discovered from their specific worktree path,
+        // not from base_path(). Each task operates on a potentially different worktree.
+        Repository::at(&self.repo_path).map_err(|e| self.error(kind, e))
     }
 
     fn error(&self, kind: TaskKind, message: impl Display) -> TaskError {
@@ -380,7 +382,7 @@ impl Task for CommitDetailsTask {
     const KIND: TaskKind = TaskKind::CommitDetails;
 
     fn compute(ctx: TaskContext) -> Result<TaskResult, TaskError> {
-        let repo = ctx.repo();
+        let repo = ctx.repo(Self::KIND)?;
         let timestamp = repo
             .commit_timestamp(&ctx.commit_sha)
             .map_err(|e| ctx.error(Self::KIND, e))?;
@@ -405,7 +407,7 @@ impl Task for AheadBehindTask {
 
     fn compute(ctx: TaskContext) -> Result<TaskResult, TaskError> {
         let base = ctx.require_default_branch(Self::KIND)?;
-        let repo = ctx.repo();
+        let repo = ctx.repo(Self::KIND)?;
 
         // Check cache first (populated by batch_ahead_behind if it ran).
         // Cache lookup has minor overhead (rev-parse for cache key + allocations),
@@ -439,7 +441,7 @@ impl Task for CommittedTreesMatchTask {
 
     fn compute(ctx: TaskContext) -> Result<TaskResult, TaskError> {
         let base = ctx.require_target(Self::KIND)?;
-        let repo = ctx.repo();
+        let repo = ctx.repo(Self::KIND)?;
         // Use ctx.commit_sha (the item's commit) instead of HEAD,
         // since for branches without worktrees, HEAD is the main worktree's HEAD
         let committed_trees_match = repo
@@ -477,7 +479,7 @@ impl Task for HasFileChangesTask {
             });
         };
         let target = ctx.require_target(Self::KIND)?;
-        let repo = ctx.repo();
+        let repo = ctx.repo(Self::KIND)?;
         let has_file_changes = repo
             .has_added_changes(branch, target)
             .map_err(|e| ctx.error(Self::KIND, e))?;
@@ -514,7 +516,7 @@ impl Task for WouldMergeAddTask {
             });
         };
         let base = ctx.require_target(Self::KIND)?;
-        let repo = ctx.repo();
+        let repo = ctx.repo(Self::KIND)?;
         let would_merge_add = repo
             .would_merge_add_to_target(branch, base)
             .map_err(|e| ctx.error(Self::KIND, e))?;
@@ -540,7 +542,7 @@ impl Task for IsAncestorTask {
 
     fn compute(ctx: TaskContext) -> Result<TaskResult, TaskError> {
         let base = ctx.require_target(Self::KIND)?;
-        let repo = ctx.repo();
+        let repo = ctx.repo(Self::KIND)?;
         let is_ancestor = repo
             .is_ancestor(&ctx.commit_sha, base)
             .map_err(|e| ctx.error(Self::KIND, e))?;
@@ -560,7 +562,7 @@ impl Task for BranchDiffTask {
 
     fn compute(ctx: TaskContext) -> Result<TaskResult, TaskError> {
         let base = ctx.require_default_branch(Self::KIND)?;
-        let repo = ctx.repo();
+        let repo = ctx.repo(Self::KIND)?;
         let diff = repo
             .branch_diff_stats(base, &ctx.commit_sha)
             .map_err(|e| ctx.error(Self::KIND, e))?;
@@ -579,7 +581,7 @@ impl Task for WorkingTreeDiffTask {
     const KIND: TaskKind = TaskKind::WorkingTreeDiff;
 
     fn compute(ctx: TaskContext) -> Result<TaskResult, TaskError> {
-        let repo = ctx.repo();
+        let repo = ctx.repo(Self::KIND)?;
         // Use --no-optional-locks to avoid index lock contention with WorkingTreeConflictsTask's
         // `git stash create` which needs the index lock.
         let status_output = repo
@@ -622,7 +624,7 @@ impl Task for MergeTreeConflictsTask {
 
     fn compute(ctx: TaskContext) -> Result<TaskResult, TaskError> {
         let base = ctx.require_default_branch(Self::KIND)?;
-        let repo = ctx.repo();
+        let repo = ctx.repo(Self::KIND)?;
         let has_merge_tree_conflicts = repo
             .has_merge_conflicts(base, &ctx.commit_sha)
             .map_err(|e| ctx.error(Self::KIND, e))?;
@@ -645,7 +647,7 @@ impl Task for WorkingTreeConflictsTask {
 
     fn compute(ctx: TaskContext) -> Result<TaskResult, TaskError> {
         let base = ctx.require_default_branch(Self::KIND)?;
-        let repo = ctx.repo();
+        let repo = ctx.repo(Self::KIND)?;
 
         // Use --no-optional-locks to avoid index lock contention with WorkingTreeDiffTask.
         // Both tasks run in parallel, and `git stash create` below needs the index lock.
@@ -711,7 +713,7 @@ impl Task for GitOperationTask {
     const KIND: TaskKind = TaskKind::GitOperation;
 
     fn compute(ctx: TaskContext) -> Result<TaskResult, TaskError> {
-        let repo = ctx.repo();
+        let repo = ctx.repo(Self::KIND)?;
         let git_operation = detect_git_operation(&repo);
         Ok(TaskResult::GitOperation {
             item_idx: ctx.item_idx,
@@ -727,7 +729,7 @@ impl Task for UserMarkerTask {
     const KIND: TaskKind = TaskKind::UserMarker;
 
     fn compute(ctx: TaskContext) -> Result<TaskResult, TaskError> {
-        let repo = ctx.repo();
+        let repo = ctx.repo(Self::KIND)?;
         let user_marker = repo.user_marker(ctx.branch.as_deref());
         Ok(TaskResult::UserMarker {
             item_idx: ctx.item_idx,
@@ -743,7 +745,7 @@ impl Task for UpstreamTask {
     const KIND: TaskKind = TaskKind::Upstream;
 
     fn compute(ctx: TaskContext) -> Result<TaskResult, TaskError> {
-        let repo = ctx.repo();
+        let repo = ctx.repo(Self::KIND)?;
 
         // No branch means no upstream
         let Some(branch) = ctx.branch.as_deref() else {
@@ -791,15 +793,10 @@ impl Task for CiStatusTask {
     const KIND: TaskKind = TaskKind::CiStatus;
 
     fn compute(ctx: TaskContext) -> Result<TaskResult, TaskError> {
-        let repo = ctx.repo();
-        let repo_path = repo
-            .worktree_root()
-            .ok()
-            .unwrap_or_else(|| ctx.repo_path.clone());
-
+        let repo = ctx.repo(Self::KIND)?;
         let pr_status = ctx.branch.as_deref().and_then(|branch| {
             let has_upstream = repo.upstream_branch(branch).ok().flatten().is_some();
-            PrStatus::detect(branch, &ctx.commit_sha, &repo_path, has_upstream)
+            PrStatus::detect(&repo, branch, &ctx.commit_sha, has_upstream)
         });
 
         Ok(TaskResult::CiStatus {

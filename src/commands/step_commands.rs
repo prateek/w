@@ -237,7 +237,7 @@ pub fn handle_squash(
     generator.emit_hint_if_needed()?;
 
     // Get current branch and repo name for template variables
-    let repo_root = repo.worktree_root()?;
+    let repo_root = repo.current_worktree().root()?;
     let repo_name = repo_root
         .file_name()
         .and_then(|n| n.to_str())
@@ -293,13 +293,16 @@ pub fn step_show_squash_prompt(
     target: Option<&str>,
     config: &worktrunk::config::CommitGenerationConfig,
 ) -> anyhow::Result<()> {
-    let repo = Repository::current();
+    let repo = Repository::current()?;
 
     // Get target branch (default to default branch if not provided)
     let target_branch = repo.resolve_target_branch(target)?;
 
     // Get current branch
-    let current_branch = repo.current_branch()?.unwrap_or_else(|| "HEAD".to_string());
+    let current_branch = repo
+        .current_worktree()
+        .branch()?
+        .unwrap_or_else(|| "HEAD".to_string());
 
     // Get merge base with target branch
     let merge_base = repo.merge_base("HEAD", &target_branch)?;
@@ -309,7 +312,7 @@ pub fn step_show_squash_prompt(
     let subjects = repo.commit_subjects(&range)?;
 
     // Get repo name from directory
-    let repo_root = repo.worktree_root()?;
+    let repo_root = repo.current_worktree().root()?;
     let repo_name = repo_root
         .file_name()
         .and_then(|n| n.to_str())
@@ -339,7 +342,7 @@ pub enum RebaseResult {
 pub fn handle_rebase(target: Option<&str>) -> anyhow::Result<RebaseResult> {
     use super::repository_ext::RepositoryCliExt;
 
-    let repo = Repository::current();
+    let repo = Repository::current()?;
 
     // Get target branch (default to default branch if not provided)
     let target_branch = repo.resolve_target_branch(target)?;
@@ -422,7 +425,7 @@ pub fn step_copy_ignored(
     use ignore::gitignore::GitignoreBuilder;
     use std::fs;
 
-    let repo = Repository::current();
+    let repo = Repository::current()?;
 
     // Resolve source and destination worktree paths
     let (source_path, source_context) = match from {
@@ -443,7 +446,7 @@ pub fn step_copy_ignored(
                 branch: branch.to_string(),
             }
         })?,
-        None => repo.worktree_root()?.to_path_buf(),
+        None => repo.current_worktree().root()?.to_path_buf(),
     };
 
     if source_path == dest_path {

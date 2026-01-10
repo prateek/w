@@ -263,9 +263,9 @@ impl TaskKind {
 
 /// Detect if a worktree is in the middle of a git operation (rebase/merge).
 pub(super) fn detect_git_operation(repo: &Repository) -> GitOperationState {
-    if repo.is_rebasing().unwrap_or(false) {
+    if repo.current_worktree().is_rebasing().unwrap_or(false) {
         GitOperationState::Rebase
-    } else if repo.is_merging().unwrap_or(false) {
+    } else if repo.current_worktree().is_merging().unwrap_or(false) {
         GitOperationState::Merge
     } else {
         GitOperationState::None
@@ -413,8 +413,9 @@ fn apply_default(items: &mut [ListItem], status_contexts: &mut [StatusContext], 
             items[idx].upstream = Some(UpstreamStatus::default());
         }
         TaskKind::CiStatus => {
-            // Some(None) means "loaded but no CI"
-            items[idx].pr_status = Some(None);
+            // Leave as None (not fetched) on error. This allows the hint path
+            // in mod.rs to run and show "install gh/glab" when CI tools fail.
+            // Some(None) means "CI tool ran successfully but found no PR".
         }
         TaskKind::UrlStatus => {
             // URL is set at item creation, only default url_active
@@ -700,7 +701,7 @@ pub fn collect(
 
     // Detect current worktree by checking if repo path is inside any worktree.
     // This avoids a git command - we just compare canonicalized paths.
-    let repo_path_canonical = canonicalize(repo.base_path()).ok();
+    let repo_path_canonical = canonicalize(repo.discovery_path()).ok();
     let current_worktree_path = repo_path_canonical.as_ref().and_then(|repo_path| {
         worktrees.iter().find_map(|wt| {
             canonicalize(&wt.path)
@@ -998,12 +999,11 @@ pub fn collect(
     // See: https://github.com/jj-vcs/jj/issues/6440 (jj hit same issue)
     #[cfg(target_os = "macos")]
     {
-        let main_repo = Repository::at(&main_worktree.path);
-        if main_repo.is_builtin_fsmonitor_enabled() {
+        if repo.is_builtin_fsmonitor_enabled() {
             for wt in &sorted_worktrees {
                 // Skip prunable worktrees (directory missing)
                 if !wt.is_prunable() {
-                    Repository::at(&wt.path).start_fsmonitor_daemon();
+                    repo.start_fsmonitor_daemon_at(&wt.path);
                 }
             }
         }

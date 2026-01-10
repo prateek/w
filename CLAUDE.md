@@ -176,14 +176,18 @@ The `codecov/patch` CI check enforces coverage on changed lines — respond to f
 
 ### Investigating codecov/patch Failures
 
-```bash
-# Find uncovered lines
-./dev/coverage.sh
-cargo llvm-cov report --show-missing-lines | grep <file>
+When CI shows a codecov/patch failure, investigate before declaring "ready to merge" — even if the check is marked "not required":
 
-# Compare against your diff (three-dot for PR changes)
-git diff main...HEAD -- path/to/file.rs
-```
+1. Identify uncovered lines in your changes:
+   ```bash
+   ./dev/coverage.sh
+   cargo llvm-cov report --show-missing-lines | grep <file>
+   git diff main...HEAD -- path/to/file.rs
+   ```
+
+2. For each uncovered function/method you added, either:
+   - Write a test that exercises it, or
+   - Document why it's intentionally untested (e.g., error paths requiring external system mocks)
 
 ## Benchmarks
 

@@ -1744,7 +1744,7 @@ fn write_vv_diagnostic(verbose: u8, command_line: &str, error_msg: Option<&str>)
                 // Escape single quotes for shell: 'it'\''s' -> it's
                 let path_str = path.to_string_lossy().replace('\'', "'\\''");
                 let _ = output::print(hint_message(cformat!(
-                    "If this is a bug, create an issue: <bright-black>gh issue create -R max-sixty/worktrunk -t 'Bug report' --body-file '{path_str}'</>"
+                    "If this is a bug, draft an issue: <bright-black>gh issue create --web -R max-sixty/worktrunk -t 'Bug report' --body-file '{path_str}'</>"
                 )));
             }
         }

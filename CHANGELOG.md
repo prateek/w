@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.13.1
+
+### Fixed
+
+- **Pager auto-quit**: Help text now auto-quits when it fits on screen, even when `LESS` is set without the `F` flag (common with oh-my-zsh's `LESS=-R` default). Fixes [#583](https://github.com/max-sixty/worktrunk/issues/583). (thanks @razor-x for reporting)
+- **`--create` hint for remote branch shadowing**: Improved recovery hint when `--create` shadows a remote branch — now shows the full recovery command.
+
 ## 0.13.0
 
 ### Improved

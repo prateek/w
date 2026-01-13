@@ -387,7 +387,7 @@ fn apply_default(items: &mut [ListItem], status_contexts: &mut [StatusContext], 
             items[idx].commit = Some(CommitDetails::default());
         }
         TaskKind::AheadBehind => {
-            items[idx].counts = Some(AheadBehind::default());
+            // Leave as None — UI shows `⋯` for not-loaded tasks
             // Conservative: don't claim orphan if we couldn't check
             items[idx].is_orphan = Some(false);
         }

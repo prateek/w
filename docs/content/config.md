@@ -43,8 +43,10 @@ wt config show
 | **User config** | `~/.config/worktrunk/config.toml` | Personal settings, command defaults, approved project commands |
 | **Project config** | `.config/wt.toml` | Lifecycle hooks, checked into version control |
 
+---
+
 <!-- USER_CONFIG_START -->
-# Worktrunk User Configuration
+## Worktrunk User Configuration
 
 Create with `wt config create`.
 
@@ -255,6 +257,8 @@ Combine these commits into a single commit message.
 <!-- DEFAULT_SQUASH_TEMPLATE_END -->
 <!-- USER_CONFIG_END -->
 
+---
+
 ## Project config
 
 The project config defines lifecycle hooks and project-specific settings. This file is checked into version control and shared across the team.
@@ -293,6 +297,8 @@ platform = "github"  # or "gitlab"
 ```
 
 By default, the platform is detected from the remote URL. Use this when URL detection fails (e.g., `git.mycompany.com` instead of `github.mycompany.com`).
+
+---
 
 ## Shell integration
 

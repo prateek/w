@@ -1105,7 +1105,11 @@ Manage approvals with `wt hook approvals add` and `wt hook approvals clear`.
 
 ## Configuration
 
-Hooks are defined in `.config/wt.toml`. They can be a single command or multiple named commands:
+Hooks can be defined in two places: project config (`.config/wt.toml`) for repository-specific automation, or user config (`~/.config/worktrunk/config.toml`) for personal automation across all repositories.
+
+### Project hooks
+
+Project hooks are defined in `.config/wt.toml`. They can be a single command or multiple named commands:
 
 ```toml
 # Single command (string)

@@ -4,7 +4,7 @@ info:
   program: wt
   args:
     - switch
-    - "pr:42"
+    - "mr:101"
   env:
     APPDATA: "[TEST_CONFIG_HOME]"
     CLICOLOR_FORCE: "1"
@@ -34,6 +34,6 @@ exit_code: 1
 ----- stdout -----
 
 ----- stderr -----
-[36m◎[39m [36mFetching PR #42...[39m
-[31m✗[39m [31mBranch [1mfeature-fix[22m exists but doesn't track PR #42[39m
-[2m↳[22m [2mTo free the name, run [90mgit branch -m -- feature-fix feature-fix-old[39m[22m
+[36m◎[39m [36mFetching MR !101...[39m
+[31m✗[39m [31mFailed to parse GitLab API response for MR !101. This may indicate a GitLab API change.[39m
+[107m [0m expected ident at line 1 column 2

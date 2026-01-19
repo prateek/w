@@ -26,26 +26,35 @@ struct ResolvedTarget {
     method: CreationMethod,
 }
 
-/// Resolve the switch target, handling pr: syntax and --create/--base flags.
+/// Resolve the switch target, handling pr:/mr: syntax and --create/--base flags.
 ///
 /// This is the first phase of planning: determine what branch we're switching to
-/// and how we'll create the worktree. May involve network calls for PR resolution.
+/// and how we'll create the worktree. May involve network calls for PR/MR resolution.
 fn resolve_switch_target(
     repo: &Repository,
     branch: &str,
     create: bool,
     base: Option<&str>,
 ) -> anyhow::Result<ResolvedTarget> {
+    use worktrunk::git::mr_ref;
     use worktrunk::git::pr_ref::{fetch_pr_info, local_branch_name};
 
     // Handle pr:<number> syntax
     if let Some(pr_number) = worktrunk::git::pr_ref::parse_pr_ref(branch) {
         // --create and --base are invalid with pr: syntax
         if create {
-            return Err(GitError::PrCreateConflict { pr_number }.into());
+            return Err(GitError::RefCreateConflict {
+                ref_type: worktrunk::git::RefType::Pr,
+                number: pr_number,
+            }
+            .into());
         }
         if base.is_some() {
-            return Err(GitError::PrBaseConflict { pr_number }.into());
+            return Err(GitError::RefBaseConflict {
+                ref_type: worktrunk::git::RefType::Pr,
+                number: pr_number,
+            }
+            .into());
         }
 
         // Fetch PR info (network call via gh CLI)
@@ -77,9 +86,10 @@ fn resolve_switch_target(
                     });
                 } else {
                     // Branch exists but tracks something else
-                    return Err(GitError::BranchTracksDifferentPr {
+                    return Err(GitError::BranchTracksDifferentRef {
                         branch: local_branch,
-                        pr_number,
+                        ref_type: worktrunk::git::RefType::Pr,
+                        number: pr_number,
                     }
                     .into());
                 }
@@ -104,6 +114,95 @@ fn resolve_switch_target(
             // Same-repo PR: just use the branch name, regular switch
             return Ok(ResolvedTarget {
                 branch: pr_info.head_ref_name,
+                method: CreationMethod::Regular {
+                    create_branch: false,
+                    base_branch: None,
+                },
+            });
+        }
+    }
+
+    // Handle mr:<number> syntax (GitLab MRs)
+    if let Some(mr_number) = mr_ref::parse_mr_ref(branch) {
+        // --create and --base are invalid with mr: syntax
+        if create {
+            return Err(GitError::RefCreateConflict {
+                ref_type: worktrunk::git::RefType::Mr,
+                number: mr_number,
+            }
+            .into());
+        }
+        if base.is_some() {
+            return Err(GitError::RefBaseConflict {
+                ref_type: worktrunk::git::RefType::Mr,
+                number: mr_number,
+            }
+            .into());
+        }
+
+        // Fetch MR info (network call via glab CLI)
+        crate::output::print(progress_message(cformat!("Fetching MR !{mr_number}...")))?;
+
+        let repo_root = repo.repo_path()?;
+        let mr_info = mr_ref::fetch_mr_info(mr_number, &repo_root)?;
+
+        if mr_info.is_cross_project {
+            // Fork MR: will need fetch + pushRemote config (see mr_ref module docs)
+            let local_branch = mr_ref::local_branch_name(&mr_info);
+
+            // Check if branch already exists and is tracking this MR
+            // If so, we can reuse it without re-fetching or re-configuring
+            if let Some(tracks_this_mr) =
+                mr_ref::branch_tracks_mr(&repo_root, &local_branch, mr_number)
+            {
+                if tracks_this_mr {
+                    // Branch exists and tracks this MR - just create worktree
+                    crate::output::print(info_message(cformat!(
+                        "Branch <bold>{local_branch}</> already configured for MR !{mr_number}"
+                    )))?;
+                    return Ok(ResolvedTarget {
+                        branch: local_branch,
+                        method: CreationMethod::Regular {
+                            create_branch: false,
+                            base_branch: None,
+                        },
+                    });
+                } else {
+                    // Branch exists but tracks something else
+                    return Err(GitError::BranchTracksDifferentRef {
+                        branch: local_branch,
+                        ref_type: worktrunk::git::RefType::Mr,
+                        number: mr_number,
+                    }
+                    .into());
+                }
+            }
+
+            // Branch doesn't exist - need full fork MR setup
+            let remote_url = repo.primary_remote_url().unwrap_or_default();
+            let fork_push_url =
+                mr_ref::fork_remote_url(&mr_info, &remote_url).ok_or_else(|| {
+                    anyhow::anyhow!(
+                        "MR !{} is from a fork but glab didn't provide source project URL; \
+                     upgrade glab or checkout the fork branch manually",
+                        mr_number
+                    )
+                })?;
+            let target_project_url = mr_ref::target_remote_url(&mr_info, &remote_url);
+
+            return Ok(ResolvedTarget {
+                branch: local_branch,
+                method: CreationMethod::ForkMr {
+                    mr_number,
+                    fork_push_url,
+                    mr_url: mr_info.url,
+                    target_project_url,
+                },
+            });
+        } else {
+            // Same-repo MR: just use the branch name, regular switch
+            return Ok(ResolvedTarget {
+                branch: mr_info.source_branch,
                 method: CreationMethod::Regular {
                     create_branch: false,
                     base_branch: None,
@@ -224,8 +323,8 @@ fn check_existing_worktree(
 /// - For regular switches (not --create), branch must exist
 /// - Handles --clobber for stale directories
 ///
-/// Note: Fork PR branch existence is checked earlier in resolve_switch_target()
-/// where we can also check if it's tracking the correct PR.
+/// Note: Fork PR/MR branch existence is checked earlier in resolve_switch_target()
+/// where we can also check if it's tracking the correct PR/MR.
 fn validate_worktree_creation(
     repo: &Repository,
     branch: &str,
@@ -274,33 +373,35 @@ fn validate_worktree_creation(
     compute_clobber_backup(path, branch, clobber, is_create)
 }
 
-/// Set up a local branch for a fork PR.
+/// Set up a local branch for a fork PR or MR.
 ///
-/// Creates the branch, configures tracking, and creates the worktree.
-/// Returns an error if any step fails - caller is responsible for cleanup.
-fn setup_fork_pr_branch(
+/// Creates the branch from FETCH_HEAD, configures tracking (remote, merge ref,
+/// pushRemote), and creates the worktree. Returns an error if any step fails -
+/// caller is responsible for cleanup.
+///
+/// # Arguments
+///
+/// * `remote_ref` - The ref to track (e.g., "pull/123/head" or "merge-requests/101/head")
+/// * `label` - Human-readable label for error messages (e.g., "PR #123" or "MR !101")
+fn setup_fork_branch(
     repo: &Repository,
     branch: &str,
     remote: &str,
-    pr_ref: &str,
+    remote_ref: &str,
     fork_push_url: &str,
     worktree_path: &Path,
-    pr_number: u32,
+    label: &str,
 ) -> anyhow::Result<()> {
     // Create local branch from FETCH_HEAD
-    repo.run_command(&["branch", branch, "FETCH_HEAD"])
-        .with_context(|| {
-            format!(
-                "Failed to create local branch '{}' from PR #{}",
-                branch, pr_number
-            )
-        })?;
+    // Use -- to prevent branch names starting with - from being interpreted as flags
+    repo.run_command(&["branch", "--", branch, "FETCH_HEAD"])
+        .with_context(|| format!("Failed to create local branch '{}' from {}", branch, label))?;
 
     // Configure branch tracking for pull and push
     let branch_remote_key = format!("branch.{}.remote", branch);
     let branch_merge_key = format!("branch.{}.merge", branch);
     let branch_push_remote_key = format!("branch.{}.pushRemote", branch);
-    let merge_ref = format!("refs/{}", pr_ref);
+    let merge_ref = format!("refs/{}", remote_ref);
 
     repo.run_command(&["config", &branch_remote_key, remote])
         .with_context(|| format!("Failed to configure branch.{}.remote", branch))?;
@@ -547,20 +648,21 @@ pub fn execute_switch(
                     // Execute branch creation and configuration with cleanup on failure.
                     // If any step after branch creation fails, we must delete the branch
                     // to avoid leaving orphaned state that blocks future attempts.
-                    let setup_result = setup_fork_pr_branch(
+                    let setup_result = setup_fork_branch(
                         repo,
                         &branch,
                         &remote,
                         &pr_ref,
                         fork_push_url,
                         &worktree_path,
-                        *pr_number,
+                        &format!("PR #{}", pr_number),
                     );
 
                     if let Err(e) = setup_result {
                         // Cleanup: try to delete the branch if it was created
                         // (ignore errors - branch may not exist if creation failed)
-                        let _ = repo.run_command(&["branch", "-D", &branch]);
+                        // Use -- to prevent branch names starting with - from being interpreted as flags
+                        let _ = repo.run_command(&["branch", "-D", "--", &branch]);
                         return Err(e);
                     }
 
@@ -569,6 +671,62 @@ pub fn execute_switch(
                     )))?;
 
                     (false, None, Some(format!("PR #{}", pr_number)))
+                }
+
+                CreationMethod::ForkMr {
+                    mr_number,
+                    fork_push_url,
+                    mr_url: _,
+                    target_project_url,
+                } => {
+                    let mr_ref = format!("merge-requests/{}/head", mr_number);
+
+                    // Find the remote that points to the target project (where MR refs live).
+                    // This handles contributor clones where origin=fork and upstream=target.
+                    //
+                    // TODO: The fallback to primary_remote/origin is silent and can pick the
+                    // wrong remote (e.g., fork instead of target), causing fetch to fail with
+                    // a confusing "ref not found" error. Consider erroring with a targeted hint
+                    // like "add upstream remote for target project" when target_project_url is
+                    // missing or can't be matched to any remote.
+                    let remote = target_project_url
+                        .as_ref()
+                        .and_then(|url| repo.find_remote_by_url(url))
+                        .or_else(|| repo.primary_remote().ok())
+                        .unwrap_or_else(|| "origin".to_string());
+
+                    // Fetch the MR head (progress already shown during planning)
+                    repo.run_command(&["fetch", &remote, &mr_ref])
+                        .with_context(|| {
+                            format!("Failed to fetch MR !{} from {}", mr_number, remote)
+                        })?;
+
+                    // Execute branch creation and configuration with cleanup on failure.
+                    // If any step after branch creation fails, we must delete the branch
+                    // to avoid leaving orphaned state that blocks future attempts.
+                    let setup_result = setup_fork_branch(
+                        repo,
+                        &branch,
+                        &remote,
+                        &mr_ref,
+                        fork_push_url,
+                        &worktree_path,
+                        &format!("MR !{}", mr_number),
+                    );
+
+                    if let Err(e) = setup_result {
+                        // Cleanup: try to delete the branch if it was created
+                        // (ignore errors - branch may not exist if creation failed)
+                        // Use -- to prevent branch names starting with - from being interpreted as flags
+                        let _ = repo.run_command(&["branch", "-D", "--", &branch]);
+                        return Err(e);
+                    }
+
+                    crate::output::print(info_message(cformat!(
+                        "Push configured to fork: <bright-black>{fork_push_url}</>"
+                    )))?;
+
+                    (false, None, Some(format!("MR !{}", mr_number)))
                 }
             };
 
@@ -609,6 +767,14 @@ pub fn execute_switch(
                         let pr_num_str = pr_number.to_string();
                         let extra_vars: Vec<(&str, &str)> =
                             vec![("pr_number", &pr_num_str), ("pr_url", pr_url)];
+                        ctx.execute_post_create_commands(&extra_vars)?;
+                    }
+                    CreationMethod::ForkMr {
+                        mr_number, mr_url, ..
+                    } => {
+                        let mr_num_str = mr_number.to_string();
+                        let extra_vars: Vec<(&str, &str)> =
+                            vec![("mr_number", &mr_num_str), ("mr_url", mr_url)];
                         ctx.execute_post_create_commands(&extra_vars)?;
                     }
                 }

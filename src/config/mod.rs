@@ -38,8 +38,9 @@ pub use project::{
     find_unknown_keys as find_unknown_project_keys,
 };
 pub use user::{
-    CommitGenerationConfig, StageMode, UserConfig, UserProjectConfig,
-    find_unknown_keys as find_unknown_user_keys, get_config_path, set_config_path,
+    CommitConfig, CommitGenerationConfig, ListConfig, MergeConfig, StageMode, UserConfig,
+    UserProjectConfig, find_unknown_keys as find_unknown_user_keys, get_config_path,
+    set_config_path,
 };
 
 #[cfg(test)]
@@ -112,7 +113,7 @@ mod tests {
         };
         assert_eq!(
             config
-                .format_path("myproject", "feature-x", &test.repo)
+                .format_path("myproject", "feature-x", &test.repo, None)
                 .unwrap(),
             "myproject.feature-x"
         );
@@ -127,7 +128,7 @@ mod tests {
         };
         assert_eq!(
             config
-                .format_path("myproject", "feature-x", &test.repo)
+                .format_path("myproject", "feature-x", &test.repo, None)
                 .unwrap(),
             "myproject-feature-x"
         );
@@ -142,7 +143,7 @@ mod tests {
         };
         assert_eq!(
             config
-                .format_path("myproject", "feature-x", &test.repo)
+                .format_path("myproject", "feature-x", &test.repo, None)
                 .unwrap(),
             ".worktrees/myproject/feature-x"
         );
@@ -158,7 +159,7 @@ mod tests {
         };
         assert_eq!(
             config
-                .format_path("myproject", "feature/foo", &test.repo)
+                .format_path("myproject", "feature/foo", &test.repo, None)
                 .unwrap(),
             "myproject.feature-foo"
         );
@@ -175,7 +176,7 @@ mod tests {
         };
         assert_eq!(
             config
-                .format_path("myproject", "feature/sub/task", &test.repo)
+                .format_path("myproject", "feature/sub/task", &test.repo, None)
                 .unwrap(),
             ".worktrees/myproject/feature-sub-task"
         );
@@ -193,7 +194,7 @@ mod tests {
         };
         assert_eq!(
             config
-                .format_path("myproject", "feature\\foo", &test.repo)
+                .format_path("myproject", "feature\\foo", &test.repo, None)
                 .unwrap(),
             ".worktrees/myproject/feature-foo"
         );
@@ -209,7 +210,7 @@ mod tests {
         };
         assert_eq!(
             config
-                .format_path("myproject", "feature/foo", &test.repo)
+                .format_path("myproject", "feature/foo", &test.repo, None)
                 .unwrap(),
             "myproject.feature/foo"
         );
@@ -389,12 +390,15 @@ task2 = "echo 'Task 2 running' > task2.txt"
     fn test_user_project_config_equality() {
         let config1 = UserProjectConfig {
             approved_commands: vec!["npm install".to_string()],
+            ..Default::default()
         };
         let config2 = UserProjectConfig {
             approved_commands: vec!["npm install".to_string()],
+            ..Default::default()
         };
         let config3 = UserProjectConfig {
             approved_commands: vec!["npm test".to_string()],
+            ..Default::default()
         };
         assert_eq!(config1, config2);
         assert_ne!(config1, config3);
@@ -407,6 +411,7 @@ task2 = "echo 'Task 2 running' > task2.txt"
             "github.com/user/repo".to_string(),
             UserProjectConfig {
                 approved_commands: vec!["npm install".to_string()],
+                ..Default::default()
             },
         );
 

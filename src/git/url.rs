@@ -9,11 +9,12 @@
 ///
 /// - `https://<host>/<owner>/<repo>.git`
 /// - `http://<host>/<owner>/<repo>.git`
+/// - `git://<host>/<owner>/<repo>.git`
 /// - `git@<host>:<owner>/<repo>.git`
 /// - `ssh://git@<host>/<owner>/<repo>.git`
 /// - `ssh://<host>/<owner>/<repo>.git`
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub(crate) struct GitRemoteUrl {
+pub struct GitRemoteUrl {
     host: String,
     owner: String,
     repo: String,
@@ -40,6 +41,13 @@ impl GitRemoteUrl {
             (host, owner, repo)
         } else if let Some(rest) = url.strip_prefix("http://") {
             // http://github.com/owner/repo.git
+            let mut parts = rest.split('/');
+            let host = parts.next()?;
+            let owner = parts.next()?;
+            let repo = parts.next()?;
+            (host, owner, repo)
+        } else if let Some(rest) = url.strip_prefix("git://") {
+            // git://github.com/owner/repo.git
             let mut parts = rest.split('/');
             let host = parts.next()?;
             let owner = parts.next()?;
@@ -109,6 +117,20 @@ impl GitRemoteUrl {
     pub fn project_identifier(&self) -> String {
         format!("{}/{}/{}", self.host, self.owner, self.repo)
     }
+
+    /// Check if this URL points to a GitHub host.
+    ///
+    /// Matches github.com and GitHub Enterprise hosts (e.g., github.mycompany.com).
+    pub fn is_github(&self) -> bool {
+        self.host.to_ascii_lowercase().contains("github")
+    }
+
+    /// Check if this URL points to a GitLab host.
+    ///
+    /// Matches gitlab.com and self-hosted GitLab instances (e.g., gitlab.example.com).
+    pub fn is_gitlab(&self) -> bool {
+        self.host.to_ascii_lowercase().contains("gitlab")
+    }
 }
 
 /// Extract owner from a git remote URL.
@@ -146,6 +168,7 @@ mod tests {
     #[test]
     fn test_https_urls() {
         let url = GitRemoteUrl::parse("https://github.com/owner/repo.git").unwrap();
+        assert_eq!(url.host(), "github.com");
         assert_eq!(url.owner(), "owner");
         assert_eq!(url.repo(), "repo");
         assert_eq!(url.project_identifier(), "github.com/owner/repo");
@@ -196,6 +219,16 @@ mod tests {
         let url = GitRemoteUrl::parse("ssh://github.com/owner/repo.git").unwrap();
         assert!(url.project_identifier().starts_with("github.com/"));
         assert_eq!(url.owner(), "owner");
+    }
+
+    #[test]
+    fn test_git_protocol_urls() {
+        let url = GitRemoteUrl::parse("git://github.com/owner/repo.git").unwrap();
+        assert_eq!(url.project_identifier(), "github.com/owner/repo");
+        assert!(url.is_github());
+
+        let url = GitRemoteUrl::parse("git://gitlab.example.com/owner/repo.git").unwrap();
+        assert!(url.is_gitlab());
     }
 
     #[test]
@@ -323,5 +356,78 @@ mod tests {
             let url = GitRemoteUrl::parse(input).unwrap();
             assert_eq!(url.project_identifier(), expected, "input: {input}");
         }
+    }
+
+    #[test]
+    fn test_is_github() {
+        // GitHub.com
+        assert!(
+            GitRemoteUrl::parse("https://github.com/owner/repo.git")
+                .unwrap()
+                .is_github()
+        );
+        assert!(
+            GitRemoteUrl::parse("git@github.com:owner/repo.git")
+                .unwrap()
+                .is_github()
+        );
+        assert!(
+            GitRemoteUrl::parse("ssh://git@github.com/owner/repo.git")
+                .unwrap()
+                .is_github()
+        );
+
+        // GitHub Enterprise
+        assert!(
+            GitRemoteUrl::parse("https://github.mycompany.com/owner/repo.git")
+                .unwrap()
+                .is_github()
+        );
+
+        // Not GitHub
+        assert!(
+            !GitRemoteUrl::parse("https://gitlab.com/owner/repo.git")
+                .unwrap()
+                .is_github()
+        );
+        assert!(
+            !GitRemoteUrl::parse("https://bitbucket.org/owner/repo.git")
+                .unwrap()
+                .is_github()
+        );
+    }
+
+    #[test]
+    fn test_is_gitlab() {
+        // GitLab.com
+        assert!(
+            GitRemoteUrl::parse("https://gitlab.com/owner/repo.git")
+                .unwrap()
+                .is_gitlab()
+        );
+        assert!(
+            GitRemoteUrl::parse("git@gitlab.com:owner/repo.git")
+                .unwrap()
+                .is_gitlab()
+        );
+
+        // Self-hosted GitLab
+        assert!(
+            GitRemoteUrl::parse("https://gitlab.example.com/owner/repo.git")
+                .unwrap()
+                .is_gitlab()
+        );
+
+        // Not GitLab
+        assert!(
+            !GitRemoteUrl::parse("https://github.com/owner/repo.git")
+                .unwrap()
+                .is_gitlab()
+        );
+        assert!(
+            !GitRemoteUrl::parse("https://bitbucket.org/owner/repo.git")
+                .unwrap()
+                .is_gitlab()
+        );
     }
 }

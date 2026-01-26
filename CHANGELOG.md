@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.20.0
+
+### Improved
+
+- **`wt step relocate` command**: Move worktrees to their expected paths based on the `worktree-path` template. Supports `--dry-run` preview, filtering by branch name, and `--commit` to auto-commit dirty worktrees before moving. Handles complex scenarios including worktree swaps (A→B, B→A), chains, and the `--clobber` flag to back up blocking non-worktree paths. [Docs](https://worktrunk.dev/step/) ([#790](https://github.com/max-sixty/worktrunk/pull/790))
+
+- **LLM setup prompt**: First-time interactive prompt when users attempt `wt merge`, `wt step commit`, or `wt step squash` without LLM configuration. Detects available tools (claude, codex) and offers auto-configuration with `?` to preview the generated config. Add `skip-commit-generation-prompt` to user config to suppress. ([#867](https://github.com/max-sixty/worktrunk/pull/867))
+
+- **Consistent prompt styling**: Interactive prompts now use consistent cyan styling via `prompt_message()` formatting. ([#858](https://github.com/max-sixty/worktrunk/pull/858))
+
+### Fixed
+
+- **Path display in error messages**: User-facing paths now consistently use `format_path_for_display()`, fixing cases where raw `.display()` output could show inconsistent path formats. ([#856](https://github.com/max-sixty/worktrunk/pull/856))
+
+### Documentation
+
+- Added Quick Start section to front page showing the switch → list → merge workflow. ([#864](https://github.com/max-sixty/worktrunk/pull/864))
+- Updated template documentation: removed deprecated `template-file` options, added `{{ git_diff_stat }}` variable, clarified squash-only variables. ([#854](https://github.com/max-sixty/worktrunk/pull/854))
+- Fixed stale documentation for `[commit.generation]` config format, statusline context gauge, and CI status for remote-only branches. ([#853](https://github.com/max-sixty/worktrunk/pull/853))
+
+### Internal
+
+- Bumped nix crate from 0.30.1 to 0.31.1. ([#860](https://github.com/max-sixty/worktrunk/pull/860))
+- Refactored deprecation detection for better modularity. ([#852](https://github.com/max-sixty/worktrunk/pull/852))
+
 ## 0.19.0
 
 ### Improved

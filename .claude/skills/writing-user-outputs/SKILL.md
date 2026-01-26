@@ -512,7 +512,30 @@ Specific rules:
 
 - **No leading/trailing blanks** — Start immediately, end cleanly
 - **One blank after prompts** — Separate user input from results
+- **One blank between phases** — When a sub-operation completes and a different
+  operation begins, add a blank line to visually separate them
 - **Never double blanks** — One blank line maximum between elements
+
+**Phase separation:** A "phase" is a logically distinct operation. Examples:
+
+- First-time config setup completing → main command workflow starting
+- Interactive prompt with results → unrelated command output
+- One complete sub-operation → another unrelated sub-operation
+
+```
+❯ Configure claude for commit messages? [y/N/?] y
+
+✓ Added to user config:
+   ┃ [commit.generation]
+   ┃ command = "..."
+↳ View config: wt config show
+                                      ← Blank line separates phases
+▲ Auto-staging 1 untracked path:
+   ┃ a
+◎ Generating commit message...
+```
+
+The blank line signals "that's done, now we're doing something else."
 
 ## Output System
 

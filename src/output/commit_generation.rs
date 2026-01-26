@@ -177,6 +177,9 @@ pub fn prompt_commit_generation(config: &mut UserConfig) -> anyhow::Result<bool>
                 hint_message(cformat!("View config: <bright-black>wt config show</>"))
             );
 
+            // Blank line separates this setup phase from the main operation that follows
+            eprintln!();
+
             Ok(true)
         }
         PromptResponse::Declined => {

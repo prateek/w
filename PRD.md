@@ -527,6 +527,12 @@ Acceptance criteria:
 - CI includes a schema regression test (golden fixture or JSON schema validation).
 - Docs specify compatibility rules (additive-only in v1, version bump rules, etc.).
 
+Progress (as of 2026-02-13):
+
+- ✅ Added `schema_version` (v1) to each `wt list --format=json` item.
+- ✅ Added a unit-level schema snapshot test (JSON Schema via `schemars`) to catch breaking changes.
+- ✅ Documented `schema_version` and compatibility rules in the `wt list` docs/help.
+
 ### M7: Release Automation + Polished Docs Site
 
 Deliverables:

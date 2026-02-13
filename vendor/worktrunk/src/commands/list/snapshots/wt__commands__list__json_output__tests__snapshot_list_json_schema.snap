@@ -1,0 +1,271 @@
+---
+source: src/commands/list/json_output.rs
+expression: schema
+---
+$schema: "https://json-schema.org/draft/2020-12/schema"
+title: JsonItem
+description: JSON output for a single list item
+type: object
+properties:
+  branch:
+    description: "Branch name, null for detached HEAD"
+    type:
+      - string
+      - "null"
+  ci:
+    description: CI status from PR or branch workflow
+    anyOf:
+      - $ref: "#/$defs/JsonCi"
+      - type: "null"
+  commit:
+    description: Commit information
+    $ref: "#/$defs/JsonCommit"
+  integration_reason:
+    description: "Why branch is integrated (only present when main_state == \"integrated\")\nValues: ancestor, trees_match, no_added_changes, merge_adds_nothing"
+    type:
+      - string
+      - "null"
+  is_current:
+    description: "This is the current worktree (matches repo discovery path: PWD or `-C`)"
+    type: boolean
+  is_main:
+    description: This is the main worktree
+    type: boolean
+  is_previous:
+    description: "This was the previous worktree (from `worktrunk.history`)"
+    type: boolean
+  kind:
+    description: "Item kind: \"worktree\" or \"branch\""
+    type: string
+  main:
+    description: Relationship to default branch (absent when is_main == true)
+    anyOf:
+      - $ref: "#/$defs/JsonMain"
+      - type: "null"
+  main_state:
+    description: "Default branch relationship: would_conflict, same_commit, integrated, diverged, ahead, behind\n(null for default branch itself)"
+    type:
+      - string
+      - "null"
+  operation_state:
+    description: "Git operation in progress: conflicts, rebase, merge (null when none)"
+    type:
+      - string
+      - "null"
+  path:
+    description: Filesystem path to the worktree
+    type:
+      - string
+      - "null"
+  remote:
+    description: Relationship to remote tracking branch (absent when no tracking branch)
+    anyOf:
+      - $ref: "#/$defs/JsonRemote"
+      - type: "null"
+  schema_version:
+    description: Schema version for this JSON object.
+    type: integer
+    format: uint32
+    minimum: 0
+  statusline:
+    description: "Pre-formatted statusline for statusline tools (tmux, starship)"
+    type:
+      - string
+      - "null"
+  symbols:
+    description: "Raw status symbols without ANSI colors (e.g., \"+! ✖ ↑\")"
+    type:
+      - string
+      - "null"
+  url:
+    description: Dev server URL from project config template
+    type:
+      - string
+      - "null"
+  url_active:
+    description: "Whether the dev server URL's port is listening"
+    type:
+      - boolean
+      - "null"
+  working_tree:
+    description: "Working tree state (staged, modified, untracked changes)"
+    anyOf:
+      - $ref: "#/$defs/JsonWorkingTree"
+      - type: "null"
+  worktree:
+    description: Worktree-specific state
+    anyOf:
+      - $ref: "#/$defs/JsonWorktree"
+      - type: "null"
+required:
+  - schema_version
+  - kind
+  - commit
+  - is_main
+  - is_current
+  - is_previous
+$defs:
+  CiSource:
+    description: "Source of CI status (PR/MR vs branch workflow)\n\nSerialized to JSON as \"pr\" or \"branch\" for programmatic consumers."
+    oneOf:
+      - description: Pull request or merge request
+        type: string
+        const: pr
+      - description: Branch workflow/pipeline (no PR/MR)
+        type: string
+        const: branch
+  JsonCi:
+    description: CI status from PR or branch workflow
+    type: object
+    properties:
+      source:
+        description: "Source: \"pr\" or \"branch\""
+        $ref: "#/$defs/CiSource"
+      stale:
+        description: True if local HEAD differs from remote HEAD (unpushed changes)
+        type: boolean
+      status:
+        description: "CI status: \"passed\", \"running\", \"failed\", \"conflicts\", \"no-ci\", \"error\""
+        type: string
+      url:
+        description: URL to the PR/MR (if available)
+        type:
+          - string
+          - "null"
+    required:
+      - status
+      - source
+      - stale
+  JsonCommit:
+    description: Commit information
+    type: object
+    properties:
+      message:
+        description: Commit message (first line)
+        type: string
+      sha:
+        description: Full commit SHA
+        type: string
+      short_sha:
+        description: Short commit SHA (7 characters)
+        type: string
+      timestamp:
+        description: Unix timestamp of commit
+        type: integer
+        format: int64
+    required:
+      - sha
+      - short_sha
+      - message
+      - timestamp
+  JsonDiff:
+    description: Line diff statistics
+    type: object
+    properties:
+      added:
+        type: integer
+        format: uint
+        minimum: 0
+      deleted:
+        type: integer
+        format: uint
+        minimum: 0
+    required:
+      - added
+      - deleted
+  JsonMain:
+    description: Relationship to default branch
+    type: object
+    properties:
+      ahead:
+        description: Commits ahead of default branch
+        type: integer
+        format: uint
+        minimum: 0
+      behind:
+        description: Commits behind default branch
+        type: integer
+        format: uint
+        minimum: 0
+      diff:
+        description: Lines added/deleted vs default branch
+        anyOf:
+          - $ref: "#/$defs/JsonDiff"
+          - type: "null"
+    required:
+      - ahead
+      - behind
+  JsonRemote:
+    description: Relationship to remote tracking branch
+    type: object
+    properties:
+      ahead:
+        description: Commits ahead of remote
+        type: integer
+        format: uint
+        minimum: 0
+      behind:
+        description: Commits behind remote
+        type: integer
+        format: uint
+        minimum: 0
+      branch:
+        description: "Remote branch name (e.g., \"feature-login\")"
+        type: string
+      name:
+        description: "Remote name (e.g., \"origin\")"
+        type: string
+    required:
+      - name
+      - branch
+      - ahead
+      - behind
+  JsonWorkingTree:
+    description: Working tree state
+    type: object
+    properties:
+      deleted:
+        description: Has deleted files (✘)
+        type: boolean
+      diff:
+        description: Lines added/deleted in working tree vs HEAD
+        anyOf:
+          - $ref: "#/$defs/JsonDiff"
+          - type: "null"
+      modified:
+        description: Has modified files (!)
+        type: boolean
+      renamed:
+        description: Has renamed files (»)
+        type: boolean
+      staged:
+        description: Has staged files (+)
+        type: boolean
+      untracked:
+        description: Has untracked files (?)
+        type: boolean
+    required:
+      - staged
+      - modified
+      - untracked
+      - renamed
+      - deleted
+  JsonWorktree:
+    description: Worktree-specific state
+    type: object
+    properties:
+      detached:
+        description: HEAD is detached (not on a branch)
+        type: boolean
+      reason:
+        description: Reason for locked/prunable state
+        type:
+          - string
+          - "null"
+      state:
+        description: "Worktree state: \"branch_worktree_mismatch\", \"prunable\", \"locked\" (absent when normal)"
+        type:
+          - string
+          - "null"
+    required:
+      - detached

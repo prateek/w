@@ -47,3 +47,4 @@ cd docs && docker run --rm -v "$(pwd)":/app -w /app ghcr.io/getzola/zola:v0.19.2
 - `codex review`: `--uncommitted` is mutually exclusive with `--base` (use one or the other).
 - Shell integration captures `w` stdout for `cd`-like commands; interactive `skim` pickers should not require stdout being a TTY (prefer checking stdin TTY / using `/dev/tty`) so commands like `w switch` work under command substitution.
 - This environment may set `NO_COLOR=1`; Worktrunk snapshot tests expect ANSI output, so run with `NO_COLOR= CLICOLOR_FORCE=1` if you need to execute them.
+- When adding `insta` snapshot tests under `vendor/worktrunk/`, generate and commit the `.snap` files (e.g., `INSTA_UPDATE=always cargo test --manifest-path vendor/worktrunk/Cargo.toml --workspace --lib --bins`). Note: `insta` is configured with `yaml` snapshots; prefer `assert_yaml_snapshot!` unless you add the `json` feature.

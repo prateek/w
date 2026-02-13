@@ -24,9 +24,17 @@ use worktrunk::git::LineDiff;
 use super::ci_status::{CiSource, PrStatus};
 use super::model::{ItemKind, ListItem, UpstreamStatus};
 
+/// Schema version for `wt list --format=json` output.
+///
+/// Bump this when making breaking (non-additive) changes.
+pub const LIST_JSON_SCHEMA_VERSION: u32 = 1;
+
 /// JSON output for a single list item
 #[derive(Debug, Clone, Serialize, JsonSchema)]
 pub struct JsonItem {
+    /// Schema version for this JSON object.
+    pub schema_version: u32,
+
     /// Branch name, null for detached HEAD
     pub branch: Option<String>,
 
@@ -325,6 +333,7 @@ impl JsonItem {
             .filter(|s| !s.is_empty());
 
         JsonItem {
+            schema_version: LIST_JSON_SCHEMA_VERSION,
             branch: item.branch.clone(),
             path,
             kind: kind_str,
@@ -891,5 +900,19 @@ mod tests {
         let json = serde_json::to_string(&ci).unwrap();
         assert!(json.contains("\"status\":\"passed\""));
         assert!(json.contains("\"source\":\"pr\""));
+    }
+
+    #[test]
+    fn test_json_item_schema_version_is_set() {
+        let item =
+            ListItem::new_branch("abc123def456".to_string(), "feature/something".to_string());
+        let json = JsonItem::from_list_item(&item);
+        assert_eq!(json.schema_version, LIST_JSON_SCHEMA_VERSION);
+    }
+
+    #[test]
+    fn snapshot_list_json_schema() {
+        let schema = schemars::schema_for!(JsonItem);
+        insta::assert_yaml_snapshot!(schema);
     }
 }

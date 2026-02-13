@@ -571,6 +571,8 @@ Rows are dimmed when [safe to delete](@/remove.md#branch-cleanup) (`_` same comm
 
 Query structured data with `--format=json`:
 
+Each item includes `schema_version` (currently 1). v1 changes are additive-only; breaking changes bump `schema_version`.
+
 ```console
 # Current worktree path (for scripts)
 wt list --format=json | jq -r '.[] | select(.is_current) | .path'
@@ -601,6 +603,7 @@ wt list --format=json --full | jq '.[] | select(.ci.stale) | .branch'
 
 | Field | Type | Description |
 |-------|------|-------------|
+| `schema_version` | number | Schema version for this object (currently 1) |
 | `branch` | string/null | Branch name (null for detached HEAD) |
 | `path` | string | Worktree path (absent for branches without worktrees) |
 | `kind` | string | `"worktree"` or `"branch"` |

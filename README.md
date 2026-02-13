@@ -24,14 +24,22 @@ Early bootstrap. See `PRD.md` for goals and milestones.
 
 ## Installation (Homebrew)
 
-This repo hosts a Homebrew tap. Until the first tagged release is published (and the formula has stable URLs), the formula is HEAD-only (tracks `main`):
+This repo hosts a Homebrew tap.
+
+Install the latest tagged release:
 
 ```bash
 brew tap prateek/w https://github.com/prateek/w
-brew install --HEAD prateek/w/w
+brew install prateek/w/w
 ```
 
-Once a tagged release is published, you can install without `--HEAD`.
+This installs both `w` and `wt`.
+
+For a development build from `main`:
+
+```bash
+brew install --HEAD prateek/w/w
+```
 
 ## Attribution
 

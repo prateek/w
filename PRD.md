@@ -320,7 +320,8 @@ We want “install and go” to be excellent. Target install methods:
 
 - Homebrew tap hosted in this repo:
   - `brew tap prateek/w https://github.com/prateek/w`
-  - `brew install --HEAD prateek/w/w` (until we publish tagged releases + stable formula URLs)
+  - `brew install prateek/w/w` (latest tagged release)
+  - `brew install --HEAD prateek/w/w` (development build from `main`)
 - GitHub Releases:
   - attach prebuilt artifacts for macOS/Linux/Windows (both `w` and `wt`)
   - publish checksums
@@ -571,6 +572,7 @@ Progress (as of 2026-02-13):
 - ✅ Added a `How it works` docs page (identity/layout/concurrency) and linked it in the top nav.
 - ✅ Added a `Commands` page (CLI reference) and linked it in the top nav.
 - ✅ Added an `LLMs / Codex` docs page describing a responsible, end-to-end contribution workflow (and linked it from the docs nav + README).
+- ✅ Updated Homebrew install docs (README + site) to default to tagged releases; kept `--HEAD` for development builds from `main`.
 
 ## 12) Risks and Mitigations
 

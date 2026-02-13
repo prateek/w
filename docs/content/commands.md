@@ -97,6 +97,7 @@ w ls --format tsv
 Options:
 
 - `--format text|json|tsv` (default: `text`)
+- `--jobs <n>`: max repositories to process concurrently (overrides config/env)
 - `--include-prunable`: include worktrees that are prunable (directory missing but metadata still present)
 - Indexing: `--cached` (cache-only) / `--refresh` (force rescan) / `--cache-path <path>`
 - Discovery: `--config <path>` / `--root <path>` (repeatable) / `--max-depth <n>`
@@ -113,6 +114,7 @@ w switch --filter my-repo
 Options:
 
 - `--filter <text>`: non-interactively select the first match (substring match on project identifier, repo path, branch, or worktree path)
+- `--jobs <n>`: max repositories to process concurrently (overrides config/env)
 - `--include-prunable`: include worktrees that are prunable
 - Indexing/discovery options are the same as `w ls`
 

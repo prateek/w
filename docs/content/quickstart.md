@@ -27,6 +27,8 @@ max_depth = 6
 max_concurrent_repos = 4
 ```
 
+You can override concurrency per command with `--jobs <n>`, or globally with `W_MAX_CONCURRENT_REPOS` (cap: 32).
+
 The repo index cache defaults to `~/.cache/w/repo-index.json`.
 
 ## 3) Try it

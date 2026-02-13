@@ -61,6 +61,9 @@ enum Command {
         /// Maximum directory depth to search under each root.
         #[arg(long)]
         max_depth: Option<usize>,
+        /// Maximum number of repositories to process concurrently (overrides config/env).
+        #[arg(long, value_name = "N")]
+        jobs: Option<usize>,
         /// Cache path for the repo index.
         #[arg(long)]
         cache_path: Option<PathBuf>,
@@ -112,6 +115,9 @@ enum Command {
         /// Maximum directory depth to search under each root.
         #[arg(long)]
         max_depth: Option<usize>,
+        /// Maximum number of repositories to process concurrently (overrides config/env).
+        #[arg(long, value_name = "N")]
+        jobs: Option<usize>,
         /// Cache path for the repo index.
         #[arg(long)]
         cache_path: Option<PathBuf>,
@@ -235,6 +241,7 @@ fn main() -> anyhow::Result<()> {
             config,
             roots,
             max_depth,
+            jobs,
             cache_path,
             cached,
             refresh,
@@ -247,6 +254,7 @@ fn main() -> anyhow::Result<()> {
                     config_path: config,
                     roots,
                     max_depth,
+                    jobs,
                     cache_path,
                     cached,
                     refresh,
@@ -278,6 +286,7 @@ fn main() -> anyhow::Result<()> {
             config,
             roots,
             max_depth,
+            jobs,
             cache_path,
             cached,
             refresh,
@@ -290,6 +299,7 @@ fn main() -> anyhow::Result<()> {
                     config_path: config,
                     roots,
                     max_depth,
+                    jobs,
                     cache_path,
                     cached,
                     refresh,
@@ -460,6 +470,7 @@ struct SwitchPickRequest {
     config_path: Option<PathBuf>,
     roots: Vec<PathBuf>,
     max_depth: Option<usize>,
+    jobs: Option<usize>,
     cache_path: Option<PathBuf>,
     cached: bool,
     refresh: bool,
@@ -472,6 +483,7 @@ fn cmd_switch(repo_dir: Option<&Path>, request: SwitchPickRequest) -> anyhow::Re
         config_path,
         roots,
         max_depth,
+        jobs,
         cache_path,
         cached,
         refresh,
@@ -485,6 +497,7 @@ fn cmd_switch(repo_dir: Option<&Path>, request: SwitchPickRequest) -> anyhow::Re
             config_path,
             roots,
             max_depth,
+            jobs,
             cache_path,
             cached,
             refresh,
@@ -726,6 +739,7 @@ struct LsRequest {
     config_path: Option<PathBuf>,
     roots: Vec<PathBuf>,
     max_depth: Option<usize>,
+    jobs: Option<usize>,
     cache_path: Option<PathBuf>,
     cached: bool,
     refresh: bool,
@@ -740,6 +754,7 @@ fn cmd_ls(repo_dir: Option<&Path>, request: LsRequest) -> anyhow::Result<LsOutpu
         config_path,
         roots,
         max_depth,
+        jobs,
         cache_path,
         cached,
         refresh,
@@ -779,7 +794,7 @@ fn cmd_ls(repo_dir: Option<&Path>, request: LsRequest) -> anyhow::Result<LsOutpu
         });
     }
 
-    let max_concurrent_repos = max_concurrent_repos(config_path.as_deref(), &roots)
+    let max_concurrent_repos = max_concurrent_repos(jobs, config_path.as_deref(), &roots)
         .context("failed to read concurrency config")?;
 
     let cache_path = cache_path.unwrap_or(repo::default_cache_path()?);
@@ -869,15 +884,26 @@ fn cmd_ls(repo_dir: Option<&Path>, request: LsRequest) -> anyhow::Result<LsOutpu
     })
 }
 
-fn max_concurrent_repos(config_path: Option<&Path>, roots: &[PathBuf]) -> anyhow::Result<usize> {
+fn max_concurrent_repos(
+    jobs: Option<usize>,
+    config_path: Option<&Path>,
+    roots: &[PathBuf],
+) -> anyhow::Result<usize> {
+    if let Some(value) = jobs {
+        return normalize_max_concurrent_repos("--jobs", value);
+    }
+
     if let Some(value) = max_concurrent_repos_from_env()? {
         return Ok(value);
     }
 
+    if let Some(config_path) = config_path {
+        let config = repo::load_config(config_path)?;
+        return normalize_max_concurrent_repos("max_concurrent_repos", config.max_concurrent_repos);
+    }
+
     if roots.is_empty() {
-        let config_path = config_path
-            .map(PathBuf::from)
-            .unwrap_or(repo::default_config_path()?);
+        let config_path = repo::default_config_path()?;
         if config_path.exists() {
             let config = repo::load_config(&config_path)?;
             return normalize_max_concurrent_repos(

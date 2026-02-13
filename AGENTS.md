@@ -27,7 +27,7 @@ cd docs && docker run --rm -p 1111:1111 -v "$(pwd)":/app -w /app ghcr.io/getzola
 
 - Prefer small, reviewable diffs.
 - Keep vendored upstream code changes upstreamable under `vendor/worktrunk/`.
-- `w ls`/`w switch` use bounded cross-repo concurrency; configure via `max_concurrent_repos` in `~/.config/w/config.toml` or `W_MAX_CONCURRENT_REPOS` (cap: 32).
+- `w ls`/`w switch` use bounded cross-repo concurrency; configure via `--jobs <n>`, `max_concurrent_repos` in `~/.config/w/config.toml`, or `W_MAX_CONCURRENT_REPOS` (cap: 32).
 
 ## Gotchas (from iteration logs)
 

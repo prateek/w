@@ -557,6 +557,10 @@ Acceptance criteria:
 - `brew tap prateek/w https://github.com/prateek/w && brew install prateek/w/w` works against the latest release.
 - GitHub Pages publishes `w` docs site from `main`.
 
+Progress (as of 2026-02-13):
+
+- ✅ Added a tag-driven GitHub Actions release workflow (`.github/workflows/release.yml`) that builds `w` + vendored `wt` on macOS/Linux/Windows and publishes `.tar.gz` artifacts with `.sha256` checksums.
+
 ## 12) Risks and Mitigations
 
 - Risk: subtree workflow becomes painful.

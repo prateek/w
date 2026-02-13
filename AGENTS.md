@@ -52,7 +52,7 @@ cd docs && docker run --rm -p 1111:1111 -v "$(pwd)":/app -w /app ghcr.io/getzola
 - `codex review`: `--uncommitted` is mutually exclusive with `--base` (use one or the other).
 - GitHub Actions jobs that commit+push back to the repo should use `actions/checkout` with `fetch-depth: 0` to avoid shallow clone push failures.
 - Some environments block destructive shell commands (e.g. `rm -rf`); prefer adding the right ignores (e.g. `__pycache__/`) and keep diffs clean without relying on cleanup commands.
-- Shell integration captures `w` stdout for `cd`-like commands; interactive `skim` pickers should not require stdout being a TTY (prefer checking stdin TTY / using `/dev/tty`) so commands like `w switch` work under command substitution.
+- Shell integration captures `w` stdout for `cd`-like commands; interactive `skim` pickers should not require stdout being a TTY (prefer checking stdin TTY / using `/dev/tty`) so commands like `w switch` and `w repo pick` work under command substitution.
 - The docs demo cast at `docs/static/demos/w-basic.cast` is a plain asciinema v2 file; keep it in sync with `w --help` and `w shell init zsh` output (it uses `\r\n` line endings inside JSON strings).
 - `docs` build via the Zola Docker image may warn about an amd64/arm64 platform mismatch; it’s safe to ignore, or add `--platform linux/amd64` to the `docker run` command.
 - This environment may set `NO_COLOR=1`; Worktrunk snapshot tests expect ANSI output, so run with `NO_COLOR= CLICOLOR_FORCE=1` if you need to execute them.

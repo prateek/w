@@ -27,3 +27,4 @@
 2026-02-13 07:37: docs: add `How it works` page (identity/layout/concurrency) + link it from the docs nav
 2026-02-13 08:02: add `w ls` formatting customization (`--preset`, `--sort`, `[ls]` config) + tests + docs
 2026-02-13 08:16: docs: refresh asciinema demo (`w --help` + `w shell init zsh`) to match current CLI output
+2026-02-13 08:33: fix `w repo pick` interactive TTY detection to allow stdout capture / command substitution

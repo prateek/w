@@ -152,9 +152,9 @@ pub(crate) fn select_repo_by_filter(index: &RepoIndex, filter: &str) -> Option<P
 }
 
 pub(crate) fn pick_repo_interactive(index: &RepoIndex) -> anyhow::Result<Option<PathBuf>> {
-    if !std::io::stdin().is_terminal() || !std::io::stdout().is_terminal() {
+    if !std::io::stdin().is_terminal() {
         anyhow::bail!(
-            "interactive picker requires a TTY; pass --filter for non-interactive selection"
+            "interactive picker requires a TTY (stdin); pass --filter for non-interactive selection"
         );
     }
 

@@ -478,6 +478,7 @@ Progress (as of 2026-02-13):
 
 - ✅ Added `w repo index` with deterministic JSON/TSV output and a cached index file (default: `~/.cache/w/repo-index.json`).
 - ✅ Added `w repo pick` with an interactive `skim` picker (or `--filter` for non-interactive selection).
+- ✅ Fixed `w repo pick` interactive mode to only require a TTY on stdin (so it works under stdout capture / command substitution).
 - ✅ Added a global `-C/--repo` option so `w` worktree commands can run against a selected repo.
 - ✅ Added integration tests covering cold scan + warm cache and `w repo pick --filter`.
 

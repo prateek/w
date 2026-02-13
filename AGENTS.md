@@ -5,18 +5,25 @@ Source of truth for the roadmap: `PRD.md`.
 ## Quick commands
 
 ```bash
+# w
 cargo fmt --check
 cargo clippy --workspace -- -D warnings
 cargo test --workspace
+
+# vendored worktrunk (run unit tests; integration snapshots are brittle in subtree)
+cargo fmt --check --manifest-path vendor/worktrunk/Cargo.toml
+cargo clippy --manifest-path vendor/worktrunk/Cargo.toml --workspace -- -D warnings
+cargo test --manifest-path vendor/worktrunk/Cargo.toml --workspace --lib --bins
 ```
 
 ## Notes
 
 - Prefer small, reviewable diffs.
-- Keep vendored upstream code changes upstreamable when we add `vendor/worktrunk/`.
+- Keep vendored upstream code changes upstreamable under `vendor/worktrunk/`.
 
 ## Gotchas (from iteration logs)
 
 - `cargo new` creates a nested git repo by default; prefer `cargo new --vcs none ...` for new crates.
 - PAL `codereview` requires `relevant_files` to be **absolute** paths when using `--raw`.
 - `codex review` may spam opentelemetry export errors to `http://localhost:14318/v1/logs`; if it hangs, kill the spawned `codex` process and proceed with manual review.
+- This environment may set `NO_COLOR=1`; Worktrunk snapshot tests expect ANSI output, so run with `NO_COLOR= CLICOLOR_FORCE=1` if you need to execute them.

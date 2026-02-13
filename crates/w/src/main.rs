@@ -3,7 +3,6 @@ use clap::{Parser, Subcommand, ValueEnum};
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::collections::{HashSet, VecDeque};
-use std::io::{Cursor, IsTerminal};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, mpsc};
 use worktrunk::{
@@ -610,6 +609,8 @@ fn pick_worktree_interactive(_worktrees: &[LsWorktree]) -> anyhow::Result<Option
 
 #[cfg(not(windows))]
 fn pick_worktree_interactive(worktrees: &[LsWorktree]) -> anyhow::Result<Option<PathBuf>> {
+    use std::io::{Cursor, IsTerminal};
+
     if !std::io::stdin().is_terminal() {
         anyhow::bail!(
             "interactive picker requires a TTY (stdin); pass --filter for non-interactive selection"

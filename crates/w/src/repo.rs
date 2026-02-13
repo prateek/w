@@ -2,7 +2,6 @@ use anyhow::Context;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::ffi::OsStr;
-use std::io::{Cursor, IsTerminal};
 use std::path::{Path, PathBuf};
 use worktrunk::git::Repository;
 
@@ -160,6 +159,8 @@ pub(crate) fn pick_repo_interactive(_index: &RepoIndex) -> anyhow::Result<Option
 
 #[cfg(not(windows))]
 pub(crate) fn pick_repo_interactive(index: &RepoIndex) -> anyhow::Result<Option<PathBuf>> {
+    use std::io::{Cursor, IsTerminal};
+
     if !std::io::stdin().is_terminal() {
         anyhow::bail!(
             "interactive picker requires a TTY (stdin); pass --filter for non-interactive selection"

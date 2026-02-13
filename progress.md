@@ -30,3 +30,4 @@
 2026-02-13 08:33: fix `w repo pick` interactive TTY detection to allow stdout capture / command substitution
 2026-02-13 09:04: release: pushed `v0.1.0` tag; fixed `.github/workflows/release.yml` (no `macos-13`, explicit macOS targets) and made `w` build on Windows by disabling `skim`-based interactive pickers there
 2026-02-13 09:27: release: fix `scripts/update_homebrew_formula.py` Ruby interpolation escaping so Homebrew formula updates succeed
+2026-02-13 09:34: ci: fix Windows clippy by moving `IsTerminal`/`Cursor` imports behind `cfg(not(windows))`

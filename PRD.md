@@ -1,6 +1,6 @@
 # PRD: `github.com/prateek/w`
 
-Status: Draft  
+Status: Complete (as of 2026-02-13)  
 Audience: OSS contributors and upstream Worktrunk maintainers (credit-forward, upstreamable)  
 
 ## 0) TL;DR

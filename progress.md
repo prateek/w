@@ -36,3 +36,4 @@
 2026-02-13 10:29: ci: fix Windows prune test by canonicalizing non-existent gitdir paths consistently (avoid `\\?\` prefix mismatch)
 2026-02-13 10:46: shell: add `--print` to `w cd/new/switch` to print the resolved path without changing directory (even with shell integration enabled) + update docs/demo + tests
 2026-02-13 10:57: docs: update Homebrew install instructions to default to tagged releases (keep `--HEAD` for `main`)
+2026-02-13 11:07: prd: mark PRD complete + add completion sentinel file

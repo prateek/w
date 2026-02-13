@@ -41,6 +41,7 @@ cd docs && docker run --rm -p 1111:1111 -v "$(pwd)":/app -w /app ghcr.io/getzola
 - When embedding Windows paths in TOML, prefer literal strings (`'C:\path'`) or escape backslashes (`C:\\path`) to avoid parse errors like `invalid unicode 8-digit hex code` from sequences such as `\U`.
 - On Windows, keep canonicalization consistent (`dunce::canonicalize` vs `std::fs::canonicalize`) to avoid `\\?\`-prefix mismatches breaking path comparisons (e.g., prune skipping stale dirs).
 - PAL `codereview` currently errors unless you pass `--relevant-files` (and often `--files-checked`) as comma-separated **absolute** paths.
+- PAL `codereview` CLI examples may omit required args; trust `pal codereview --help` and always pass `--relevant-files`/`--files-checked`.
 - When passing PAL prompts via `bash .../pal ... --step "..."`, avoid backticks (`` `...` ``) in the shell string; they trigger command substitution. Prefer single quotes or escape backticks.
 - PAL `codereview` via `pal-mcporter` may return JSON (even with `-o markdown`) and sometimes produces empty/low-signal findings; treat as best-effort and do a quick manual review too.
 - If `codex review` tries to run `pal-mcporter`, it may fail with uv cache permission errors; run PAL reviews from your normal shell (or set a writable cache dir like `UV_CACHE_DIR`).

@@ -33,6 +33,11 @@ enum Command {
         #[arg(long)]
         clobber: bool,
     },
+    /// Switch to a worktree for an existing branch and print its path.
+    Cd {
+        /// Branch name (or Worktrunk symbols like "@", "-", "^").
+        branch: String,
+    },
     /// Shell integration helpers.
     Shell {
         #[command(subcommand)]
@@ -65,6 +70,10 @@ fn main() -> anyhow::Result<()> {
             let path = cmd_new(branch, base, clobber)?;
             println!("{}", path.display());
         }
+        Command::Cd { branch } => {
+            let path = cmd_cd(branch)?;
+            println!("{}", path.display());
+        }
         Command::Shell {
             command: ShellCommand::Init { shell },
         } => {
@@ -76,8 +85,7 @@ fn main() -> anyhow::Result<()> {
 }
 
 fn cmd_new(branch: String, base: Option<String>, clobber: bool) -> anyhow::Result<PathBuf> {
-    let repo = Repository::current().context("failed to discover git repo")?;
-    let config = UserConfig::load().context("failed to load Worktrunk config")?;
+    let (repo, config) = current_repo_and_config()?;
 
     let branch = repo
         .resolve_worktree_name(&branch)
@@ -99,6 +107,29 @@ fn cmd_new(branch: String, base: Option<String>, clobber: bool) -> anyhow::Resul
     )?;
 
     Ok(outcome.path)
+}
+
+fn cmd_cd(branch: String) -> anyhow::Result<PathBuf> {
+    let (repo, config) = current_repo_and_config()?;
+
+    let outcome = worktrunk_switch(
+        &repo,
+        &config,
+        SwitchRequest {
+            branch,
+            create: false,
+            base: None,
+            clobber: false,
+        },
+    )?;
+
+    Ok(outcome.path)
+}
+
+fn current_repo_and_config() -> anyhow::Result<(Repository, UserConfig)> {
+    let repo = Repository::current().context("failed to discover git repo")?;
+    let config = UserConfig::load().context("failed to load Worktrunk config")?;
+    Ok((repo, config))
 }
 
 fn shell_init_snippet(shell: Shell) -> &'static str {
@@ -175,5 +206,18 @@ mod tests {
         assert_eq!(branch, "feature");
         assert!(base.is_none());
         assert!(!clobber);
+    }
+
+    #[test]
+    fn cd_parses() {
+        let cli = Cli::try_parse_from(["w", "cd", "feature"]).unwrap();
+        let Cli {
+            command: Command::Cd { branch },
+        } = cli
+        else {
+            panic!("expected w cd");
+        };
+
+        assert_eq!(branch, "feature");
     }
 }

@@ -503,6 +503,10 @@ Acceptance criteria:
 - Defaults are “fast”: tests enforce that expensive computations are opt-in.
 - Cross-repo concurrency defaults are bounded and configurable; tests cover the knob wiring.
 
+Progress (as of 2026-02-13):
+
+- ✅ Added `w ls` with stable `--format json|tsv` output (schema_version=1) and integration tests.
+
 ### M6: Stable `wt list --format json` Contract + Docs
 
 Deliverables:

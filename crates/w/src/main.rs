@@ -1,5 +1,6 @@
 use anyhow::Context;
 use clap::{Parser, Subcommand, ValueEnum};
+use serde::Serialize;
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use worktrunk::{
@@ -71,6 +72,33 @@ enum Command {
     },
     /// Remove stale worktree directories under the configured worktree root.
     Prune,
+    /// List worktrees across repositories.
+    Ls {
+        /// Path to `w` config TOML (defaults to `~/.config/w/config.toml`).
+        #[arg(long)]
+        config: Option<PathBuf>,
+        /// Root directory to scan for git repositories (may be repeated).
+        #[arg(long = "root", value_name = "PATH")]
+        roots: Vec<PathBuf>,
+        /// Maximum directory depth to search under each root.
+        #[arg(long)]
+        max_depth: Option<usize>,
+        /// Cache path for the repo index.
+        #[arg(long)]
+        cache_path: Option<PathBuf>,
+        /// Read from the cache only (do not scan).
+        #[arg(long, conflicts_with = "refresh")]
+        cached: bool,
+        /// Force a rescan and refresh the cache.
+        #[arg(long, conflicts_with = "cached")]
+        refresh: bool,
+        /// Output format.
+        #[arg(long, value_enum, default_value_t = LsFormat::Text)]
+        format: LsFormat,
+        /// Include prunable worktrees (directories deleted but git still tracks metadata).
+        #[arg(long)]
+        include_prunable: bool,
+    },
     /// Multi-repo helpers (indexing and selection).
     Repo {
         #[command(subcommand)]
@@ -152,6 +180,13 @@ enum RepoIndexFormat {
     Tsv,
 }
 
+#[derive(ValueEnum, Clone, Debug)]
+enum LsFormat {
+    Text,
+    Json,
+    Tsv,
+}
+
 fn main() -> anyhow::Result<()> {
     let Cli { repo_dir, command } = Cli::parse();
     match command {
@@ -183,6 +218,66 @@ fn main() -> anyhow::Result<()> {
         Command::Prune => {
             for path in cmd_prune(repo_dir.as_deref())? {
                 println!("{}", path.display());
+            }
+        }
+        Command::Ls {
+            config,
+            roots,
+            max_depth,
+            cache_path,
+            cached,
+            refresh,
+            format,
+            include_prunable,
+        } => {
+            let output = cmd_ls(
+                repo_dir.as_deref(),
+                LsRequest {
+                    config_path: config,
+                    roots,
+                    max_depth,
+                    cache_path,
+                    cached,
+                    refresh,
+                    include_prunable,
+                },
+            )?;
+
+            if !output.errors.is_empty() {
+                for err in &output.errors {
+                    eprintln!("w ls: {}: {}", err.repo_path, err.error);
+                }
+            }
+
+            match format {
+                LsFormat::Json => {
+                    println!("{}", serde_json::to_string_pretty(&output)?);
+                }
+                LsFormat::Tsv => {
+                    for wt in &output.worktrees {
+                        println!(
+                            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+                            wt.project_identifier,
+                            wt.repo_path,
+                            wt.path,
+                            wt.branch.as_deref().unwrap_or(""),
+                            wt.head,
+                            wt.detached,
+                            wt.locked.as_deref().unwrap_or(""),
+                            wt.prunable.as_deref().unwrap_or(""),
+                        );
+                    }
+                }
+                LsFormat::Text => {
+                    for wt in &output.worktrees {
+                        let branch = wt.branch.as_deref().unwrap_or(if wt.detached {
+                            "(detached)"
+                        } else {
+                            ""
+                        });
+                        println!("{}\t{}\t{}", wt.project_identifier, branch, wt.path);
+                    }
+                }
             }
         }
         Command::Repo { command } => match command {
@@ -428,6 +523,158 @@ fn cmd_prune(repo_dir: Option<&Path>) -> anyhow::Result<Vec<PathBuf>> {
     }
 
     Ok(removed)
+}
+
+#[derive(Debug, Serialize)]
+struct LsOutput {
+    schema_version: u32,
+    worktrees: Vec<LsWorktree>,
+    errors: Vec<LsError>,
+}
+
+#[derive(Debug, Serialize)]
+struct LsWorktree {
+    repo_path: String,
+    project_identifier: String,
+    path: String,
+    branch: Option<String>,
+    head: String,
+    detached: bool,
+    locked: Option<String>,
+    prunable: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct LsError {
+    repo_path: String,
+    error: String,
+}
+
+struct LsRequest {
+    config_path: Option<PathBuf>,
+    roots: Vec<PathBuf>,
+    max_depth: Option<usize>,
+    cache_path: Option<PathBuf>,
+    cached: bool,
+    refresh: bool,
+    include_prunable: bool,
+}
+
+fn cmd_ls(repo_dir: Option<&Path>, request: LsRequest) -> anyhow::Result<LsOutput> {
+    let LsRequest {
+        config_path,
+        roots,
+        max_depth,
+        cache_path,
+        cached,
+        refresh,
+        include_prunable,
+    } = request;
+
+    if let Some(repo_dir) = repo_dir {
+        let repo = Repository::at(repo_dir).context("failed to discover git repo")?;
+        let repo_root = canonicalize_best_effort(repo.repo_path());
+        let repo_path = repo_root.to_string_lossy().to_string();
+        let project_identifier = repo
+            .project_identifier()
+            .unwrap_or_else(|_| repo_path.clone());
+
+        let mut repo_worktrees = repo.list_worktrees()?;
+        repo_worktrees.sort_by(|a, b| a.path.cmp(&b.path));
+
+        let worktrees = repo_worktrees
+            .into_iter()
+            .filter(|wt| include_prunable || !wt.is_prunable())
+            .map(|wt| LsWorktree {
+                repo_path: repo_path.clone(),
+                project_identifier: project_identifier.clone(),
+                path: wt.path.to_string_lossy().to_string(),
+                branch: wt.branch,
+                head: wt.head,
+                detached: wt.detached,
+                locked: wt.locked,
+                prunable: wt.prunable,
+            })
+            .collect();
+
+        return Ok(LsOutput {
+            schema_version: 1,
+            worktrees,
+            errors: Vec::new(),
+        });
+    }
+
+    let cache_path = cache_path.unwrap_or(repo::default_cache_path()?);
+    let index = if cached {
+        repo::read_repo_index_cache(&cache_path)?
+    } else if refresh || !cache_path.exists() {
+        let (roots, max_depth) = repo_roots_and_depth(config_path.as_deref(), roots, max_depth)?;
+        let index = repo::build_repo_index(&roots, max_depth)?;
+        repo::write_repo_index_cache(&cache_path, &index)?;
+        index
+    } else {
+        repo::read_repo_index_cache(&cache_path)?
+    };
+
+    let mut repos = Vec::new();
+    for entry in index.repos {
+        let repo_dir = PathBuf::from(&entry.path);
+        repos.push((repo_dir, entry.path, entry.project_identifier));
+    }
+
+    let mut worktrees = Vec::new();
+    let mut errors = Vec::new();
+
+    for (repo_dir, repo_path, project_identifier) in repos {
+        let repo = match Repository::at(&repo_dir) {
+            Ok(repo) => repo,
+            Err(err) => {
+                errors.push(LsError {
+                    repo_path,
+                    error: err.to_string(),
+                });
+                continue;
+            }
+        };
+
+        let mut repo_worktrees = match repo.list_worktrees() {
+            Ok(worktrees) => worktrees,
+            Err(err) => {
+                errors.push(LsError {
+                    repo_path,
+                    error: err.to_string(),
+                });
+                continue;
+            }
+        };
+
+        repo_worktrees.sort_by(|a, b| a.path.cmp(&b.path));
+
+        for wt in repo_worktrees {
+            if !include_prunable && wt.is_prunable() {
+                continue;
+            }
+
+            worktrees.push(LsWorktree {
+                repo_path: repo_path.clone(),
+                project_identifier: project_identifier.clone(),
+                path: wt.path.to_string_lossy().to_string(),
+                branch: wt.branch.clone(),
+                head: wt.head.clone(),
+                detached: wt.detached,
+                locked: wt.locked.clone(),
+                prunable: wt.prunable.clone(),
+            });
+        }
+    }
+
+    worktrees.sort_by(|a, b| a.repo_path.cmp(&b.repo_path).then(a.path.cmp(&b.path)));
+
+    Ok(LsOutput {
+        schema_version: 1,
+        worktrees,
+        errors,
+    })
 }
 
 fn repo_roots_and_depth(
@@ -770,5 +1017,19 @@ mod tests {
         else {
             panic!("expected w prune");
         };
+    }
+
+    #[test]
+    fn ls_parses() {
+        let cli = Cli::try_parse_from(["w", "ls", "--format", "json"]).unwrap();
+        let Cli {
+            repo_dir: _,
+            command,
+        } = cli;
+        let Command::Ls { format, .. } = command else {
+            panic!("expected w ls");
+        };
+
+        assert!(matches!(format, LsFormat::Json));
     }
 }

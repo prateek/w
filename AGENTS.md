@@ -28,6 +28,7 @@ cd docs && zola serve
 ## Gotchas (from iteration logs)
 
 - `cargo new` creates a nested git repo by default; prefer `cargo new --vcs none ...` for new crates.
+- Homebrew tap naming: `brew tap prateek/w` assumes a `prateek/homebrew-w` repo; this tap lives in `prateek/w`, so use `brew tap prateek/w https://github.com/prateek/w`.
 - PAL `codereview` requires `--relevant-files` to be **absolute** paths (even without `--raw`).
 - PAL `continuation_id` flows generally don’t resume across separate `pal-mcporter` invocations (fresh server per call).
 - `codex review` may spam opentelemetry export errors to `http://localhost:14318/v1/logs`; if it hangs, kill the spawned `codex` process and proceed with manual review.

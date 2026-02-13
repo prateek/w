@@ -319,8 +319,8 @@ Branch protection:
 We want “install and go” to be excellent. Target install methods:
 
 - Homebrew tap hosted in this repo:
-  - `brew tap prateek/w`
-  - `brew install w` (and optionally `wt` if we decide to publish both as formulae)
+  - `brew tap prateek/w https://github.com/prateek/w`
+  - `brew install --HEAD prateek/w/w` (until we publish tagged releases + stable formula URLs)
 - GitHub Releases:
   - attach prebuilt artifacts for macOS/Linux/Windows (both `w` and `wt`)
   - publish checksums
@@ -363,7 +363,8 @@ Progress (as of 2026-02-13):
 - ✅ Vendored upstream Worktrunk under `vendor/worktrunk/` via `git subtree` (currently `v0.23.2`) and added `vendor/worktrunk/UPSTREAM.md`.
 - ✅ CI now runs fmt/clippy + unit tests for vendored Worktrunk (in addition to `w` checks).
 - ✅ Added a minimal Zola docs site scaffold (`docs/`) with CI build checks and a GitHub Pages deploy workflow.
-- ⏳ Remaining for M0: Homebrew tap scaffolding, and add a basic demo.
+- ✅ Added Homebrew tap scaffolding (`Formula/w.rb`) and documented Homebrew install steps.
+- ⏳ Remaining for M0: add a basic demo.
 
 ### M1: Project Identity in Templates (Worktrunk patch + tests)
 
@@ -507,7 +508,7 @@ Acceptance criteria:
 
 - A tagged release publishes binaries for macOS/Linux/Windows for both `wt` and `w`.
 - Release artifacts include checksums.
-- `brew tap prateek/w && brew install w` works against the latest release.
+- `brew tap prateek/w https://github.com/prateek/w && brew install prateek/w/w` works against the latest release.
 - GitHub Pages publishes `w` docs site from `main`.
 
 ## 12) Risks and Mitigations

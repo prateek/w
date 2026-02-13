@@ -1,9 +1,10 @@
 use anyhow::Context;
 use clap::{Parser, Subcommand, ValueEnum};
 use serde::Serialize;
-use std::collections::HashSet;
+use std::collections::{HashSet, VecDeque};
 use std::io::{Cursor, IsTerminal};
 use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex, mpsc};
 use worktrunk::{
     config::UserConfig,
     git::Repository,
@@ -731,6 +732,9 @@ struct LsRequest {
     include_prunable: bool,
 }
 
+const W_MAX_CONCURRENT_REPOS_ENV: &str = "W_MAX_CONCURRENT_REPOS";
+const MAX_CONCURRENT_REPOS_CAP: usize = 32;
+
 fn cmd_ls(repo_dir: Option<&Path>, request: LsRequest) -> anyhow::Result<LsOutput> {
     let LsRequest {
         config_path,
@@ -775,6 +779,9 @@ fn cmd_ls(repo_dir: Option<&Path>, request: LsRequest) -> anyhow::Result<LsOutpu
         });
     }
 
+    let max_concurrent_repos = max_concurrent_repos(config_path.as_deref(), &roots)
+        .context("failed to read concurrency config")?;
+
     let cache_path = cache_path.unwrap_or(repo::default_cache_path()?);
     let index = if cached {
         repo::read_repo_index_cache(&cache_path)?
@@ -796,56 +803,155 @@ fn cmd_ls(repo_dir: Option<&Path>, request: LsRequest) -> anyhow::Result<LsOutpu
     let mut worktrees = Vec::new();
     let mut errors = Vec::new();
 
-    for (repo_dir, repo_path, project_identifier) in repos {
-        let repo = match Repository::at(&repo_dir) {
-            Ok(repo) => repo,
-            Err(err) => {
-                errors.push(LsError {
-                    repo_path,
-                    error: err.to_string(),
-                });
-                continue;
+    if max_concurrent_repos <= 1 || repos.len() <= 1 {
+        for (repo_dir, repo_path, project_identifier) in repos {
+            match list_repo_worktrees(repo_dir, repo_path, project_identifier, include_prunable) {
+                Ok(mut repo_worktrees) => worktrees.append(&mut repo_worktrees),
+                Err(err) => errors.push(err),
             }
-        };
+        }
+    } else {
+        enum RepoWorktreesMessage {
+            Worktrees(Vec<LsWorktree>),
+            Error(LsError),
+        }
 
-        let mut repo_worktrees = match repo.list_worktrees() {
-            Ok(worktrees) => worktrees,
-            Err(err) => {
-                errors.push(LsError {
-                    repo_path,
-                    error: err.to_string(),
-                });
-                continue;
-            }
-        };
+        let worker_count = max_concurrent_repos.min(repos.len());
+        let jobs = Arc::new(Mutex::new(VecDeque::from(repos)));
+        let (tx, rx) = mpsc::channel::<RepoWorktreesMessage>();
 
-        repo_worktrees.sort_by(|a, b| a.path.cmp(&b.path));
+        for _ in 0..worker_count {
+            let jobs = Arc::clone(&jobs);
+            let tx = tx.clone();
+            std::thread::spawn(move || {
+                loop {
+                    let job = {
+                        let mut jobs = jobs.lock().unwrap_or_else(|e| e.into_inner());
+                        jobs.pop_front()
+                    };
+                    let Some((repo_dir, repo_path, project_identifier)) = job else {
+                        break;
+                    };
 
-        for wt in repo_worktrees {
-            if !include_prunable && wt.is_prunable() {
-                continue;
-            }
-
-            worktrees.push(LsWorktree {
-                repo_path: repo_path.clone(),
-                project_identifier: project_identifier.clone(),
-                path: wt.path.to_string_lossy().to_string(),
-                branch: wt.branch.clone(),
-                head: wt.head.clone(),
-                detached: wt.detached,
-                locked: wt.locked.clone(),
-                prunable: wt.prunable.clone(),
+                    let msg = match list_repo_worktrees(
+                        repo_dir,
+                        repo_path,
+                        project_identifier,
+                        include_prunable,
+                    ) {
+                        Ok(worktrees) => RepoWorktreesMessage::Worktrees(worktrees),
+                        Err(err) => RepoWorktreesMessage::Error(err),
+                    };
+                    let _ = tx.send(msg);
+                }
             });
+        }
+
+        drop(tx);
+
+        for msg in rx {
+            match msg {
+                RepoWorktreesMessage::Worktrees(mut repo_worktrees) => {
+                    worktrees.append(&mut repo_worktrees);
+                }
+                RepoWorktreesMessage::Error(err) => errors.push(err),
+            }
         }
     }
 
     worktrees.sort_by(|a, b| a.repo_path.cmp(&b.repo_path).then(a.path.cmp(&b.path)));
+    errors.sort_by(|a, b| a.repo_path.cmp(&b.repo_path).then(a.error.cmp(&b.error)));
 
     Ok(LsOutput {
         schema_version: 1,
         worktrees,
         errors,
     })
+}
+
+fn max_concurrent_repos(config_path: Option<&Path>, roots: &[PathBuf]) -> anyhow::Result<usize> {
+    if let Some(value) = max_concurrent_repos_from_env()? {
+        return Ok(value);
+    }
+
+    if roots.is_empty() {
+        let config_path = config_path
+            .map(PathBuf::from)
+            .unwrap_or(repo::default_config_path()?);
+        if config_path.exists() {
+            let config = repo::load_config(&config_path)?;
+            return normalize_max_concurrent_repos(
+                "max_concurrent_repos",
+                config.max_concurrent_repos,
+            );
+        }
+    }
+
+    Ok(default_max_concurrent_repos())
+}
+
+fn default_max_concurrent_repos() -> usize {
+    std::thread::available_parallelism()
+        .map(|n| n.get().min(4))
+        .unwrap_or(4)
+}
+
+fn max_concurrent_repos_from_env() -> anyhow::Result<Option<usize>> {
+    let Ok(raw) = std::env::var(W_MAX_CONCURRENT_REPOS_ENV) else {
+        return Ok(None);
+    };
+    let raw = raw.trim();
+    if raw.is_empty() {
+        return Ok(None);
+    }
+    let value: usize = raw.parse().with_context(|| {
+        format!("{W_MAX_CONCURRENT_REPOS_ENV} must be a positive integer, got: {raw:?}")
+    })?;
+    Some(normalize_max_concurrent_repos(
+        W_MAX_CONCURRENT_REPOS_ENV,
+        value,
+    ))
+    .transpose()
+}
+
+fn normalize_max_concurrent_repos(name: &str, value: usize) -> anyhow::Result<usize> {
+    if value == 0 {
+        anyhow::bail!("{name} must be a positive integer (>= 1)");
+    }
+    Ok(value.min(MAX_CONCURRENT_REPOS_CAP))
+}
+
+fn list_repo_worktrees(
+    repo_dir: PathBuf,
+    repo_path: String,
+    project_identifier: String,
+    include_prunable: bool,
+) -> Result<Vec<LsWorktree>, LsError> {
+    let repo = Repository::at(&repo_dir).map_err(|err| LsError {
+        repo_path: repo_path.clone(),
+        error: err.to_string(),
+    })?;
+
+    let mut repo_worktrees = repo.list_worktrees().map_err(|err| LsError {
+        repo_path: repo_path.clone(),
+        error: err.to_string(),
+    })?;
+    repo_worktrees.sort_by(|a, b| a.path.cmp(&b.path));
+
+    Ok(repo_worktrees
+        .into_iter()
+        .filter(|wt| include_prunable || !wt.is_prunable())
+        .map(|wt| LsWorktree {
+            repo_path: repo_path.clone(),
+            project_identifier: project_identifier.clone(),
+            path: wt.path.to_string_lossy().to_string(),
+            branch: wt.branch,
+            head: wt.head,
+            detached: wt.detached,
+            locked: wt.locked,
+            prunable: wt.prunable,
+        })
+        .collect())
 }
 
 fn repo_roots_and_depth(

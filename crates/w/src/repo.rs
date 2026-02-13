@@ -12,10 +12,16 @@ pub(crate) struct WConfig {
     pub(crate) repo_roots: Vec<PathBuf>,
     #[serde(default = "default_max_depth")]
     pub(crate) max_depth: usize,
+    #[serde(default = "default_max_concurrent_repos")]
+    pub(crate) max_concurrent_repos: usize,
 }
 
 fn default_max_depth() -> usize {
     6
+}
+
+fn default_max_concurrent_repos() -> usize {
+    4
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

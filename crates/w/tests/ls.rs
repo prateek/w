@@ -207,3 +207,81 @@ fn w_ls_with_c_uses_repo_root_path() {
         .to_string();
     assert_eq!(out.worktrees[0].repo_path, expected_repo_root);
 }
+
+#[test]
+fn w_ls_errors_on_invalid_max_concurrent_repos_env() {
+    let tmp = tempfile::tempdir().unwrap();
+
+    let root = tmp.path().join("root");
+    std::fs::create_dir_all(&root).unwrap();
+
+    let repo = root.join("repo");
+    std::fs::create_dir_all(&repo).unwrap();
+    init_repo(&repo);
+
+    let cache_path = tmp.path().join("repo-index-cache.json");
+
+    let output = cargo_bin_cmd!("w")
+        .args([
+            "ls",
+            "--root",
+            root.to_str().unwrap(),
+            "--max-depth",
+            "2",
+            "--cache-path",
+            cache_path.to_str().unwrap(),
+            "--format",
+            "json",
+        ])
+        .env("W_MAX_CONCURRENT_REPOS", "0")
+        .output()
+        .unwrap();
+
+    assert!(
+        !output.status.success(),
+        "expected failure, got: {output:?}"
+    );
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("W_MAX_CONCURRENT_REPOS"),
+        "stderr did not mention W_MAX_CONCURRENT_REPOS:\n{stderr}"
+    );
+}
+
+#[test]
+fn w_ls_accepts_max_concurrent_repos_in_config() {
+    let tmp = tempfile::tempdir().unwrap();
+
+    let root = tmp.path().join("root");
+    std::fs::create_dir_all(&root).unwrap();
+
+    let repo = root.join("repo");
+    std::fs::create_dir_all(&repo).unwrap();
+    init_repo(&repo);
+
+    let config_path = tmp.path().join("w-config.toml");
+    std::fs::write(
+        &config_path,
+        format!(
+            "repo_roots = [\"{}\"]\nmax_depth = 2\nmax_concurrent_repos = 2\n",
+            root.display()
+        ),
+    )
+    .unwrap();
+
+    let cache_path = tmp.path().join("repo-index-cache.json");
+
+    let output = cargo_bin_cmd!("w")
+        .args([
+            "ls",
+            "--config",
+            config_path.to_str().unwrap(),
+            "--cache-path",
+            cache_path.to_str().unwrap(),
+            "--format",
+            "json",
+        ])
+        .output()
+        .unwrap();
+    assert!(output.status.success(), "w ls failed: {output:?}");
+}

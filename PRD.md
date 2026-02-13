@@ -507,6 +507,7 @@ Progress (as of 2026-02-13):
 
 - ✅ Added `w ls` with stable `--format json|tsv` output (schema_version=1) and integration tests.
 - ✅ Added `w switch` cross-repo picker (interactive via `skim` or non-interactive `--filter`) + shell integration support + integration tests.
+- ✅ Added bounded cross-repo concurrency for `w ls`/`w switch` (config: `max_concurrent_repos`, env override: `W_MAX_CONCURRENT_REPOS`) + tests.
 
 ### M6: Stable `wt list --format json` Contract + Docs
 

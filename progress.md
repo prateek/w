@@ -16,3 +16,4 @@
 2026-02-13 04:18: M4: add `w repo index` (JSON/TSV + cache) + `w repo pick` (skim/--filter) + global `-C/--repo` + integration tests
 2026-02-13 04:41: M5 (partial): add `w ls` (cross-repo worktree listing) with stable JSON/TSV output + integration tests
 2026-02-13 04:59: M5 (partial): add `w switch` (cross-repo picker via `skim` or `--filter`) + shell integration support + integration tests
+2026-02-13 05:21: M5: add bounded cross-repo concurrency for `w ls`/`w switch` (config + `W_MAX_CONCURRENT_REPOS`) + tests

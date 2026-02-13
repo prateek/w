@@ -1,3 +1,4 @@
 [workspace]
 members = ["crates/w"]
+exclude = ["vendor/worktrunk"]
 resolver = "2"

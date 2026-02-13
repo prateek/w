@@ -444,6 +444,12 @@ Acceptance criteria:
   - prune only removes stale directories
 - `w shell init <shell>` works for at least zsh/bash/fish/pwsh in CI (smoke-level).
 
+Progress (as of 2026-02-13):
+
+- ✅ Implemented `w new <branch>` using `worktrunk::integration::v1` and Worktrunk user config.
+- ✅ Added an integration test covering create → switch behavior for `w new`.
+- ✅ Updated the root Cargo workspace to exclude `vendor/worktrunk` so `cargo fmt/clippy/test` works with the path dependency.
+
 ### M4: Built-in Repo Index + Picker (`skim`)
 
 Deliverables:

@@ -30,6 +30,7 @@ cd docs && docker run --rm -v "$(pwd)":/app -w /app ghcr.io/getzola/zola:v0.19.2
 ## Gotchas (from iteration logs)
 
 - `cargo new` creates a nested git repo by default; prefer `cargo new --vcs none ...` for new crates.
+- If `cargo fmt`/`cargo metadata` fails with "multiple workspace roots found" after adding a path dependency on `vendor/worktrunk`, add `exclude = ["vendor/worktrunk"]` to the root workspace `Cargo.toml`.
 - Homebrew tap naming: `brew tap prateek/w` assumes a `prateek/homebrew-w` repo; this tap lives in `prateek/w`, so use `brew tap prateek/w https://github.com/prateek/w`.
 - PAL `codereview` currently errors unless you pass `--relevant-files` (comma-separated **absolute** paths).
 - PAL `codereview` external validation may time out or model-mismatch; `--model o4-mini --thinking-mode minimal` has worked.

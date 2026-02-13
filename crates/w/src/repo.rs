@@ -14,6 +14,8 @@ pub(crate) struct WConfig {
     pub(crate) max_depth: usize,
     #[serde(default = "default_max_concurrent_repos")]
     pub(crate) max_concurrent_repos: usize,
+    #[serde(default)]
+    pub(crate) ls: LsConfig,
 }
 
 fn default_max_depth() -> usize {
@@ -22,6 +24,12 @@ fn default_max_depth() -> usize {
 
 fn default_max_concurrent_repos() -> usize {
     4
+}
+
+#[derive(Debug, Default, Deserialize)]
+pub(crate) struct LsConfig {
+    pub(crate) preset: Option<crate::LsTextPreset>,
+    pub(crate) sort: Option<crate::LsSort>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

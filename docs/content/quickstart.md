@@ -25,6 +25,10 @@ Multi-repo commands (`w ls`, `w switch`, `w repo …`) scan directories you conf
 repo_roots = ["~/code/github.com"]
 max_depth = 6
 max_concurrent_repos = 4
+
+[ls]
+preset = "default" # compact|default|full
+sort = "repo"      # repo|project|path
 ```
 
 You can override concurrency per command with `--jobs <n>`, or globally with `W_MAX_CONCURRENT_REPOS` (cap: 32).

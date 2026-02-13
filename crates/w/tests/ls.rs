@@ -29,6 +29,23 @@ fn init_repo(repo_dir: &Path) {
     git(repo_dir, &["commit", "-m", "initial"]);
 }
 
+fn init_root_repo_with_feature_worktree(tmp: &tempfile::TempDir) -> std::path::PathBuf {
+    let root = tmp.path().join("root");
+    std::fs::create_dir_all(&root).unwrap();
+
+    let repo = root.join("repo");
+    std::fs::create_dir_all(&repo).unwrap();
+    init_repo(&repo);
+
+    let wt = tmp.path().join("worktree_feature");
+    git(
+        &repo,
+        &["worktree", "add", "-b", "feature", wt.to_str().unwrap()],
+    );
+
+    root
+}
+
 #[derive(Debug, Deserialize)]
 struct LsOutput {
     schema_version: u32,
@@ -407,4 +424,154 @@ fn w_ls_accepts_max_concurrent_repos_in_config() {
         .output()
         .unwrap();
     assert!(output.status.success(), "w ls failed: {output:?}");
+}
+
+#[test]
+fn w_ls_text_preset_can_be_set_via_config() {
+    let tmp = tempfile::tempdir().unwrap();
+
+    let root = init_root_repo_with_feature_worktree(&tmp);
+
+    let config_path = tmp.path().join("w-config.toml");
+    std::fs::write(&config_path, "[ls]\npreset = \"full\"\n").unwrap();
+
+    let cache_path = tmp.path().join("repo-index-cache.json");
+
+    let output = cargo_bin_cmd!("w")
+        .args([
+            "ls",
+            "--config",
+            config_path.to_str().unwrap(),
+            "--root",
+            root.to_str().unwrap(),
+            "--max-depth",
+            "2",
+            "--cache-path",
+            cache_path.to_str().unwrap(),
+            "--format",
+            "text",
+        ])
+        .output()
+        .unwrap();
+    assert!(output.status.success(), "w ls failed: {output:?}");
+
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    let lines = stdout.lines().collect::<Vec<_>>();
+    assert_eq!(lines.len(), 2, "expected 2 worktrees, got: {lines:?}");
+
+    for line in lines {
+        let cols = line.split('\t').collect::<Vec<_>>();
+        assert_eq!(cols.len(), 5, "expected 5 columns for full preset");
+    }
+}
+
+#[test]
+fn w_ls_text_preset_flag_overrides_config() {
+    let tmp = tempfile::tempdir().unwrap();
+
+    let root = init_root_repo_with_feature_worktree(&tmp);
+
+    let config_path = tmp.path().join("w-config.toml");
+    std::fs::write(&config_path, "[ls]\npreset = \"full\"\n").unwrap();
+
+    let cache_path = tmp.path().join("repo-index-cache.json");
+
+    let output = cargo_bin_cmd!("w")
+        .args([
+            "ls",
+            "--config",
+            config_path.to_str().unwrap(),
+            "--root",
+            root.to_str().unwrap(),
+            "--max-depth",
+            "2",
+            "--cache-path",
+            cache_path.to_str().unwrap(),
+            "--format",
+            "text",
+            "--preset",
+            "compact",
+        ])
+        .output()
+        .unwrap();
+    assert!(output.status.success(), "w ls failed: {output:?}");
+
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    let lines = stdout.lines().collect::<Vec<_>>();
+    assert_eq!(lines.len(), 2, "expected 2 worktrees, got: {lines:?}");
+
+    for line in lines {
+        let cols = line.split('\t').collect::<Vec<_>>();
+        assert_eq!(cols.len(), 2, "expected 2 columns for compact preset");
+    }
+}
+
+#[test]
+fn w_ls_sort_project_orders_by_project_identifier() {
+    let tmp = tempfile::tempdir().unwrap();
+
+    let root = tmp.path().join("root");
+    std::fs::create_dir_all(&root).unwrap();
+
+    let repo_a = root.join("repo_a");
+    let repo_b = root.join("repo_b");
+    std::fs::create_dir_all(&repo_a).unwrap();
+    std::fs::create_dir_all(&repo_b).unwrap();
+    init_repo(&repo_a);
+    init_repo(&repo_b);
+
+    git(
+        &repo_a,
+        &["remote", "add", "origin", "https://github.com/z/repo"],
+    );
+    git(
+        &repo_b,
+        &["remote", "add", "origin", "https://github.com/a/repo"],
+    );
+
+    let wt_a = tmp.path().join("worktree_feature_a");
+    let wt_b = tmp.path().join("worktree_feature_b");
+
+    git(
+        &repo_a,
+        &["worktree", "add", "-b", "feature-a", wt_a.to_str().unwrap()],
+    );
+    git(
+        &repo_b,
+        &["worktree", "add", "-b", "feature-b", wt_b.to_str().unwrap()],
+    );
+
+    let cache_path = tmp.path().join("repo-index-cache.json");
+
+    let output = cargo_bin_cmd!("w")
+        .args([
+            "ls",
+            "--root",
+            root.to_str().unwrap(),
+            "--max-depth",
+            "2",
+            "--cache-path",
+            cache_path.to_str().unwrap(),
+            "--format",
+            "text",
+            "--sort",
+            "project",
+        ])
+        .output()
+        .unwrap();
+    assert!(output.status.success(), "w ls failed: {output:?}");
+
+    let stdout = String::from_utf8(output.stdout).unwrap();
+    let lines = stdout.lines().collect::<Vec<_>>();
+    assert_eq!(lines.len(), 4, "expected 4 worktrees, got: {lines:?}");
+
+    let project_ids = lines
+        .iter()
+        .map(|line| line.split('\t').next().unwrap())
+        .collect::<Vec<_>>();
+
+    assert_eq!(project_ids[0], "github.com/a/repo");
+    assert_eq!(project_ids[1], "github.com/a/repo");
+    assert_eq!(project_ids[2], "github.com/z/repo");
+    assert_eq!(project_ids[3], "github.com/z/repo");
 }

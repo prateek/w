@@ -97,6 +97,8 @@ w ls --format tsv
 Options:
 
 - `--format text|json|tsv` (default: `text`)
+- `--preset compact|default|full`: text preset (only applies to `--format text`; can also be set via `[ls].preset` in config)
+- `--sort repo|project|path`: sort order for output (can also be set via `[ls].sort` in config)
 - `--jobs <n>`: max repositories to process concurrently (overrides config/env)
 - `--include-prunable`: include worktrees that are prunable (directory missing but metadata still present)
 - Indexing: `--cached` (cache-only) / `--refresh` (force rescan) / `--cache-path <path>`

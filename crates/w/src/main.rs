@@ -1,6 +1,7 @@
 use anyhow::Context;
 use clap::{Parser, Subcommand, ValueEnum};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+use std::borrow::Cow;
 use std::collections::{HashSet, VecDeque};
 use std::io::{Cursor, IsTerminal};
 use std::path::{Path, PathBuf};
@@ -130,6 +131,12 @@ enum Command {
         /// Output format.
         #[arg(long, value_enum, default_value_t = LsFormat::Text)]
         format: LsFormat,
+        /// Text preset (applies to `--format text`).
+        #[arg(long, value_enum)]
+        preset: Option<LsTextPreset>,
+        /// Sort order for output.
+        #[arg(long, value_enum)]
+        sort: Option<LsSort>,
         /// Include prunable worktrees (directories deleted but git still tracks metadata).
         #[arg(long)]
         include_prunable: bool,
@@ -222,6 +229,28 @@ enum LsFormat {
     Tsv,
 }
 
+#[derive(ValueEnum, Copy, Clone, Debug, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub(crate) enum LsTextPreset {
+    #[value(name = "default")]
+    Default,
+    #[value(name = "compact")]
+    Compact,
+    #[value(name = "full")]
+    Full,
+}
+
+#[derive(ValueEnum, Copy, Clone, Debug, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub(crate) enum LsSort {
+    #[value(name = "repo")]
+    Repo,
+    #[value(name = "project")]
+    Project,
+    #[value(name = "path")]
+    Path,
+}
+
 fn main() -> anyhow::Result<()> {
     let Cli { repo_dir, command } = Cli::parse();
     match command {
@@ -291,9 +320,24 @@ fn main() -> anyhow::Result<()> {
             cached,
             refresh,
             format,
+            preset,
+            sort,
             include_prunable,
         } => {
-            let output = cmd_ls(
+            if preset.is_some() && !matches!(format, LsFormat::Text) {
+                anyhow::bail!("--preset is only supported with --format text");
+            }
+
+            let config_for_formatting =
+                load_w_config_for_ls_formatting(repo_dir.as_deref(), config.as_deref(), &roots)?;
+            let sort = sort
+                .or_else(|| config_for_formatting.as_ref().and_then(|c| c.ls.sort))
+                .unwrap_or(LsSort::Repo);
+            let preset = preset
+                .or_else(|| config_for_formatting.as_ref().and_then(|c| c.ls.preset))
+                .unwrap_or(LsTextPreset::Default);
+
+            let mut output = cmd_ls(
                 repo_dir.as_deref(),
                 LsRequest {
                     config_path: config,
@@ -312,6 +356,8 @@ fn main() -> anyhow::Result<()> {
                     eprintln!("w ls: {}: {}", err.repo_path, err.error);
                 }
             }
+
+            sort_ls_worktrees(&mut output.worktrees, sort);
 
             match format {
                 LsFormat::Json => {
@@ -334,12 +380,25 @@ fn main() -> anyhow::Result<()> {
                 }
                 LsFormat::Text => {
                     for wt in &output.worktrees {
-                        let branch = wt.branch.as_deref().unwrap_or(if wt.detached {
-                            "(detached)"
-                        } else {
-                            ""
-                        });
-                        println!("{}\t{}\t{}", wt.project_identifier, branch, wt.path);
+                        let branch = worktree_branch_display(wt);
+                        match preset {
+                            LsTextPreset::Compact => {
+                                println!("{}\t{}", wt.project_identifier, branch);
+                            }
+                            LsTextPreset::Default => {
+                                println!("{}\t{}\t{}", wt.project_identifier, branch, wt.path);
+                            }
+                            LsTextPreset::Full => {
+                                println!(
+                                    "{}\t{}\t{}\t{}\t{}",
+                                    wt.project_identifier,
+                                    branch,
+                                    wt.path,
+                                    wt.locked.as_deref().unwrap_or(""),
+                                    wt.prunable.as_deref().unwrap_or(""),
+                                );
+                            }
+                        }
                     }
                 }
             }
@@ -1025,6 +1084,62 @@ fn worktree_root_dir(repo: &Repository, config: &UserConfig) -> anyhow::Result<P
 
 fn canonicalize_best_effort(path: &std::path::Path) -> PathBuf {
     std::fs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf())
+}
+
+fn load_w_config_for_ls_formatting(
+    repo_dir: Option<&Path>,
+    config_path: Option<&Path>,
+    roots: &[PathBuf],
+) -> anyhow::Result<Option<repo::WConfig>> {
+    if let Some(config_path) = config_path {
+        return Ok(Some(repo::load_config(config_path)?));
+    }
+    if repo_dir.is_some() {
+        return Ok(None);
+    }
+    if !roots.is_empty() {
+        return Ok(None);
+    }
+
+    let config_path = repo::default_config_path()?;
+    if !config_path.exists() {
+        return Ok(None);
+    }
+    Ok(Some(repo::load_config(&config_path)?))
+}
+
+fn sort_ls_worktrees(worktrees: &mut [LsWorktree], sort: LsSort) {
+    match sort {
+        LsSort::Repo => {
+            worktrees.sort_by(|a, b| a.repo_path.cmp(&b.repo_path).then(a.path.cmp(&b.path)));
+        }
+        LsSort::Project => {
+            worktrees.sort_by(|a, b| {
+                a.project_identifier
+                    .cmp(&b.project_identifier)
+                    .then(a.path.cmp(&b.path))
+                    .then(a.repo_path.cmp(&b.repo_path))
+            });
+        }
+        LsSort::Path => {
+            worktrees.sort_by(|a, b| {
+                a.path
+                    .cmp(&b.path)
+                    .then(a.project_identifier.cmp(&b.project_identifier))
+                    .then(a.repo_path.cmp(&b.repo_path))
+            });
+        }
+    }
+}
+
+fn worktree_branch_display(worktree: &LsWorktree) -> Cow<'_, str> {
+    if let Some(branch) = worktree.branch.as_deref() {
+        return Cow::Borrowed(branch);
+    }
+    if worktree.detached {
+        return Cow::Borrowed("(detached)");
+    }
+    Cow::Borrowed("")
 }
 
 fn canonicalize_gitdir_path(path: &std::path::Path) -> PathBuf {

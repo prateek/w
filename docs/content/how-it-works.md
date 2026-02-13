@@ -49,6 +49,13 @@ Commands that fan out over many repos (`w ls`, `w switch`) run per-repo jobs wit
 
 Defaults are conservative (`min(available_parallelism, 4)`).
 
+## Formatting
+
+`w ls` supports configurable text presets and sorting:
+
+- config: `[ls].preset` / `[ls].sort` in `~/.config/w/config.toml`
+- per-command: `w ls --preset …` / `w ls --sort …`
+
 ## Interactive pickers and TTY
 
 `w repo pick` and `w switch` use `skim` for interactive selection. If you don’t have a TTY, use `--filter` to select non-interactively.

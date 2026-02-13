@@ -5,6 +5,11 @@ template = "index.html"
 
 Experimental multi-repo wrapper for [Worktrunk](https://github.com/max-sixty/worktrunk).
 
-This site is intentionally minimal while the project is in early bootstrap. See `PRD.md` in the repository root for the roadmap and milestones.
+Start here:
+
+- [Install](@/install.md)
+- [Quickstart](@/quickstart.md)
 
 See the [demo](@/demo.md).
+
+For the roadmap and milestones, see `PRD.md` in the repository root.

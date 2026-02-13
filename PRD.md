@@ -561,6 +561,7 @@ Progress (as of 2026-02-13):
 
 - ✅ Added a tag-driven GitHub Actions release workflow (`.github/workflows/release.yml`) that builds `w` + vendored `wt` on macOS/Linux/Windows and publishes `.tar.gz` artifacts with `.sha256` checksums.
 - ✅ Release workflow now auto-updates `Formula/w.rb` on `main` to point at the tagged release artifacts (with sha256), enabling stable Homebrew installs after a release.
+- ✅ Expanded the docs site with basic user docs (Install + Quickstart) and added them to the top nav.
 
 ## 12) Risks and Mitigations
 

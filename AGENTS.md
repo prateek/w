@@ -44,10 +44,12 @@ cd docs && docker run --rm -v "$(pwd)":/app -w /app ghcr.io/getzola/zola:v0.19.2
 - `codex review` may spam opentelemetry export errors to `http://localhost:14318/v1/logs`; if it hangs, kill the spawned `codex` process and proceed with manual review.
 - `codex` may warn that `[features].web_search_request` is deprecated; fix by setting `web_search` in `~/.codex/config.toml` (or ignore the warning).
 - `codex review --uncommitted` currently errors if you pass a custom prompt; run it without a prompt (or use `--base`/`--commit`).
+- `codex review --base <ref>` relies on `git diff <ref>` and won’t include untracked files; `git add` (or `git add -N`) new files before reviewing.
 - To kill a hung `codex review`: `ps -eo pid,command | rg "codex .* review" | head` then `kill <pid>`.
 - `codex review`: `--uncommitted` is mutually exclusive with `--base` (use one or the other).
 - GitHub Actions jobs that commit+push back to the repo should use `actions/checkout` with `fetch-depth: 0` to avoid shallow clone push failures.
 - Some environments block destructive shell commands (e.g. `rm -rf`); prefer adding the right ignores (e.g. `__pycache__/`) and keep diffs clean without relying on cleanup commands.
 - Shell integration captures `w` stdout for `cd`-like commands; interactive `skim` pickers should not require stdout being a TTY (prefer checking stdin TTY / using `/dev/tty`) so commands like `w switch` work under command substitution.
+- `docs` build via the Zola Docker image may warn about an amd64/arm64 platform mismatch; it’s safe to ignore, or add `--platform linux/amd64` to the `docker run` command.
 - This environment may set `NO_COLOR=1`; Worktrunk snapshot tests expect ANSI output, so run with `NO_COLOR= CLICOLOR_FORCE=1` if you need to execute them.
 - When adding `insta` snapshot tests under `vendor/worktrunk/`, generate and commit the `.snap` files (e.g., `INSTA_UPDATE=always cargo test --manifest-path vendor/worktrunk/Cargo.toml --workspace --lib --bins`). Note: `insta` is configured with `yaml` snapshots; prefer `assert_yaml_snapshot!` unless you add the `json` feature.

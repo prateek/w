@@ -9,6 +9,11 @@ Worktrunk (`wt`) focused on single-repo workflows.
 
 Early bootstrap. See `PRD.md` for goals and milestones.
 
+## Demo
+
+- Docs page: `https://prateek.github.io/w/demo/`
+- Play locally: `asciinema play docs/static/demos/w-basic.cast`
+
 ## Installation (Homebrew)
 
 This repo hosts a Homebrew tap. For now, the formula is HEAD-only (tracks `main`).

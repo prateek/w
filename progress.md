@@ -4,3 +4,4 @@
 2026-02-13 00:10: add `NOTICE` + `CONTRIBUTING.md`
 2026-02-13 00:25: scaffold Zola docs site + CI build + GitHub Pages deploy workflow
 2026-02-13 00:40: add Homebrew tap scaffolding (`Formula/w.rb`) + Homebrew install docs
+2026-02-13 00:55: add minimal asciinema demo (README + docs)

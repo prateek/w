@@ -18,6 +18,8 @@ cargo test --manifest-path vendor/worktrunk/Cargo.toml --workspace --lib --bins
 # docs (zola)
 cd docs && zola build
 cd docs && zola serve
+# if `zola` isn't installed locally, use Docker:
+cd docs && docker run --rm -v "$(pwd)":/app -w /app ghcr.io/getzola/zola:v0.19.2 build
 ```
 
 ## Notes

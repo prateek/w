@@ -32,7 +32,7 @@ cd docs && docker run --rm -v "$(pwd)":/app -w /app ghcr.io/getzola/zola:v0.19.2
 - `cargo new` creates a nested git repo by default; prefer `cargo new --vcs none ...` for new crates.
 - If `cargo fmt`/`cargo metadata` fails with "multiple workspace roots found" after adding a path dependency on `vendor/worktrunk`, add `exclude = ["vendor/worktrunk"]` to the root workspace `Cargo.toml`.
 - Homebrew tap naming: `brew tap prateek/w` assumes a `prateek/homebrew-w` repo; this tap lives in `prateek/w`, so use `brew tap prateek/w https://github.com/prateek/w`.
-- PAL `codereview` currently errors unless you pass `--relevant-files` (comma-separated **absolute** paths).
+- PAL `codereview` currently errors unless you pass `--relevant-files` (and often `--files-checked`) as comma-separated **absolute** paths.
 - When passing PAL prompts via `bash .../pal ... --step "..."`, avoid backticks (`` `...` ``) in the shell string; they trigger command substitution. Prefer single quotes or escape backticks.
 - PAL `codereview` via `pal-mcporter` may return JSON (even with `-o markdown`) and sometimes produces empty/low-signal findings; treat as best-effort and do a quick manual review too.
 - PAL tool calls may time out; increase timeouts with `PAL_MCPORTER_TIMEOUT_MS` or `pal ... -t <ms>`.

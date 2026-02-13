@@ -1,7 +1,7 @@
 use anyhow::Context;
 use clap::{Parser, Subcommand, ValueEnum};
 use std::collections::HashSet;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use worktrunk::{
     config::UserConfig,
     git::Repository,
@@ -10,6 +10,8 @@ use worktrunk::{
         remove as worktrunk_remove, switch as worktrunk_switch,
     },
 };
+
+mod repo;
 
 #[derive(Parser, Debug)]
 #[command(
@@ -20,6 +22,9 @@ use worktrunk::{
     arg_required_else_help = true
 )]
 struct Cli {
+    /// Operate on a repository at the given path (like `git -C`).
+    #[arg(short = 'C', long = "repo", global = true, value_name = "PATH")]
+    repo_dir: Option<PathBuf>,
     #[command(subcommand)]
     command: Command,
 }
@@ -66,10 +71,64 @@ enum Command {
     },
     /// Remove stale worktree directories under the configured worktree root.
     Prune,
+    /// Multi-repo helpers (indexing and selection).
+    Repo {
+        #[command(subcommand)]
+        command: RepoCommand,
+    },
     /// Shell integration helpers.
     Shell {
         #[command(subcommand)]
         command: ShellCommand,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+enum RepoCommand {
+    /// Build/print the repository index.
+    Index {
+        /// Path to `w` config TOML (defaults to `~/.config/w/config.toml`).
+        #[arg(long)]
+        config: Option<PathBuf>,
+        /// Root directory to scan for git repositories (may be repeated).
+        #[arg(long = "root", value_name = "PATH")]
+        roots: Vec<PathBuf>,
+        /// Maximum directory depth to search under each root.
+        #[arg(long)]
+        max_depth: Option<usize>,
+        /// Cache path for the repo index.
+        #[arg(long)]
+        cache_path: Option<PathBuf>,
+        /// Read from the cache only (do not scan).
+        #[arg(long)]
+        cached: bool,
+        /// Output format.
+        #[arg(long, value_enum, default_value_t = RepoIndexFormat::Json)]
+        format: RepoIndexFormat,
+    },
+    /// Select a repository and print its path.
+    Pick {
+        /// Path to `w` config TOML (defaults to `~/.config/w/config.toml`).
+        #[arg(long)]
+        config: Option<PathBuf>,
+        /// Root directory to scan for git repositories (may be repeated).
+        #[arg(long = "root", value_name = "PATH")]
+        roots: Vec<PathBuf>,
+        /// Maximum directory depth to search under each root.
+        #[arg(long)]
+        max_depth: Option<usize>,
+        /// Cache path for the repo index.
+        #[arg(long)]
+        cache_path: Option<PathBuf>,
+        /// Read from the cache only (do not scan).
+        #[arg(long, conflicts_with = "refresh")]
+        cached: bool,
+        /// Force a rescan and refresh the cache.
+        #[arg(long, conflicts_with = "cached")]
+        refresh: bool,
+        /// Non-interactively select the first match (substring match on path or project identifier).
+        #[arg(long)]
+        filter: Option<String>,
     },
 }
 
@@ -87,19 +146,25 @@ enum Shell {
     Pwsh,
 }
 
+#[derive(ValueEnum, Clone, Debug)]
+enum RepoIndexFormat {
+    Json,
+    Tsv,
+}
+
 fn main() -> anyhow::Result<()> {
-    let cli = Cli::parse();
-    match cli.command {
+    let Cli { repo_dir, command } = Cli::parse();
+    match command {
         Command::New {
             branch,
             base,
             clobber,
         } => {
-            let path = cmd_new(branch, base, clobber)?;
+            let path = cmd_new(repo_dir.as_deref(), branch, base, clobber)?;
             println!("{}", path.display());
         }
         Command::Cd { branch } => {
-            let path = cmd_cd(branch)?;
+            let path = cmd_cd(repo_dir.as_deref(), branch)?;
             println!("{}", path.display());
         }
         Command::Run {
@@ -108,18 +173,83 @@ fn main() -> anyhow::Result<()> {
             clobber,
             cmd,
         } => {
-            let exit_code = cmd_run(branch, base, clobber, cmd)?;
+            let exit_code = cmd_run(repo_dir.as_deref(), branch, base, clobber, cmd)?;
             std::process::exit(exit_code);
         }
         Command::Rm { branch, force } => {
-            let removed_path = cmd_rm(branch, force)?;
+            let removed_path = cmd_rm(repo_dir.as_deref(), branch, force)?;
             println!("{}", removed_path.display());
         }
         Command::Prune => {
-            for path in cmd_prune()? {
+            for path in cmd_prune(repo_dir.as_deref())? {
                 println!("{}", path.display());
             }
         }
+        Command::Repo { command } => match command {
+            RepoCommand::Index {
+                config,
+                roots,
+                max_depth,
+                cache_path,
+                cached,
+                format,
+            } => {
+                let cache_path = cache_path.unwrap_or(repo::default_cache_path()?);
+
+                let index = if cached {
+                    repo::read_repo_index_cache(&cache_path)?
+                } else {
+                    let (roots, max_depth) =
+                        repo_roots_and_depth(config.as_deref(), roots, max_depth)?;
+                    let index = repo::build_repo_index(&roots, max_depth)?;
+                    repo::write_repo_index_cache(&cache_path, &index)?;
+                    index
+                };
+
+                match format {
+                    RepoIndexFormat::Json => {
+                        println!("{}", serde_json::to_string_pretty(&index)?);
+                    }
+                    RepoIndexFormat::Tsv => {
+                        for repo in index.repos {
+                            println!("{}\t{}", repo.project_identifier, repo.path);
+                        }
+                    }
+                }
+            }
+            RepoCommand::Pick {
+                config,
+                roots,
+                max_depth,
+                cache_path,
+                cached,
+                refresh,
+                filter,
+            } => {
+                let cache_path = cache_path.unwrap_or(repo::default_cache_path()?);
+
+                let index = if cached {
+                    repo::read_repo_index_cache(&cache_path)?
+                } else if refresh || !cache_path.exists() {
+                    let (roots, max_depth) =
+                        repo_roots_and_depth(config.as_deref(), roots, max_depth)?;
+                    let index = repo::build_repo_index(&roots, max_depth)?;
+                    repo::write_repo_index_cache(&cache_path, &index)?;
+                    index
+                } else {
+                    repo::read_repo_index_cache(&cache_path)?
+                };
+
+                let selected = if let Some(filter) = filter {
+                    repo::select_repo_by_filter(&index, &filter)
+                        .ok_or_else(|| anyhow::anyhow!("no repository matched filter: {filter}"))?
+                } else {
+                    repo::pick_repo_interactive(&index)?.context("no repository selected")?
+                };
+
+                println!("{}", selected.display());
+            }
+        },
         Command::Shell {
             command: ShellCommand::Init { shell },
         } => {
@@ -130,8 +260,13 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn cmd_new(branch: String, base: Option<String>, clobber: bool) -> anyhow::Result<PathBuf> {
-    let (repo, config) = current_repo_and_config()?;
+fn cmd_new(
+    repo_dir: Option<&Path>,
+    branch: String,
+    base: Option<String>,
+    clobber: bool,
+) -> anyhow::Result<PathBuf> {
+    let (repo, config) = current_repo_and_config(repo_dir)?;
 
     let branch = repo
         .resolve_worktree_name(&branch)
@@ -155,8 +290,8 @@ fn cmd_new(branch: String, base: Option<String>, clobber: bool) -> anyhow::Resul
     Ok(outcome.path)
 }
 
-fn cmd_cd(branch: String) -> anyhow::Result<PathBuf> {
-    let (repo, config) = current_repo_and_config()?;
+fn cmd_cd(repo_dir: Option<&Path>, branch: String) -> anyhow::Result<PathBuf> {
+    let (repo, config) = current_repo_and_config(repo_dir)?;
 
     let outcome = worktrunk_switch(
         &repo,
@@ -173,12 +308,13 @@ fn cmd_cd(branch: String) -> anyhow::Result<PathBuf> {
 }
 
 fn cmd_run(
+    repo_dir: Option<&Path>,
     branch: String,
     base: Option<String>,
     clobber: bool,
     cmd: Vec<String>,
 ) -> anyhow::Result<i32> {
-    let (repo, config) = current_repo_and_config()?;
+    let (repo, config) = current_repo_and_config(repo_dir)?;
 
     let (program, args) = cmd.split_first().context("command must be non-empty")?;
 
@@ -210,8 +346,8 @@ fn cmd_run(
     Ok(status.code().unwrap_or(1))
 }
 
-fn cmd_rm(branch: String, force: bool) -> anyhow::Result<PathBuf> {
-    let (repo, config) = current_repo_and_config()?;
+fn cmd_rm(repo_dir: Option<&Path>, branch: String, force: bool) -> anyhow::Result<PathBuf> {
+    let (repo, config) = current_repo_and_config(repo_dir)?;
 
     let branch = repo
         .resolve_worktree_name(&branch)
@@ -234,14 +370,17 @@ fn cmd_rm(branch: String, force: bool) -> anyhow::Result<PathBuf> {
     Ok(outcome.removed_worktree_path.unwrap_or(existing_path))
 }
 
-fn current_repo_and_config() -> anyhow::Result<(Repository, UserConfig)> {
-    let repo = Repository::current().context("failed to discover git repo")?;
+fn current_repo_and_config(repo_dir: Option<&Path>) -> anyhow::Result<(Repository, UserConfig)> {
+    let repo = match repo_dir {
+        Some(dir) => Repository::at(dir).context("failed to discover git repo")?,
+        None => Repository::current().context("failed to discover git repo")?,
+    };
     let config = UserConfig::load().context("failed to load Worktrunk config")?;
     Ok((repo, config))
 }
 
-fn cmd_prune() -> anyhow::Result<Vec<PathBuf>> {
-    let (repo, config) = current_repo_and_config()?;
+fn cmd_prune(repo_dir: Option<&Path>) -> anyhow::Result<Vec<PathBuf>> {
+    let (repo, config) = current_repo_and_config(repo_dir)?;
 
     let root = worktree_root_dir(&repo, &config)?;
     if !root.exists() {
@@ -289,6 +428,32 @@ fn cmd_prune() -> anyhow::Result<Vec<PathBuf>> {
     }
 
     Ok(removed)
+}
+
+fn repo_roots_and_depth(
+    config_path: Option<&Path>,
+    roots: Vec<PathBuf>,
+    max_depth: Option<usize>,
+) -> anyhow::Result<(Vec<PathBuf>, usize)> {
+    if !roots.is_empty() {
+        let max_depth = max_depth.unwrap_or(6);
+        return Ok((roots, max_depth));
+    }
+
+    let config_path = config_path
+        .map(PathBuf::from)
+        .unwrap_or(repo::default_config_path()?);
+    let config = repo::load_config(&config_path)?;
+
+    let roots = config.repo_roots;
+    if roots.is_empty() {
+        anyhow::bail!(
+            "no repo roots configured (set repo_roots in {})",
+            config_path.display()
+        );
+    }
+
+    Ok((roots, max_depth.unwrap_or(config.max_depth)))
 }
 
 fn worktree_root_dir(repo: &Repository, config: &UserConfig) -> anyhow::Result<PathBuf> {
@@ -509,6 +674,7 @@ mod tests {
     fn shell_init_parses() {
         let cli = Cli::try_parse_from(["w", "shell", "init", "zsh"]).unwrap();
         let Cli {
+            repo_dir: _,
             command:
                 Command::Shell {
                     command: ShellCommand::Init { shell },
@@ -525,6 +691,7 @@ mod tests {
     fn new_parses() {
         let cli = Cli::try_parse_from(["w", "new", "feature"]).unwrap();
         let Cli {
+            repo_dir: _,
             command:
                 Command::New {
                     branch,
@@ -545,6 +712,7 @@ mod tests {
     fn cd_parses() {
         let cli = Cli::try_parse_from(["w", "cd", "feature"]).unwrap();
         let Cli {
+            repo_dir: _,
             command: Command::Cd { branch },
         } = cli
         else {
@@ -558,6 +726,7 @@ mod tests {
     fn run_parses() {
         let cli = Cli::try_parse_from(["w", "run", "feature", "--", "echo", "hi"]).unwrap();
         let Cli {
+            repo_dir: _,
             command:
                 Command::Run {
                     branch,
@@ -580,6 +749,7 @@ mod tests {
     fn rm_parses() {
         let cli = Cli::try_parse_from(["w", "rm", "feature", "--force"]).unwrap();
         let Cli {
+            repo_dir: _,
             command: Command::Rm { branch, force },
         } = cli
         else {
@@ -594,6 +764,7 @@ mod tests {
     fn prune_parses() {
         let cli = Cli::try_parse_from(["w", "prune"]).unwrap();
         let Cli {
+            repo_dir: _,
             command: Command::Prune,
         } = cli
         else {

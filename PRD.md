@@ -354,6 +354,13 @@ Acceptance criteria:
 - `w` builds (even if minimal “help only”) on all platforms in CI.
 - `main` is protected by required checks.
 
+Progress (as of 2026-02-12):
+
+- ✅ Bootstrapped Rust workspace with a minimal `w` CLI (`crates/w/`) and local checks (`cargo fmt/clippy/test`).
+- ✅ Added GitHub Actions CI to run fmt/clippy/tests for `w` on macOS/Linux/Windows.
+- ✅ Added initial root docs: `README.md` and `AGENTS.md`.
+- ⏳ Remaining for M0: vendor Worktrunk under `vendor/worktrunk/`, add `NOTICE` + `CONTRIBUTING.md`, scaffold docs site + Homebrew tap, and add a basic demo.
+
 ### M1: Project Identity in Templates (Worktrunk patch + tests)
 
 Deliverables:

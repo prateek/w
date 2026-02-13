@@ -1,0 +1,20 @@
+# `w`
+
+Experimental multi-repo wrapper for [Worktrunk](https://github.com/max-sixty/worktrunk).
+
+This repo is a downstream sandbox for exploring a native Rust `w` UX while keeping upstream
+Worktrunk (`wt`) focused on single-repo workflows.
+
+## Status
+
+Early bootstrap. See `PRD.md` for goals and milestones.
+
+## Development
+
+Run checks for `w`:
+
+```bash
+cargo fmt --check
+cargo clippy --workspace -- -D warnings
+cargo test --workspace
+```

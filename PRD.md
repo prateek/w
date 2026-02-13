@@ -362,7 +362,8 @@ Progress (as of 2026-02-13):
 - ✅ Added root docs: `NOTICE` and `CONTRIBUTING.md`.
 - ✅ Vendored upstream Worktrunk under `vendor/worktrunk/` via `git subtree` (currently `v0.23.2`) and added `vendor/worktrunk/UPSTREAM.md`.
 - ✅ CI now runs fmt/clippy + unit tests for vendored Worktrunk (in addition to `w` checks).
-- ⏳ Remaining for M0: scaffold docs site + Homebrew tap, and add a basic demo.
+- ✅ Added a minimal Zola docs site scaffold (`docs/`) with CI build checks and a GitHub Pages deploy workflow.
+- ⏳ Remaining for M0: Homebrew tap scaffolding, and add a basic demo.
 
 ### M1: Project Identity in Templates (Worktrunk patch + tests)
 

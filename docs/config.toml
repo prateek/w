@@ -1,0 +1,10 @@
+base_url = "https://prateek.github.io/w"
+title = "w"
+description = "Experimental multi-repo wrapper for Worktrunk."
+default_language = "en"
+
+build_search_index = false
+compile_sass = false
+generate_feeds = false
+minify_html = true
+

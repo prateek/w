@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="{{ lang }}">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>
+      {% block title %}{{ config.title }}{% endblock title %}
+    </title>
+    <meta name="description" content="{{ config.description }}" />
+    <link rel="stylesheet" href="{{ get_url(path='style.css') }}" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container">
+        <a class="site-title" href="{{ get_url(path='/') }}">{{ config.title }}</a>
+        <nav class="nav">
+          <a href="{{ get_url(path='@/attribution.md') }}">Attribution</a>
+          <a href="https://github.com/prateek/w">GitHub</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container">
+      {% block content %}{% endblock content %}
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <div class="muted">Experimental, upstream-first, and credit-forward.</div>
+      </div>
+    </footer>
+  </body>
+</html>
+

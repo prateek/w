@@ -39,3 +39,18 @@ jobs:
 
       - name: Test (worktrunk)
         run: cargo test --manifest-path vendor/worktrunk/Cargo.toml --workspace --lib --bins
+
+  docs:
+    name: docs (zola)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install zola
+        uses: taiki-e/install-action@v2
+        with:
+          tool: zola
+
+      - name: Build
+        run: zola build
+        working-directory: docs

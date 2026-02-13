@@ -18,3 +18,12 @@ cargo fmt --check
 cargo clippy --workspace -- -D warnings
 cargo test --workspace
 ```
+
+## Docs
+
+This repo includes a minimal docs site built with Zola:
+
+```bash
+cd docs
+zola serve
+```

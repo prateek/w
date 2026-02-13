@@ -364,7 +364,7 @@ Progress (as of 2026-02-13):
 - ✅ CI now runs fmt/clippy + unit tests for vendored Worktrunk (in addition to `w` checks).
 - ✅ Added a minimal Zola docs site scaffold (`docs/`) with CI build checks and a GitHub Pages deploy workflow.
 - ✅ Added Homebrew tap scaffolding (`Formula/w.rb`) and documented Homebrew install steps.
-- ✅ Added a minimal asciinema demo (README + docs).
+- ✅ Added and refreshed the minimal asciinema demo (README + docs) to match the current CLI and shell integration output.
 
 ### M1: Project Identity in Templates (Worktrunk patch + tests)
 

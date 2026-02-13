@@ -15,3 +15,4 @@
 2026-02-13 03:55: M3: implement `w shell init` for zsh/bash/fish/pwsh + smoke tests
 2026-02-13 04:18: M4: add `w repo index` (JSON/TSV + cache) + `w repo pick` (skim/--filter) + global `-C/--repo` + integration tests
 2026-02-13 04:41: M5 (partial): add `w ls` (cross-repo worktree listing) with stable JSON/TSV output + integration tests
+2026-02-13 04:59: M5 (partial): add `w switch` (cross-repo picker via `skim` or `--filter`) + shell integration support + integration tests

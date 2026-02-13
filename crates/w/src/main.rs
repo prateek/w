@@ -2,6 +2,7 @@ use anyhow::Context;
 use clap::{Parser, Subcommand, ValueEnum};
 use serde::Serialize;
 use std::collections::HashSet;
+use std::io::{Cursor, IsTerminal};
 use std::path::{Path, PathBuf};
 use worktrunk::{
     config::UserConfig,
@@ -47,6 +48,33 @@ enum Command {
     Cd {
         /// Branch name (or Worktrunk symbols like "@", "-", "^").
         branch: String,
+    },
+    /// Switch to a worktree across repositories and print its path.
+    Switch {
+        /// Path to `w` config TOML (defaults to `~/.config/w/config.toml`).
+        #[arg(long)]
+        config: Option<PathBuf>,
+        /// Root directory to scan for git repositories (may be repeated).
+        #[arg(long = "root", value_name = "PATH")]
+        roots: Vec<PathBuf>,
+        /// Maximum directory depth to search under each root.
+        #[arg(long)]
+        max_depth: Option<usize>,
+        /// Cache path for the repo index.
+        #[arg(long)]
+        cache_path: Option<PathBuf>,
+        /// Read from the cache only (do not scan).
+        #[arg(long, conflicts_with = "refresh")]
+        cached: bool,
+        /// Force a rescan and refresh the cache.
+        #[arg(long, conflicts_with = "cached")]
+        refresh: bool,
+        /// Include prunable worktrees (directories deleted but git still tracks metadata).
+        #[arg(long)]
+        include_prunable: bool,
+        /// Non-interactively select the first match (substring match on project identifier, repo path, branch, or worktree path).
+        #[arg(long)]
+        filter: Option<String>,
     },
     /// Switch/create a worktree for a branch, then run a command in it.
     Run {
@@ -200,6 +228,31 @@ fn main() -> anyhow::Result<()> {
         }
         Command::Cd { branch } => {
             let path = cmd_cd(repo_dir.as_deref(), branch)?;
+            println!("{}", path.display());
+        }
+        Command::Switch {
+            config,
+            roots,
+            max_depth,
+            cache_path,
+            cached,
+            refresh,
+            include_prunable,
+            filter,
+        } => {
+            let path = cmd_switch(
+                repo_dir.as_deref(),
+                SwitchPickRequest {
+                    config_path: config,
+                    roots,
+                    max_depth,
+                    cache_path,
+                    cached,
+                    refresh,
+                    include_prunable,
+                    filter,
+                },
+            )?;
             println!("{}", path.display());
         }
         Command::Run {
@@ -400,6 +453,124 @@ fn cmd_cd(repo_dir: Option<&Path>, branch: String) -> anyhow::Result<PathBuf> {
     )?;
 
     Ok(outcome.path)
+}
+
+struct SwitchPickRequest {
+    config_path: Option<PathBuf>,
+    roots: Vec<PathBuf>,
+    max_depth: Option<usize>,
+    cache_path: Option<PathBuf>,
+    cached: bool,
+    refresh: bool,
+    include_prunable: bool,
+    filter: Option<String>,
+}
+
+fn cmd_switch(repo_dir: Option<&Path>, request: SwitchPickRequest) -> anyhow::Result<PathBuf> {
+    let SwitchPickRequest {
+        config_path,
+        roots,
+        max_depth,
+        cache_path,
+        cached,
+        refresh,
+        include_prunable,
+        filter,
+    } = request;
+
+    let output = cmd_ls(
+        repo_dir,
+        LsRequest {
+            config_path,
+            roots,
+            max_depth,
+            cache_path,
+            cached,
+            refresh,
+            include_prunable,
+        },
+    )?;
+
+    if !output.errors.is_empty() {
+        for err in &output.errors {
+            eprintln!("w switch: {}: {}", err.repo_path, err.error);
+        }
+    }
+
+    if output.worktrees.is_empty() {
+        anyhow::bail!("no worktrees found");
+    }
+
+    if let Some(filter) = filter {
+        let selected = select_worktree_by_filter(&output.worktrees, &filter)
+            .ok_or_else(|| anyhow::anyhow!("no worktree matched filter: {filter}"))?;
+        return Ok(PathBuf::from(&selected.path));
+    }
+
+    pick_worktree_interactive(&output.worktrees)?.context("no worktree selected")
+}
+
+fn select_worktree_by_filter<'a>(
+    worktrees: &'a [LsWorktree],
+    filter: &str,
+) -> Option<&'a LsWorktree> {
+    let needle = filter.to_lowercase();
+    worktrees.iter().find(|wt| {
+        wt.project_identifier.to_lowercase().contains(&needle)
+            || wt.repo_path.to_lowercase().contains(&needle)
+            || wt.path.to_lowercase().contains(&needle)
+            || wt
+                .branch
+                .as_deref()
+                .unwrap_or("")
+                .to_lowercase()
+                .contains(&needle)
+    })
+}
+
+fn pick_worktree_interactive(worktrees: &[LsWorktree]) -> anyhow::Result<Option<PathBuf>> {
+    if !std::io::stdin().is_terminal() {
+        anyhow::bail!(
+            "interactive picker requires a TTY (stdin); pass --filter for non-interactive selection"
+        );
+    }
+
+    use skim::prelude::*;
+
+    let options = SkimOptionsBuilder::default()
+        .height("50%".into())
+        .multi(false)
+        .prompt("worktree> ".into())
+        .build()
+        .context("failed to build skim options")?;
+
+    let input = worktrees
+        .iter()
+        .map(|wt| {
+            let branch =
+                wt.branch
+                    .as_deref()
+                    .unwrap_or(if wt.detached { "(detached)" } else { "" });
+            format!("{}\t{}\t{}", wt.project_identifier, branch, wt.path)
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    let items = SkimItemReader::default().of_bufread(Cursor::new(input));
+    let out = Skim::run_with(&options, Some(items)).map(|out| out.selected_items);
+    let Some(selected) = out.and_then(|items| items.into_iter().next()) else {
+        return Ok(None);
+    };
+
+    let line = selected.output();
+    let line = line.as_ref();
+    let path = line.split('\t').nth(2).unwrap_or(line).trim().to_string();
+
+    if path.is_empty() {
+        return Ok(None);
+    }
+
+    Ok(Some(PathBuf::from(path)))
 }
 
 fn cmd_run(
@@ -769,12 +940,12 @@ fn shell_init_snippet(shell: Shell) -> &'static str {
 #   eval "$(w shell init zsh)"
 #
 # Notes:
-# - Overrides the `w` shell function to allow `w cd`/`w new` to change the current directory.
+# - Overrides the `w` shell function to allow `w cd`/`w new`/`w switch` to change the current directory.
 # - Use `command w ...` to bypass the function (call the binary directly).
 
 w() {
   case "$1" in
-    cd|new)
+    cd|new|switch)
       for arg in "$@"; do
         if [[ "$arg" == "-h" || "$arg" == "--help" ]]; then
           command w "$@"
@@ -800,12 +971,12 @@ w() {
 #   eval "$(w shell init bash)"
 #
 # Notes:
-# - Overrides the `w` shell function to allow `w cd`/`w new` to change the current directory.
+# - Overrides the `w` shell function to allow `w cd`/`w new`/`w switch` to change the current directory.
 # - Use `command w ...` to bypass the function (call the binary directly).
 
 w() {
   case "$1" in
-    cd|new)
+    cd|new|switch)
       for arg in "$@"; do
         if [[ "$arg" == "-h" || "$arg" == "--help" ]]; then
           command w "$@"
@@ -831,13 +1002,13 @@ w() {
 #   w shell init fish | source
 #
 # Notes:
-# - Overrides the `w` function to allow `w cd`/`w new` to change the current directory.
+# - Overrides the `w` function to allow `w cd`/`w new`/`w switch` to change the current directory.
 # - Use `command w ...` to bypass the function (call the binary directly).
 
-function w --wraps w --description 'w wrapper with cd/new'
+function w --wraps w --description 'w wrapper with cd/new/switch'
     if test (count $argv) -ge 1
         set -l sub $argv[1]
-        if test "$sub" = "cd" -o "$sub" = "new"
+        if test "$sub" = "cd" -o "$sub" = "new" -o "$sub" = "switch"
             for arg in $argv
                 if test "$arg" = "-h" -o "$arg" = "--help"
                     command w $argv
@@ -865,7 +1036,7 @@ end"#
 #   Invoke-Expression (& w shell init pwsh)
 #
 # Notes:
-# - Defines a `w` function to allow `w cd`/`w new` to change the current directory.
+# - Defines a `w` function to allow `w cd`/`w new`/`w switch` to change the current directory.
 # - The function shells out to the `w` application (not itself) to avoid recursion.
 
 $script:__w_bin = (Get-Command w -CommandType Application).Source
@@ -876,7 +1047,7 @@ function w {
         [string[]]$wArgs
     )
 
-    if ($wArgs.Count -ge 1 -and ($wArgs[0] -eq 'cd' -or $wArgs[0] -eq 'new')) {
+    if ($wArgs.Count -ge 1 -and ($wArgs[0] -eq 'cd' -or $wArgs[0] -eq 'new' -or $wArgs[0] -eq 'switch')) {
         if ($wArgs -contains '-h' -or $wArgs -contains '--help') {
             & $script:__w_bin @wArgs
             return
@@ -967,6 +1138,20 @@ mod tests {
         };
 
         assert_eq!(branch, "feature");
+    }
+
+    #[test]
+    fn switch_parses() {
+        let cli = Cli::try_parse_from(["w", "switch", "--filter", "feature"]).unwrap();
+        let Cli {
+            repo_dir: _,
+            command: Command::Switch { filter, .. },
+        } = cli
+        else {
+            panic!("expected w switch");
+        };
+
+        assert_eq!(filter.as_deref(), Some("feature"));
     }
 
     #[test]

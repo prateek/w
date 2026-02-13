@@ -44,4 +44,5 @@ cd docs && docker run --rm -v "$(pwd)":/app -w /app ghcr.io/getzola/zola:v0.19.2
 - `codex review --uncommitted` currently errors if you pass a custom prompt; run it without a prompt (or use `--base`/`--commit`).
 - To kill a hung `codex review`: `ps -eo pid,command | rg "codex .* review" | head` then `kill <pid>`.
 - `codex review`: `--uncommitted` is mutually exclusive with `--base` (use one or the other).
+- Shell integration captures `w` stdout for `cd`-like commands; interactive `skim` pickers should not require stdout being a TTY (prefer checking stdin TTY / using `/dev/tty`) so commands like `w switch` work under command substitution.
 - This environment may set `NO_COLOR=1`; Worktrunk snapshot tests expect ANSI output, so run with `NO_COLOR= CLICOLOR_FORCE=1` if you need to execute them.

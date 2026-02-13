@@ -150,12 +150,12 @@ class W < Formula
       return
     end
 
-    bin.install "#{pkg_dir}/w"
-    bin.install "#{pkg_dir}/wt"
+    bin.install "#{{pkg_dir}}/w"
+    bin.install "#{{pkg_dir}}/wt"
   end
 
   test do
-    assert_match "zsh", shell_output("#{bin}/w shell init zsh")
+    assert_match "zsh", shell_output("#{{bin}}/w shell init zsh")
   end
 end
 '''

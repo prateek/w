@@ -1,0 +1,258 @@
+name: ci
+
+# Runner versions are pinned to avoid surprise breaking changes from -latest migrations.
+# The claude-renovate workflow checks weekly for updates and creates PRs.
+# - windows-2022: Pinned because windows-2025 lacks D: drive (actions/runner-images#12677)
+# - ubuntu-24.04, macos-15: Pinned to current -latest equivalents
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  # Authenticate lychee requests to GitHub to avoid rate limiting
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+    - name: 📂 Checkout code
+      uses: actions/checkout@v6
+
+    - name: 💰 Cache
+      uses: Swatinem/rust-cache@v2
+
+    - name: Install lychee
+      uses: baptiste0928/cargo-install@v3
+      with:
+        crate: lychee
+
+    - name: 🔍 Pre-commit hooks
+      uses: pre-commit/action@v3.0.1
+
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            name: linux
+          - os: macos-15
+            name: macos
+          - os: windows-2022
+            name: windows
+    name: test (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: 📂 Checkout code
+      uses: actions/checkout@v6
+
+    - name: Install cargo-insta
+      uses: baptiste0928/cargo-install@v3
+      with:
+        crate: cargo-insta
+
+    - name: Install cargo-nextest
+      uses: baptiste0928/cargo-install@v3
+      with:
+        crate: cargo-nextest
+
+    - name: 💰 Cache
+      uses: Swatinem/rust-cache@v2
+
+    - name: Install shells (zsh, fish) - Ubuntu
+      if: runner.os == 'Linux'
+      uses: awalsh128/cache-apt-pkgs-action@latest
+      with:
+        packages: zsh fish
+        version: 1.0
+
+    - name: Install shells (bash, zsh, fish) - macOS
+      if: runner.os == 'macOS'
+      run: |
+        brew install fish
+        # bash and zsh are pre-installed on macOS
+
+    - name: Install shells - Windows
+      if: runner.os == 'Windows'
+      run: |
+        # Git Bash is pre-installed on GitHub Actions Windows runners
+        # Fish and zsh are not commonly available on native Windows (require WSL/MSYS2)
+        # CI will test with bash only on Windows (tests skip unavailable shells)
+        echo "Using Git Bash for Windows tests"
+      shell: pwsh
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v7.3.0
+      with:
+        # Silence "no file matched" warning; uv is only used to install pre-commit
+        cache-dependency-glob: ".pre-commit-config.yaml"
+
+    - name: Install pre-commit
+      run: uv tool install pre-commit
+
+    # lychee-system hook requires lychee binary; skip on Windows via SKIP env var in wt.toml
+    - name: Install lychee
+      if: runner.os != 'Windows'
+      uses: baptiste0928/cargo-install@v3
+      with:
+        crate: lychee
+
+    - name: Install wt
+      uses: baptiste0928/cargo-install@v3
+      with:
+        crate: worktrunk
+
+    - name: 🧪 Pre-merge hooks
+      run: wt hook pre-merge --yes
+
+    - name: 📊 Upload test timing
+      if: always()
+      uses: actions/upload-artifact@v6
+      with:
+        name: junit-${{ matrix.name }}
+        path: target/nextest/default/junit.xml
+
+    - name: 📊 Upload test results to Codecov
+      if: ${{ !cancelled() && github.repository_owner == 'max-sixty' }}
+      uses: codecov/test-results-action@v1.2.1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: target/nextest/default/junit.xml
+
+  # Check if Cargo files changed (for conditional jobs below)
+  changes:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      cargo: ${{ steps.filter.outputs.cargo }}
+    steps:
+    - name: 📂 Checkout code
+      uses: actions/checkout@v6
+    - uses: dorny/paths-filter@v3
+      id: filter
+      with:
+        filters: |
+          cargo:
+            - 'Cargo.toml'
+            - 'Cargo.lock'
+            - 'rust-toolchain.toml'
+
+  msrv:
+    runs-on: ubuntu-24.04
+    needs: changes
+    if: needs.changes.outputs.cargo == 'true' || github.event_name == 'workflow_dispatch'
+    steps:
+    - name: 📂 Checkout code
+      uses: actions/checkout@v6
+
+    - name: 💰 Cache
+      uses: Swatinem/rust-cache@v2
+
+    - uses: baptiste0928/cargo-install@v3
+      with:
+        crate: cargo-msrv
+
+    - name: Verify minimum rust version
+      run: cargo msrv verify
+
+  check-unused-dependencies:
+    runs-on: ubuntu-24.04
+    needs: changes
+    if: needs.changes.outputs.cargo == 'true' || github.event_name == 'workflow_dispatch'
+    steps:
+    - name: 📂 Checkout code
+      uses: actions/checkout@v6
+
+    # cargo-udeps requires nightly; update date periodically
+    - run: rustup override set nightly-2026-02-01
+
+    - name: 💰 Cache
+      uses: Swatinem/rust-cache@v2
+
+    - uses: baptiste0928/cargo-install@v3
+      with:
+        crate: cargo-udeps
+
+    - uses: clechasseur/rs-cargo@v4.0.1
+      with:
+        command: udeps
+        args: --all-targets
+
+  benchmarks:
+    runs-on: ubuntu-24.04
+    needs: changes
+    if: needs.changes.outputs.cargo == 'true' || github.event_name == 'workflow_dispatch'
+    steps:
+    - name: 📂 Checkout code
+      uses: actions/checkout@v6
+
+    - name: 💰 Cache
+      uses: Swatinem/rust-cache@v2
+
+    - name: Install shells (zsh, fish)
+      uses: awalsh128/cache-apt-pkgs-action@latest
+      with:
+        packages: zsh fish
+        version: 1.0
+
+    - name: 💰 Rust repo cache
+      uses: actions/cache@v5
+      with:
+        path: target/bench-repos
+        key: bench-repos-rust-${{ runner.os }}
+
+    - name: 📊 Run benchmarks
+      run: cargo bench
+
+  code-coverage:
+    runs-on: ubuntu-24.04
+    steps:
+    - name: 📂 Checkout code
+      uses: actions/checkout@v6
+
+    - uses: baptiste0928/cargo-install@v3
+      with:
+        crate: cargo-llvm-cov
+
+    - name: 💰 Cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        save-if: ${{ github.ref == 'refs/heads/main' }}
+
+    - name: Install shells (zsh, fish)
+      uses: awalsh128/cache-apt-pkgs-action@latest
+      with:
+        packages: zsh fish
+        version: 1.0
+
+    # Ensure nothing remains from caching
+    - run: cargo llvm-cov clean --workspace
+
+    - name: 📊 Generate coverage report
+      env:
+        NEXTEST_NO_INPUT_HANDLER: 1
+      run: cargo llvm-cov --features shell-integration-tests --cobertura --output-path=cobertura.xml
+
+    - name: Upload code coverage results
+      uses: actions/upload-artifact@v6
+      with:
+        name: code-coverage-report
+        path: cobertura.xml
+
+    - name: Upload to codecov.io
+      # Codecov action raises errors on forks; allow running on PRs to main repo
+      if: github.repository_owner == 'max-sixty'
+      uses: codecov/codecov-action@v5.5.2
+      with:
+        files: cobertura.xml
+        fail_ci_if_error: true
+        token: ${{ secrets.CODECOV_TOKEN }}

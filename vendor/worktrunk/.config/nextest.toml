@@ -1,0 +1,26 @@
+# IMPORTANT: Tests that spawn interactive shells (zsh -ic, bash -ic) cause
+# nextest's InputHandler to receive SIGTTOU when restoring terminal settings,
+# suspending the test process. See https://github.com/nextest-rs/nextest/issues/2878
+#
+# Solution: Run with NEXTEST_NO_INPUT_HANDLER=1 or use the pre-merge hook which
+# sets this automatically:
+#
+#   NEXTEST_NO_INPUT_HANDLER=1 cargo nextest run --features shell-integration-tests
+#
+# Or use `cargo test` which doesn't have this issue:
+#
+#   cargo test --test integration --features shell-integration-tests
+
+[profile.default]
+slow-timeout = { period = "60s", terminate-after = 1 }
+status-level = "fail"
+success-output = "never"
+
+[profile.default.junit]
+path = "junit.xml"
+
+# The source_flag test runs `cargo run` inside a PTY, which can take longer than
+# 60s when cargo needs to check/compile dependencies on slow CI runners.
+[[profile.default.overrides]]
+filter = 'test(/test_source_flag_forwards_errors/)'
+slow-timeout = { period = "180s", terminate-after = 1 }

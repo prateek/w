@@ -1,0 +1,48 @@
+# worktrunk shell integration for fish
+#
+# This is the full function definition, output by `{{ cmd }} config shell init fish`.
+# It's sourced at runtime by the wrapper in ~/.config/fish/functions/{{ cmd }}.fish.
+
+# Override {{ cmd }} command with file-based directive passing.
+# Creates a temp file, passes path via WORKTRUNK_DIRECTIVE_FILE, evals it after.
+# WORKTRUNK_BIN can override the binary path (for testing dev builds).
+#
+# Note: We use `eval (cat ... | string collect)` instead of `source` because:
+# 1. fish's `source` doesn't propagate exit codes to the parent function
+# 2. `eval (cat ...)` without `string collect` splits on newlines, breaking multiline directives
+# With `string collect`, we get proper exit code propagation for cd and other directives.
+function {{ cmd }}
+    set -l use_source false
+    set -l args
+
+    for arg in $argv
+        if test "$arg" = "--source"; set use_source true; else; set -a args $arg; end
+    end
+
+    test -n "$WORKTRUNK_BIN"; or set -l WORKTRUNK_BIN (type -P {{ cmd }} 2>/dev/null)
+    if test -z "$WORKTRUNK_BIN"
+        echo "{{ cmd }}: command not found" >&2
+        return 127
+    end
+    set -l directive_file (mktemp)
+
+    # --source: use cargo run (builds from source)
+    if test $use_source = true
+        WORKTRUNK_DIRECTIVE_FILE=$directive_file cargo run --bin {{ cmd }} --quiet -- $args
+    else
+        WORKTRUNK_DIRECTIVE_FILE=$directive_file command $WORKTRUNK_BIN $args
+    end
+    set -l exit_code $status
+
+    if test -s "$directive_file"
+        eval (cat "$directive_file" | string collect)
+        if test $exit_code -eq 0
+            set exit_code $status
+        end
+    end
+
+    rm -f "$directive_file"
+    return $exit_code
+end
+
+# Completions are in ~/.config/fish/completions/{{ cmd }}.fish (installed by `{{ cmd }} config shell install`)

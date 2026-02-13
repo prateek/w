@@ -1,0 +1,74 @@
+---
+source: tests/integration_tests/help.rs
+info:
+  program: wt
+  args:
+    - config
+    - state
+    - ci-status
+    - "--help"
+  env:
+    CLICOLOR_FORCE: "1"
+    COLUMNS: "500"
+    LANG: C
+    LC_ALL: C
+    PSModulePath: ""
+    RUST_LOG: warn
+    SHELL: ""
+    TERM: alacritty
+    WORKTRUNK_CONFIG_PATH: /nonexistent/test/config.toml
+    WORKTRUNK_TEST_CLAUDE_INSTALLED: "0"
+    WORKTRUNK_TEST_POWERSHELL_ENV: "0"
+    WORKTRUNK_TEST_SKIP_URL_HEALTH_CHECK: "1"
+    WT_TEST_DELAYED_STREAM_MS: "-1"
+    WT_TEST_EPOCH: "1735776000"
+---
+success: true
+exit_code: 0
+----- stdout -----
+
+----- stderr -----
+wt config state ci-status - CI status cache
+
+Usage: [1m[36mwt config state ci-status[0m [36m[OPTIONS][0m [36m[COMMAND][0m
+
+[1m[32mCommands:[0m
+  [1m[36mget[0m    Get CI status for a branch
+  [1m[36mclear[0m  Clear CI status cache
+
+[1m[32mOptions:[0m
+  [1m[36m-h[0m, [1m[36m--help[0m
+          Print help (see a summary with '-h')
+
+[1m[32mGlobal Options:[0m
+  [1m[36m-C[0m[36m [0m[36m<path>[0m
+          Working directory for this command
+
+      [1m[36m--config[0m[36m [0m[36m<path>[0m
+          User config file path
+
+  [1m[36m-v[0m, [1m[36m--verbose[0m[36m...[0m
+          Verbose output (-v: hooks, templates; -vv: debug report)
+
+Caches GitHub/GitLab CI status for display in [2mwt list[0m.
+
+Requires [2mgh[0m (GitHub) or [2mglab[0m (GitLab) CLI, authenticated. Platform auto-detects from remote URL; override with [2mci.platform = "github"[0m in [2m.config/wt.toml[0m for self-hosted instances.
+
+Checks open PRs/MRs first, then branch pipelines for branches with upstream. Local-only branches (no remote tracking) show blank.
+
+Results cache for 30-60 seconds. Indicators dim when local changes haven't been pushed.
+
+[1m[32mStatus values[0m
+
+    Status                   Meaning                 
+   ───────── ─────────────────────────────────────── 
+   passed    All checks passed                       
+   running   Checks in progress                      
+   failed    Checks failed                           
+   conflicts PR has merge conflicts                  
+   no-ci     No checks configured                    
+   error     Fetch error (rate limit, network, auth) 
+
+See [2mwt list[0m CI status for display symbols and colors.
+
+Without a subcommand, runs [2mget[0m for the current branch. Use [2mclear[0m to reset cache for a branch or [2mclear --all[0m to reset all.

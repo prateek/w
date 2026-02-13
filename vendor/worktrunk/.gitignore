@@ -1,0 +1,18 @@
+/target
+docs/static/assets/
+docs/demos/out/
+
+# Lychee link checker cache
+.lycheecache
+test-concurrent.sh
+
+# Insta snapshot test artifacts
+*.snap.new
+*.snap.pending
+logo-variant-*.png
+test-results/
+
+# Nix build outputs
+/result
+/result-*
+.fonts

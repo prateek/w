@@ -20,6 +20,7 @@ cd docs && zola build
 cd docs && zola serve
 # if `zola` isn't installed locally, use Docker:
 cd docs && docker run --rm -v "$(pwd)":/app -w /app ghcr.io/getzola/zola:v0.19.2 build
+cd docs && docker run --rm -p 1111:1111 -v "$(pwd)":/app -w /app ghcr.io/getzola/zola:v0.19.2 serve --interface 0.0.0.0 --port 1111
 ```
 
 ## Notes

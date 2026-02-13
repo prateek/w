@@ -563,6 +563,7 @@ Progress (as of 2026-02-13):
 - ✅ Release workflow now auto-updates `Formula/w.rb` on `main` to point at the tagged release artifacts (with sha256), enabling stable Homebrew installs after a release.
 - ✅ Expanded the docs site with basic user docs (Install + Quickstart) and added them to the top nav.
 - ✅ Added a `Commands` page (CLI reference) and linked it in the top nav.
+- ✅ Added an `LLMs / Codex` docs page describing a responsible, end-to-end contribution workflow (and linked it from the docs nav + README).
 
 ## 12) Risks and Mitigations
 

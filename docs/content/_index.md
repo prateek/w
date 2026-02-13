@@ -10,6 +10,7 @@ Start here:
 - [Install](@/install.md)
 - [Quickstart](@/quickstart.md)
 - [Commands](@/commands.md)
+- [LLMs / Codex](@/llms.md)
 
 See the [demo](@/demo.md).
 

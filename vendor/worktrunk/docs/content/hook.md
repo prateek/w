@@ -184,6 +184,7 @@ Hooks can use template variables that expand at runtime:
 | Variable | Description |
 |----------|-------------|
 | `{{ repo }}` | Repository directory name |
+| `{{ project_identifier }}` | Canonical project identifier (e.g., `github.com/owner/repo`) |
 | `{{ repo_path }}` | Absolute path to repository root |
 | `{{ branch }}` | Branch name |
 | `{{ worktree_name }}` | Worktree directory name |
@@ -193,7 +194,7 @@ Hooks can use template variables that expand at runtime:
 | `{{ commit }}` | Full HEAD commit SHA |
 | `{{ short_commit }}` | Short HEAD commit SHA (7 chars) |
 | `{{ remote }}` | Primary remote name |
-| `{{ remote_url }}` | Remote URL |
+| `{{ remote_url }}` | Remote URL (credentials redacted) |
 | `{{ upstream }}` | Upstream tracking branch (if set) |
 | `{{ target }}` | Target branch (merge hooks only) |
 | `{{ base }}` | Base branch (creation hooks only) |

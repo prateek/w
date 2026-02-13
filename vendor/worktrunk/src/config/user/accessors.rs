@@ -169,9 +169,18 @@ impl UserConfig {
         };
         // Use native path format (not POSIX) since this is used for filesystem operations
         let repo_path = repo.repo_path().to_string_lossy().to_string();
+        let project_identifier_fallback = if project.is_none() {
+            repo.project_identifier().ok()
+        } else {
+            None
+        };
         let mut vars = HashMap::new();
         vars.insert("main_worktree", main_worktree);
         vars.insert("repo", main_worktree);
+        let project_identifier = project.or(project_identifier_fallback.as_deref());
+        if let Some(project_identifier) = project_identifier {
+            vars.insert("project_identifier", project_identifier);
+        }
         vars.insert("branch", branch);
         vars.insert("repo_path", repo_path.as_str());
         expand_template(&template, &vars, false, repo, "worktree-path")

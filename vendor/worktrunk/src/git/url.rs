@@ -61,6 +61,15 @@ fn split_namespace_repo(path: &str) -> Option<(String, String)> {
     Some((namespace, repo.to_string()))
 }
 
+/// Strip userinfo (credentials) from a URL authority component.
+///
+/// For example:
+/// - `token@github.com` -> `github.com`
+/// - `user:pass@gitlab.com:8443` -> `gitlab.com:8443`
+fn strip_userinfo(authority: &str) -> &str {
+    authority.rsplit('@').next().unwrap_or(authority)
+}
+
 impl GitRemoteUrl {
     /// Parse a git remote URL into structured components.
     ///
@@ -74,17 +83,20 @@ impl GitRemoteUrl {
         let (host, namespace, repo) = if let Some(rest) = url.strip_prefix("https://") {
             // https://github.com/owner/repo.git
             // https://gitlab.com/group/subgroup/repo.git
-            let (host, path) = rest.split_once('/')?;
+            let (authority, path) = rest.split_once('/')?;
+            let host = strip_userinfo(authority);
             let (namespace, repo) = split_namespace_repo(path)?;
             (host, namespace, repo)
         } else if let Some(rest) = url.strip_prefix("http://") {
             // http://github.com/owner/repo.git
-            let (host, path) = rest.split_once('/')?;
+            let (authority, path) = rest.split_once('/')?;
+            let host = strip_userinfo(authority);
             let (namespace, repo) = split_namespace_repo(path)?;
             (host, namespace, repo)
         } else if let Some(rest) = url.strip_prefix("git://") {
             // git://github.com/owner/repo.git
-            let (host, path) = rest.split_once('/')?;
+            let (authority, path) = rest.split_once('/')?;
+            let host = strip_userinfo(authority);
             let (namespace, repo) = split_namespace_repo(path)?;
             (host, namespace, repo)
         } else if let Some(rest) = url.strip_prefix("ssh://") {
@@ -209,6 +221,17 @@ mod tests {
         // With whitespace
         let url = GitRemoteUrl::parse("  https://github.com/owner/repo.git\n").unwrap();
         assert_eq!(url.owner(), "owner");
+    }
+
+    #[test]
+    fn test_https_urls_with_userinfo() {
+        let url = GitRemoteUrl::parse("https://token123@github.com/owner/repo.git").unwrap();
+        assert_eq!(url.host(), "github.com");
+        assert_eq!(url.project_identifier(), "github.com/owner/repo");
+
+        let url = GitRemoteUrl::parse("https://user:pass@github.com/owner/repo.git").unwrap();
+        assert_eq!(url.host(), "github.com");
+        assert_eq!(url.project_identifier(), "github.com/owner/repo");
     }
 
     #[test]

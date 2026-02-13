@@ -258,6 +258,42 @@ mod tests {
     }
 
     #[test]
+    fn test_format_worktree_path_with_project_identifier() {
+        let test = test_repo();
+        std::process::Command::new("git")
+            .args([
+                "remote",
+                "add",
+                "origin",
+                "https://token@github.com/owner/repo.git",
+            ])
+            .current_dir(test._dir.path())
+            .output()
+            .unwrap();
+
+        let config = UserConfig {
+            configs: OverridableConfig {
+                worktree_path: Some(
+                    "worktrees/{{ project_identifier | sanitize }}/{{ branch | sanitize }}"
+                        .to_string(),
+                ),
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+
+        let path = config
+            .format_path("myproject", "feature/foo", &test.repo, None)
+            .unwrap();
+
+        assert_eq!(path, "worktrees/github.com-owner-repo/feature-foo");
+        assert!(
+            !path.contains("token"),
+            "project_identifier must not leak credentials"
+        );
+    }
+
+    #[test]
     fn test_format_worktree_path_with_backslashes() {
         let test = test_repo();
         // Windows-style path separators should also be sanitized

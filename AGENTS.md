@@ -31,7 +31,8 @@ cd docs && docker run --rm -v "$(pwd)":/app -w /app ghcr.io/getzola/zola:v0.19.2
 
 - `cargo new` creates a nested git repo by default; prefer `cargo new --vcs none ...` for new crates.
 - Homebrew tap naming: `brew tap prateek/w` assumes a `prateek/homebrew-w` repo; this tap lives in `prateek/w`, so use `brew tap prateek/w https://github.com/prateek/w`.
-- PAL `codereview` requires `--relevant-files` to be **absolute** paths (even without `--raw`).
+- PAL `codereview` currently errors unless you pass `--relevant-files` (comma-separated **absolute** paths).
+- PAL `codereview` external validation may time out or model-mismatch; `--model o4-mini --thinking-mode minimal` has worked.
 - PAL `continuation_id` flows generally don’t resume across separate `pal-mcporter` invocations (fresh server per call).
 - `codex review` may spam opentelemetry export errors to `http://localhost:14318/v1/logs`; if it hangs, kill the spawned `codex` process and proceed with manual review.
 - This environment may set `NO_COLOR=1`; Worktrunk snapshot tests expect ANSI output, so run with `NO_COLOR= CLICOLOR_FORCE=1` if you need to execute them.

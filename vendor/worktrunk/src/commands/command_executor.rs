@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::path::Path;
 use worktrunk::HookType;
-use worktrunk::config::{Command, CommandConfig, UserConfig, expand_template};
+use worktrunk::config::{Command, CommandConfig, UserConfig, expand_template, redact_credentials};
 use worktrunk::git::Repository;
 use worktrunk::path::to_posix_path;
 
@@ -87,6 +87,9 @@ pub fn build_hook_context(
 
     let mut map = HashMap::new();
     map.insert("repo".into(), repo_name.into());
+    if let Ok(project_identifier) = ctx.repo.project_identifier() {
+        map.insert("project_identifier".into(), project_identifier);
+    }
     map.insert("branch".into(), ctx.branch_or_head().into());
     map.insert("worktree_name".into(), worktree_name.into());
 
@@ -124,7 +127,7 @@ pub fn build_hook_context(
         map.insert("remote".into(), remote.to_string());
         // Add remote URL for conditional hook execution (e.g., GitLab vs GitHub)
         if let Some(url) = ctx.repo.remote_url(&remote) {
-            map.insert("remote_url".into(), url);
+            map.insert("remote_url".into(), redact_credentials(&url));
         }
         if let Some(branch) = ctx.branch
             && let Ok(Some(upstream)) = ctx.repo.branch(branch).upstream()
@@ -228,4 +231,75 @@ pub fn prepare_commands(
             context_json,
         })
         .collect())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Test fixture that creates a real temporary git repository.
+    struct TestRepo {
+        _dir: tempfile::TempDir,
+        repo: Repository,
+    }
+
+    impl TestRepo {
+        fn new() -> Self {
+            let dir = tempfile::tempdir().unwrap();
+            std::process::Command::new("git")
+                .args(["init"])
+                .current_dir(dir.path())
+                .output()
+                .unwrap();
+            std::process::Command::new("git")
+                .args([
+                    "remote",
+                    "add",
+                    "origin",
+                    "https://token@github.com/owner/repo.git",
+                ])
+                .current_dir(dir.path())
+                .output()
+                .unwrap();
+
+            let repo = Repository::at(dir.path()).unwrap();
+            Self { _dir: dir, repo }
+        }
+    }
+
+    #[test]
+    fn test_build_hook_context_includes_project_identifier() {
+        let test = TestRepo::new();
+        let config = UserConfig::default();
+        let worktree_path = test.repo.repo_path().to_path_buf();
+        let ctx = CommandContext::new(
+            &test.repo,
+            &config,
+            Some("feature/foo"),
+            worktree_path.as_path(),
+            true,
+        );
+
+        let hook_ctx = build_hook_context(&ctx, &[]);
+        let project_identifier = hook_ctx
+            .get("project_identifier")
+            .expect("project_identifier should be present in hook context");
+        let remote_url = hook_ctx
+            .get("remote_url")
+            .expect("remote_url should be present when a primary remote is configured");
+
+        assert_eq!(project_identifier, "github.com/owner/repo");
+        assert!(
+            !project_identifier.contains("token"),
+            "project_identifier must not leak credentials"
+        );
+        assert!(
+            remote_url.contains("[REDACTED]"),
+            "remote_url should redact creds"
+        );
+        assert!(
+            !remote_url.contains("token"),
+            "remote_url must not leak credentials"
+        );
+    }
 }

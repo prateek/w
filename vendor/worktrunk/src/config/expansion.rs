@@ -27,6 +27,7 @@ use crate::styling::{eprintln, format_with_gutter, info_message, verbosity};
 /// This list is the single source of truth for `--var` validation in CLI.
 pub const TEMPLATE_VARS: &[&str] = &[
     "repo",
+    "project_identifier",
     "branch",
     "worktree_name",
     "repo_path",

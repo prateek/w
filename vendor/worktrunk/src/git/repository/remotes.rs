@@ -175,12 +175,12 @@ impl Repository {
                     let url = url.strip_suffix(".git").unwrap_or(url.as_str());
                     // Handle ssh:// format with port: ssh://git@host:port/path -> host/port/path
                     if let Some(ssh_part) = url.strip_prefix("ssh://") {
-                        let ssh_part = ssh_part.strip_prefix("git@").unwrap_or(ssh_part);
-                        if let Some(colon_pos) = ssh_part.find(':') {
-                            let (host, rest) = ssh_part.split_at(colon_pos);
+                        let without_user = ssh_part.rsplit('@').next().unwrap_or(ssh_part);
+                        if let Some(colon_pos) = without_user.find(':') {
+                            let (host, rest) = without_user.split_at(colon_pos);
                             return Ok(format!("{}{}", host, rest.replacen(':', "/", 1)));
                         }
-                        return Ok(ssh_part.to_string());
+                        return Ok(without_user.to_string());
                     }
                     return Ok(url.to_string());
                 }
@@ -222,5 +222,39 @@ impl Repository {
             &format!("refs/remotes/{}", ref_name),
         ])
         .is_ok()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_project_identifier_strips_userinfo_from_ssh_urls_with_ports() {
+        let dir = tempfile::tempdir().unwrap();
+        std::process::Command::new("git")
+            .args(["init"])
+            .current_dir(dir.path())
+            .output()
+            .unwrap();
+        std::process::Command::new("git")
+            .args([
+                "remote",
+                "add",
+                "origin",
+                "ssh://token@github.com:2222/owner/repo.git",
+            ])
+            .current_dir(dir.path())
+            .output()
+            .unwrap();
+
+        let repo = Repository::at(dir.path()).unwrap();
+        let project_identifier = repo.project_identifier().unwrap();
+
+        assert_eq!(project_identifier, "github.com/2222/owner/repo");
+        assert!(
+            !project_identifier.contains("token"),
+            "project_identifier must not leak userinfo"
+        );
     }
 }

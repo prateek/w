@@ -387,6 +387,14 @@ Acceptance criteria:
 - A regression test demonstrates credential/userinfo is not present in the value.
 - `w` can set a centralized `worktree-path` template that does not require repo slug parsing.
 
+Progress (as of 2026-02-13):
+
+- ✅ Exposed `project_identifier` to hook template context (`wt hook` / `--execute` templates).
+- ✅ Exposed `project_identifier` to `worktree-path` templates.
+- ✅ Hardened project-identifier parsing to strip URL userinfo (credential-safe).
+- ✅ Added tests covering both contexts + credential-safety regression.
+- ✅ Redacted credentials in hook `remote_url` template var to avoid leaks.
+
 ### M2: `worktrunk::integration::v1` (Switch/Remove/Path)
 
 Deliverables:

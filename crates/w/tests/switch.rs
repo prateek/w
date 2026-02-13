@@ -142,5 +142,8 @@ fn w_switch_without_filter_requires_tty() {
     assert!(!output.status.success());
 
     let stderr = String::from_utf8_lossy(&output.stderr);
+    #[cfg(windows)]
+    assert!(stderr.contains("interactive picker is not supported on Windows"));
+    #[cfg(not(windows))]
     assert!(stderr.contains("interactive picker requires a TTY"));
 }

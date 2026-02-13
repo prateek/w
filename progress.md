@@ -28,3 +28,4 @@
 2026-02-13 08:02: add `w ls` formatting customization (`--preset`, `--sort`, `[ls]` config) + tests + docs
 2026-02-13 08:16: docs: refresh asciinema demo (`w --help` + `w shell init zsh`) to match current CLI output
 2026-02-13 08:33: fix `w repo pick` interactive TTY detection to allow stdout capture / command substitution
+2026-02-13 09:04: release: pushed `v0.1.0` tag; fixed `.github/workflows/release.yml` (no `macos-13`, explicit macOS targets) and made `w` build on Windows by disabling `skim`-based interactive pickers there

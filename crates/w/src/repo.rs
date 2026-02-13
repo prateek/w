@@ -151,6 +151,14 @@ pub(crate) fn select_repo_by_filter(index: &RepoIndex, filter: &str) -> Option<P
         .map(|repo| PathBuf::from(&repo.path))
 }
 
+#[cfg(windows)]
+pub(crate) fn pick_repo_interactive(_index: &RepoIndex) -> anyhow::Result<Option<PathBuf>> {
+    anyhow::bail!(
+        "interactive picker is not supported on Windows; pass --filter for non-interactive selection"
+    );
+}
+
+#[cfg(not(windows))]
 pub(crate) fn pick_repo_interactive(index: &RepoIndex) -> anyhow::Result<Option<PathBuf>> {
     if !std::io::stdin().is_terminal() {
         anyhow::bail!(

@@ -21,7 +21,7 @@ env:
 
 jobs:
   build:
-    name: build (${{ matrix.platform }}-${{ matrix.os }})
+    name: build (${{ matrix.platform }}-${{ matrix.arch }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -29,15 +29,23 @@ jobs:
         include:
           - os: ubuntu-latest
             platform: linux
+            target: x86_64-unknown-linux-gnu
+            arch: X64
             bin_ext: ""
-          - os: macos-13
+          - os: macos-latest
             platform: macos
+            target: aarch64-apple-darwin
+            arch: ARM64
             bin_ext: ""
-          - os: macos-14
+          - os: macos-latest
             platform: macos
+            target: x86_64-apple-darwin
+            arch: X64
             bin_ext: ""
           - os: windows-latest
             platform: windows
+            target: x86_64-pc-windows-msvc
+            arch: X64
             bin_ext: ".exe"
 
     defaults:
@@ -54,27 +62,28 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
+          targets: ${{ matrix.target }}
 
       - name: Build w (release)
-        run: cargo build --release --locked --package w --bin w
+        run: cargo build --release --locked --target "${{ matrix.target }}" --package w --bin w
 
       - name: Build wt (release)
-        run: cargo build --release --locked --manifest-path vendor/worktrunk/Cargo.toml --bin wt
+        run: cargo build --release --locked --target "${{ matrix.target }}" --manifest-path vendor/worktrunk/Cargo.toml --bin wt
 
       - name: Package
         run: |
           set -euo pipefail
 
           version="${RELEASE_TAG}"
-          arch="${RUNNER_ARCH}"
+          arch="${{ matrix.arch }}"
 
           dist_dir="dist"
           pkg="w-${version}-${{ matrix.platform }}-${arch}"
           pkg_dir="${dist_dir}/${pkg}"
 
           mkdir -p "${pkg_dir}"
-          cp "${CARGO_TARGET_DIR}/release/w${{ matrix.bin_ext }}" "${pkg_dir}/w${{ matrix.bin_ext }}"
-          cp "${CARGO_TARGET_DIR}/release/wt${{ matrix.bin_ext }}" "${pkg_dir}/wt${{ matrix.bin_ext }}"
+          cp "${CARGO_TARGET_DIR}/${{ matrix.target }}/release/w${{ matrix.bin_ext }}" "${pkg_dir}/w${{ matrix.bin_ext }}"
+          cp "${CARGO_TARGET_DIR}/${{ matrix.target }}/release/wt${{ matrix.bin_ext }}" "${pkg_dir}/wt${{ matrix.bin_ext }}"
 
           tarball="${dist_dir}/${pkg}.tar.gz"
           tar -C "${dist_dir}" -czf "${tarball}" "${pkg}"
@@ -91,7 +100,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: dist-${{ matrix.platform }}-${{ runner.arch }}
+          name: dist-${{ matrix.platform }}-${{ matrix.arch }}
           if-no-files-found: error
           path: |
             dist/*.tar.gz

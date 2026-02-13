@@ -601,6 +601,14 @@ fn select_worktree_by_filter<'a>(
     })
 }
 
+#[cfg(windows)]
+fn pick_worktree_interactive(_worktrees: &[LsWorktree]) -> anyhow::Result<Option<PathBuf>> {
+    anyhow::bail!(
+        "interactive picker is not supported on Windows; pass --filter for non-interactive selection"
+    );
+}
+
+#[cfg(not(windows))]
 fn pick_worktree_interactive(worktrees: &[LsWorktree]) -> anyhow::Result<Option<PathBuf>> {
     if !std::io::stdin().is_terminal() {
         anyhow::bail!(

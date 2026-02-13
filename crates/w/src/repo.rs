@@ -274,10 +274,10 @@ fn xdg_config_dir() -> anyhow::Result<PathBuf> {
     }
 
     #[cfg(windows)]
-    if let Ok(appdata) = std::env::var("APPDATA") {
-        if !appdata.trim().is_empty() {
-            return Ok(PathBuf::from(appdata));
-        }
+    if let Ok(appdata) = std::env::var("APPDATA")
+        && !appdata.trim().is_empty()
+    {
+        return Ok(PathBuf::from(appdata));
     }
 
     Ok(home_dir()?.join(".config"))
@@ -291,10 +291,10 @@ fn xdg_cache_dir() -> anyhow::Result<PathBuf> {
     }
 
     #[cfg(windows)]
-    if let Ok(local_appdata) = std::env::var("LOCALAPPDATA") {
-        if !local_appdata.trim().is_empty() {
-            return Ok(PathBuf::from(local_appdata));
-        }
+    if let Ok(local_appdata) = std::env::var("LOCALAPPDATA")
+        && !local_appdata.trim().is_empty()
+    {
+        return Ok(PathBuf::from(local_appdata));
     }
 
     Ok(home_dir()?.join(".cache"))
@@ -308,10 +308,10 @@ fn home_dir() -> anyhow::Result<PathBuf> {
     }
 
     #[cfg(windows)]
-    if let Ok(user_profile) = std::env::var("USERPROFILE") {
-        if !user_profile.trim().is_empty() {
-            return Ok(PathBuf::from(user_profile));
-        }
+    if let Ok(user_profile) = std::env::var("USERPROFILE")
+        && !user_profile.trim().is_empty()
+    {
+        return Ok(PathBuf::from(user_profile));
     }
 
     anyhow::bail!("cannot determine home directory (set $HOME or $USERPROFILE)")

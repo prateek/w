@@ -31,3 +31,4 @@
 2026-02-13 09:04: release: pushed `v0.1.0` tag; fixed `.github/workflows/release.yml` (no `macos-13`, explicit macOS targets) and made `w` build on Windows by disabling `skim`-based interactive pickers there
 2026-02-13 09:27: release: fix `scripts/update_homebrew_formula.py` Ruby interpolation escaping so Homebrew formula updates succeed
 2026-02-13 09:34: ci: fix Windows clippy by moving `IsTerminal`/`Cursor` imports behind `cfg(not(windows))`
+2026-02-13 09:47: ci: fix Windows clippy `collapsible_if` lints in env-var directory resolution

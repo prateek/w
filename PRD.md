@@ -564,6 +564,7 @@ Progress (as of 2026-02-13):
 - ✅ Added a tag-driven GitHub Actions release workflow (`.github/workflows/release.yml`) that builds `w` + vendored `wt` on macOS/Linux/Windows and publishes `.tar.gz` artifacts with `.sha256` checksums.
 - ✅ Hardened the release workflow against runner/image churn: macOS artifacts build via explicit `--target` builds on `macos-latest` (including x86_64), and Windows builds avoid unix-only interactive picker deps.
 - ✅ Release workflow now auto-updates `Formula/w.rb` on `main` to point at the tagged release artifacts (with sha256), enabling stable Homebrew installs after a release.
+- ✅ Fixed a Windows-only Clippy lint (`collapsible_if`) in env-var directory resolution so `cargo clippy -- -D warnings` stays green in CI.
 - ✅ Expanded the docs site with basic user docs (Install + Quickstart) and added them to the top nav.
 - ✅ Added a `How it works` docs page (identity/layout/concurrency) and linked it in the top nav.
 - ✅ Added a `Commands` page (CLI reference) and linked it in the top nav.

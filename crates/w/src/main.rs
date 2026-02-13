@@ -38,6 +38,20 @@ enum Command {
         /// Branch name (or Worktrunk symbols like "@", "-", "^").
         branch: String,
     },
+    /// Switch/create a worktree for a branch, then run a command in it.
+    Run {
+        /// Branch name (or Worktrunk symbols like "@", "-", "^").
+        branch: String,
+        /// Base ref when creating a branch (defaults to the repo's default branch).
+        #[arg(long)]
+        base: Option<String>,
+        /// Move aside a pre-existing directory at the computed worktree path.
+        #[arg(long)]
+        clobber: bool,
+        /// Command to run (pass after `--`), e.g. `w run feature -- cargo test`.
+        #[arg(required = true, num_args = 1.., trailing_var_arg = true)]
+        cmd: Vec<String>,
+    },
     /// Shell integration helpers.
     Shell {
         #[command(subcommand)]
@@ -73,6 +87,15 @@ fn main() -> anyhow::Result<()> {
         Command::Cd { branch } => {
             let path = cmd_cd(branch)?;
             println!("{}", path.display());
+        }
+        Command::Run {
+            branch,
+            base,
+            clobber,
+            cmd,
+        } => {
+            let exit_code = cmd_run(branch, base, clobber, cmd)?;
+            std::process::exit(exit_code);
         }
         Command::Shell {
             command: ShellCommand::Init { shell },
@@ -124,6 +147,44 @@ fn cmd_cd(branch: String) -> anyhow::Result<PathBuf> {
     )?;
 
     Ok(outcome.path)
+}
+
+fn cmd_run(
+    branch: String,
+    base: Option<String>,
+    clobber: bool,
+    cmd: Vec<String>,
+) -> anyhow::Result<i32> {
+    let (repo, config) = current_repo_and_config()?;
+
+    let (program, args) = cmd.split_first().context("command must be non-empty")?;
+
+    let branch = repo
+        .resolve_worktree_name(&branch)
+        .context("failed to resolve branch name")?;
+    let create = !repo
+        .branch(&branch)
+        .exists()
+        .context("failed to check branch existence")?;
+
+    let outcome = worktrunk_switch(
+        &repo,
+        &config,
+        SwitchRequest {
+            branch,
+            create,
+            base,
+            clobber,
+        },
+    )?;
+
+    let status = std::process::Command::new(program)
+        .args(args)
+        .current_dir(&outcome.path)
+        .status()
+        .with_context(|| format!("failed to run command: {}", cmd.join(" ")))?;
+
+    Ok(status.code().unwrap_or(1))
 }
 
 fn current_repo_and_config() -> anyhow::Result<(Repository, UserConfig)> {
@@ -219,5 +280,27 @@ mod tests {
         };
 
         assert_eq!(branch, "feature");
+    }
+
+    #[test]
+    fn run_parses() {
+        let cli = Cli::try_parse_from(["w", "run", "feature", "--", "echo", "hi"]).unwrap();
+        let Cli {
+            command:
+                Command::Run {
+                    branch,
+                    base,
+                    clobber,
+                    cmd,
+                },
+        } = cli
+        else {
+            panic!("expected w run");
+        };
+
+        assert_eq!(branch, "feature");
+        assert!(base.is_none());
+        assert!(!clobber);
+        assert_eq!(cmd, ["echo", "hi"]);
     }
 }

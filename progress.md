@@ -9,3 +9,4 @@
 2026-02-13 02:04: M2: add `worktrunk::integration::v1` (switch/remove/compute_worktree_path) + unit tests + remote-only branch handling
 2026-02-13 02:26: M3 (partial): implement `w new` via `worktrunk::integration::v1` + integration test; fix Cargo workspace exclude for vendored dependency
 2026-02-13 02:39: M3 (partial): implement `w cd` (existing branch worktree switch; no branch creation) + integration tests
+2026-02-13 02:58: M3 (partial): implement `w run` (switch/create then execute in the worktree) + integration test

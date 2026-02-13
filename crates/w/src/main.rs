@@ -351,20 +351,137 @@ fn parse_gitdir_file(
 fn shell_init_snippet(shell: Shell) -> &'static str {
     match shell {
         Shell::Zsh => {
-            r#"# TODO: zsh integration not implemented yet.
-# For now, use: w <subcommand> --print (future) and cd manually."#
+            r#"# w shell integration (zsh)
+#
+# Usage:
+#   eval "$(w shell init zsh)"
+#
+# Notes:
+# - Overrides the `w` shell function to allow `w cd`/`w new` to change the current directory.
+# - Use `command w ...` to bypass the function (call the binary directly).
+
+w() {
+  case "$1" in
+    cd|new)
+      for arg in "$@"; do
+        if [[ "$arg" == "-h" || "$arg" == "--help" ]]; then
+          command w "$@"
+          return $?
+        fi
+      done
+
+      local target
+      target="$(command w "$@")" || return $?
+      [[ -n "$target" ]] || return 1
+      builtin cd -- "$target" || return $?
+      ;;
+    *)
+      command w "$@"
+      ;;
+  esac
+}"#
         }
         Shell::Bash => {
-            r#"# TODO: bash integration not implemented yet.
-# For now, use: w <subcommand> --print (future) and cd manually."#
+            r#"# w shell integration (bash)
+#
+# Usage:
+#   eval "$(w shell init bash)"
+#
+# Notes:
+# - Overrides the `w` shell function to allow `w cd`/`w new` to change the current directory.
+# - Use `command w ...` to bypass the function (call the binary directly).
+
+w() {
+  case "$1" in
+    cd|new)
+      for arg in "$@"; do
+        if [[ "$arg" == "-h" || "$arg" == "--help" ]]; then
+          command w "$@"
+          return $?
+        fi
+      done
+
+      local target
+      target="$(command w "$@")" || return $?
+      [[ -n "$target" ]] || return 1
+      builtin cd -- "$target" || return $?
+      ;;
+    *)
+      command w "$@"
+      ;;
+  esac
+}"#
         }
         Shell::Fish => {
-            r#"# TODO: fish integration not implemented yet.
-# For now, use: w <subcommand> --print (future) and cd manually."#
+            r#"# w shell integration (fish)
+#
+# Usage:
+#   w shell init fish | source
+#
+# Notes:
+# - Overrides the `w` function to allow `w cd`/`w new` to change the current directory.
+# - Use `command w ...` to bypass the function (call the binary directly).
+
+function w --wraps w --description 'w wrapper with cd/new'
+    if test (count $argv) -ge 1
+        set -l sub $argv[1]
+        if test "$sub" = "cd" -o "$sub" = "new"
+            for arg in $argv
+                if test "$arg" = "-h" -o "$arg" = "--help"
+                    command w $argv
+                    return $status
+                end
+            end
+
+            set -l target (command w $argv | string collect)
+            or return $status
+            if test -z "$target"
+                return 1
+            end
+            cd -- "$target"
+            return $status
+        end
+    end
+
+    command w $argv
+end"#
         }
         Shell::Pwsh => {
-            r#"# TODO: pwsh integration not implemented yet.
-# For now, use: w <subcommand> --print (future) and cd manually."#
+            r#"# w shell integration (pwsh)
+#
+# Usage:
+#   Invoke-Expression (& w shell init pwsh)
+#
+# Notes:
+# - Defines a `w` function to allow `w cd`/`w new` to change the current directory.
+# - The function shells out to the `w` application (not itself) to avoid recursion.
+
+$script:__w_bin = (Get-Command w -CommandType Application).Source
+
+function w {
+    param(
+        [Parameter(ValueFromRemainingArguments = $true)]
+        [string[]]$wArgs
+    )
+
+    if ($wArgs.Count -ge 1 -and ($wArgs[0] -eq 'cd' -or $wArgs[0] -eq 'new')) {
+        if ($wArgs -contains '-h' -or $wArgs -contains '--help') {
+            & $script:__w_bin @wArgs
+            return
+        }
+
+        $target = & $script:__w_bin @wArgs
+        if ($LASTEXITCODE -ne 0) { return }
+
+        if ($target -is [System.Array]) { $target = $target[-1] }
+        if ([string]::IsNullOrWhiteSpace($target)) { return }
+
+        Set-Location -Path $target
+        return
+    }
+
+    & $script:__w_bin @wArgs
+}"#
         }
     }
 }

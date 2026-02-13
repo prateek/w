@@ -453,6 +453,7 @@ Progress (as of 2026-02-13):
 - ✅ Implemented `w run <branch> -- <cmd...>` (switch/create then execute in the worktree) + integration test.
 - ✅ Implemented `w rm <branch>` (refuse dirty worktrees without `--force`) using `worktrunk::integration::v1` + integration tests.
 - ✅ Implemented `w prune` (remove stale worktree directories under the configured worktree root) + integration test.
+- ✅ Implemented `w shell init <shell>` for zsh/bash/fish/pwsh (smoke-level snippet tests); `w cd`/`w new` now work as a shell function.
 - ✅ Updated the root Cargo workspace to exclude `vendor/worktrunk` so `cargo fmt/clippy/test` works with the path dependency.
 
 ### M4: Built-in Repo Index + Picker (`skim`)

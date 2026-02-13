@@ -9,6 +9,7 @@ Start here:
 
 - [Install](@/install.md)
 - [Quickstart](@/quickstart.md)
+- [How it works](@/how-it-works.md)
 - [Commands](@/commands.md)
 - [LLMs / Codex](@/llms.md)
 

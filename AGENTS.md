@@ -46,6 +46,7 @@ cd docs && docker run --rm -p 1111:1111 -v "$(pwd)":/app -w /app ghcr.io/getzola
 - `codex` may warn that `[features].web_search_request` is deprecated; fix by setting `web_search` in `~/.codex/config.toml` (or ignore the warning).
 - `codex review --uncommitted` currently errors if you pass a custom prompt; run it without a prompt (or use `--base`/`--commit`).
 - `codex review --base <ref>` relies on `git diff <ref>` and won’t include untracked files; `git add` (or `git add -N`) new files before reviewing.
+- `rg` treats patterns starting with `--` as flags; use `rg -- \"--refresh\" ...` when searching for CLI flags.
 - To kill a hung `codex review`: `ps -eo pid,command | rg "codex .* review" | head` then `kill <pid>`.
 - `codex review`: `--uncommitted` is mutually exclusive with `--base` (use one or the other).
 - GitHub Actions jobs that commit+push back to the repo should use `actions/checkout` with `fetch-depth: 0` to avoid shallow clone push failures.

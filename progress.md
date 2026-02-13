@@ -24,3 +24,4 @@
 2026-02-13 06:47: docs: add `Commands` page (CLI reference) + add nav link
 2026-02-13 06:59: docs: add `LLMs / Codex` page + link it from the docs nav and README
 2026-02-13 07:19: add `--jobs` override for `w ls`/`w switch` cross-repo concurrency + docs + tests
+2026-02-13 07:37: docs: add `How it works` page (identity/layout/concurrency) + link it from the docs nav

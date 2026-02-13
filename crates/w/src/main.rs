@@ -1167,9 +1167,7 @@ fn canonicalize_gitdir_path(path: &std::path::Path) -> PathBuf {
         return path.to_path_buf();
     };
 
-    std::fs::canonicalize(parent)
-        .map(|parent| parent.join(file_name))
-        .unwrap_or_else(|_| path.to_path_buf())
+    canonicalize_best_effort(parent).join(file_name)
 }
 
 fn parse_gitdir_file(

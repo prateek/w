@@ -566,6 +566,7 @@ Progress (as of 2026-02-13):
 - ✅ Release workflow now auto-updates `Formula/w.rb` on `main` to point at the tagged release artifacts (with sha256), enabling stable Homebrew installs after a release.
 - ✅ Fixed a Windows-only Clippy lint (`collapsible_if`) in env-var directory resolution so `cargo clippy -- -D warnings` stays green in CI.
 - ✅ Fixed Windows CI tests around path handling: TOML config fixtures now use literal strings for Windows paths, and `w ls` normalizes worktree paths consistently across platforms.
+- ✅ Fixed a Windows-only prune test failure by canonicalizing non-existent gitdir paths via `canonicalize_best_effort` (avoids `\\?\` prefix mismatches in path comparisons).
 - ✅ Expanded the docs site with basic user docs (Install + Quickstart) and added them to the top nav.
 - ✅ Added a `How it works` docs page (identity/layout/concurrency) and linked it in the top nav.
 - ✅ Added a `Commands` page (CLI reference) and linked it in the top nav.

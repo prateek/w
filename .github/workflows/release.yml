@@ -21,7 +21,7 @@ env:
 
 jobs:
   build:
-    name: build (${{ matrix.platform }})
+    name: build (${{ matrix.platform }}-${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -30,7 +30,10 @@ jobs:
           - os: ubuntu-latest
             platform: linux
             bin_ext: ""
-          - os: macos-latest
+          - os: macos-13
+            platform: macos
+            bin_ext: ""
+          - os: macos-14
             platform: macos
             bin_ext: ""
           - os: windows-latest
@@ -113,3 +116,44 @@ jobs:
           files: |
             dist/*.tar.gz
             dist/*.tar.gz.sha256
+
+  homebrew:
+    name: homebrew
+    runs-on: ubuntu-latest
+    needs: publish
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Update formula
+        run: |
+          set -euo pipefail
+          python scripts/update_homebrew_formula.py \
+            --repo "${GITHUB_REPOSITORY}" \
+            --tag "${RELEASE_TAG}" \
+            --dist-dir dist \
+            --formula-path Formula/w.rb
+
+      - name: Commit and push
+        run: |
+          set -euo pipefail
+
+          if git diff --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/w.rb
+          git commit -m "brew: update formula for ${RELEASE_TAG}"
+          git push origin HEAD:main

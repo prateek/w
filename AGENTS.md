@@ -36,6 +36,7 @@ cd docs && docker run --rm -v "$(pwd)":/app -w /app ghcr.io/getzola/zola:v0.19.2
 - PAL `codereview` currently errors unless you pass `--relevant-files` (and often `--files-checked`) as comma-separated **absolute** paths.
 - When passing PAL prompts via `bash .../pal ... --step "..."`, avoid backticks (`` `...` ``) in the shell string; they trigger command substitution. Prefer single quotes or escape backticks.
 - PAL `codereview` via `pal-mcporter` may return JSON (even with `-o markdown`) and sometimes produces empty/low-signal findings; treat as best-effort and do a quick manual review too.
+- If `codex review` tries to run `pal-mcporter`, it may fail with uv cache permission errors; run PAL reviews from your normal shell (or set a writable cache dir like `UV_CACHE_DIR`).
 - PAL tool calls may time out; increase timeouts with `PAL_MCPORTER_TIMEOUT_MS` or `pal ... -t <ms>`.
 - PAL `codereview` external validation may time out or model-mismatch; `--model o4-mini --thinking-mode minimal` has worked.
 - PAL `continuation_id` flows generally don’t resume across separate `pal-mcporter` invocations (fresh server per call).
@@ -45,6 +46,8 @@ cd docs && docker run --rm -v "$(pwd)":/app -w /app ghcr.io/getzola/zola:v0.19.2
 - `codex review --uncommitted` currently errors if you pass a custom prompt; run it without a prompt (or use `--base`/`--commit`).
 - To kill a hung `codex review`: `ps -eo pid,command | rg "codex .* review" | head` then `kill <pid>`.
 - `codex review`: `--uncommitted` is mutually exclusive with `--base` (use one or the other).
+- GitHub Actions jobs that commit+push back to the repo should use `actions/checkout` with `fetch-depth: 0` to avoid shallow clone push failures.
+- Some environments block destructive shell commands (e.g. `rm -rf`); prefer adding the right ignores (e.g. `__pycache__/`) and keep diffs clean without relying on cleanup commands.
 - Shell integration captures `w` stdout for `cd`-like commands; interactive `skim` pickers should not require stdout being a TTY (prefer checking stdin TTY / using `/dev/tty`) so commands like `w switch` work under command substitution.
 - This environment may set `NO_COLOR=1`; Worktrunk snapshot tests expect ANSI output, so run with `NO_COLOR= CLICOLOR_FORCE=1` if you need to execute them.
 - When adding `insta` snapshot tests under `vendor/worktrunk/`, generate and commit the `.snap` files (e.g., `INSTA_UPDATE=always cargo test --manifest-path vendor/worktrunk/Cargo.toml --workspace --lib --bins`). Note: `insta` is configured with `yaml` snapshots; prefer `assert_yaml_snapshot!` unless you add the `json` feature.

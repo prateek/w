@@ -19,3 +19,4 @@
 2026-02-13 05:21: M5: add bounded cross-repo concurrency for `w ls`/`w switch` (config + `W_MAX_CONCURRENT_REPOS`) + tests
 2026-02-13 05:41: M6: add `schema_version` to `wt list --format=json` output + schema regression test + docs
 2026-02-13 05:54: M7 (partial): add tag-driven GitHub Actions release workflow (build/publish `w` + vendored `wt` artifacts + `.sha256` checksums)
+2026-02-13 06:16: M7 (partial): auto-update Homebrew formula on tagged releases + build macOS x86_64 + arm64 release artifacts

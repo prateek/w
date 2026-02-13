@@ -49,6 +49,7 @@ cd docs && docker run --rm -p 1111:1111 -v "$(pwd)":/app -w /app ghcr.io/getzola
 - PAL `continuation_id` flows generally don’t resume across separate `pal-mcporter` invocations (fresh server per call).
 - `cargo clippy -- -D warnings` will fail on `clippy::too_many_arguments`; bundle CLI args into an options struct instead of adding `#[allow]` everywhere.
 - `codex review` may spam opentelemetry export errors to `http://localhost:14318/v1/logs`; if it hangs, kill the spawned `codex` process and proceed with manual review.
+- `codex review` runs in a read-only sandbox; if it tries to run `cargo test` and fails with `.cargo-lock`/`Operation not permitted`, ignore it and run tests from your normal shell.
 - `codex` may warn that `[features].web_search_request` is deprecated; fix by setting `web_search` in `~/.codex/config.toml` (or ignore the warning).
 - `codex review --uncommitted` currently errors if you pass a custom prompt; run it without a prompt (or use `--base`/`--commit`).
 - `codex review --base <ref>` relies on `git diff <ref>` and won’t include untracked files; `git add` (or `git add -N`) new files before reviewing.

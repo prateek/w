@@ -34,3 +34,4 @@
 2026-02-13 09:47: ci: fix Windows clippy `collapsible_if` lints in env-var directory resolution
 2026-02-13 10:13: ci: fix Windows `cargo test` failures (TOML Windows path quoting + normalize `w ls` worktree paths)
 2026-02-13 10:29: ci: fix Windows prune test by canonicalizing non-existent gitdir paths consistently (avoid `\\?\` prefix mismatch)
+2026-02-13 10:46: shell: add `--print` to `w cd/new/switch` to print the resolved path without changing directory (even with shell integration enabled) + update docs/demo + tests

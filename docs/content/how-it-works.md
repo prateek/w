@@ -67,3 +67,5 @@ A subprocess can’t `cd` your current shell. `w shell init <shell>` prints a sm
 1. runs the real `w` binary
 2. captures the printed path for `cd/new/switch`
 3. changes directory in your current shell
+
+Pass `--print` (or use `command w …`) to bypass the directory change and just print the path.

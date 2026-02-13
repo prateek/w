@@ -44,11 +44,17 @@ enum Command {
         /// Move aside a pre-existing directory at the computed worktree path.
         #[arg(long)]
         clobber: bool,
+        /// Print the resolved path (even with shell integration enabled).
+        #[arg(long)]
+        print: bool,
     },
     /// Switch to a worktree for an existing branch and print its path.
     Cd {
         /// Branch name (or Worktrunk symbols like "@", "-", "^").
         branch: String,
+        /// Print the resolved path (even with shell integration enabled).
+        #[arg(long)]
+        print: bool,
     },
     /// Switch to a worktree across repositories and print its path.
     Switch {
@@ -79,6 +85,9 @@ enum Command {
         /// Non-interactively select the first match (substring match on project identifier, repo path, branch, or worktree path).
         #[arg(long)]
         filter: Option<String>,
+        /// Print the resolved path (even with shell integration enabled).
+        #[arg(long)]
+        print: bool,
     },
     /// Switch/create a worktree for a branch, then run a command in it.
     Run {
@@ -257,11 +266,12 @@ fn main() -> anyhow::Result<()> {
             branch,
             base,
             clobber,
+            print: _,
         } => {
             let path = cmd_new(repo_dir.as_deref(), branch, base, clobber)?;
             println!("{}", path.display());
         }
-        Command::Cd { branch } => {
+        Command::Cd { branch, print: _ } => {
             let path = cmd_cd(repo_dir.as_deref(), branch)?;
             println!("{}", path.display());
         }
@@ -275,6 +285,7 @@ fn main() -> anyhow::Result<()> {
             refresh,
             include_prunable,
             filter,
+            print: _,
         } => {
             let path = cmd_switch(
                 repo_dir.as_deref(),
@@ -1199,13 +1210,13 @@ fn shell_init_snippet(shell: Shell) -> &'static str {
 #
 # Notes:
 # - Overrides the `w` shell function to allow `w cd`/`w new`/`w switch` to change the current directory.
-# - Use `command w ...` to bypass the function (call the binary directly).
+# - Use `--print` (or `command w ...`) to bypass the directory change and print the path.
 
 w() {
   case "$1" in
     cd|new|switch)
       for arg in "$@"; do
-        if [[ "$arg" == "-h" || "$arg" == "--help" ]]; then
+        if [[ "$arg" == "-h" || "$arg" == "--help" || "$arg" == "--print" ]]; then
           command w "$@"
           return $?
         fi
@@ -1230,13 +1241,13 @@ w() {
 #
 # Notes:
 # - Overrides the `w` shell function to allow `w cd`/`w new`/`w switch` to change the current directory.
-# - Use `command w ...` to bypass the function (call the binary directly).
+# - Use `--print` (or `command w ...`) to bypass the directory change and print the path.
 
 w() {
   case "$1" in
     cd|new|switch)
       for arg in "$@"; do
-        if [[ "$arg" == "-h" || "$arg" == "--help" ]]; then
+        if [[ "$arg" == "-h" || "$arg" == "--help" || "$arg" == "--print" ]]; then
           command w "$@"
           return $?
         fi
@@ -1261,14 +1272,14 @@ w() {
 #
 # Notes:
 # - Overrides the `w` function to allow `w cd`/`w new`/`w switch` to change the current directory.
-# - Use `command w ...` to bypass the function (call the binary directly).
+# - Use `--print` (or `command w ...`) to bypass the directory change and print the path.
 
 function w --wraps w --description 'w wrapper with cd/new/switch'
     if test (count $argv) -ge 1
         set -l sub $argv[1]
         if test "$sub" = "cd" -o "$sub" = "new" -o "$sub" = "switch"
             for arg in $argv
-                if test "$arg" = "-h" -o "$arg" = "--help"
+                if test "$arg" = "-h" -o "$arg" = "--help" -o "$arg" = "--print"
                     command w $argv
                     return $status
                 end
@@ -1306,7 +1317,7 @@ function w {
     )
 
     if ($wArgs.Count -ge 1 -and ($wArgs[0] -eq 'cd' -or $wArgs[0] -eq 'new' -or $wArgs[0] -eq 'switch')) {
-        if ($wArgs -contains '-h' -or $wArgs -contains '--help') {
+        if ($wArgs -contains '-h' -or $wArgs -contains '--help' -or $wArgs -contains '--print') {
             & $script:__w_bin @wArgs
             return
         }
@@ -1373,6 +1384,7 @@ mod tests {
                     branch,
                     base,
                     clobber,
+                    print,
                 },
         } = cli
         else {
@@ -1382,6 +1394,7 @@ mod tests {
         assert_eq!(branch, "feature");
         assert!(base.is_none());
         assert!(!clobber);
+        assert!(!print);
     }
 
     #[test]
@@ -1389,13 +1402,14 @@ mod tests {
         let cli = Cli::try_parse_from(["w", "cd", "feature"]).unwrap();
         let Cli {
             repo_dir: _,
-            command: Command::Cd { branch },
+            command: Command::Cd { branch, print },
         } = cli
         else {
             panic!("expected w cd");
         };
 
         assert_eq!(branch, "feature");
+        assert!(!print);
     }
 
     #[test]
@@ -1403,13 +1417,14 @@ mod tests {
         let cli = Cli::try_parse_from(["w", "switch", "--filter", "feature"]).unwrap();
         let Cli {
             repo_dir: _,
-            command: Command::Switch { filter, .. },
+            command: Command::Switch { filter, print, .. },
         } = cli
         else {
             panic!("expected w switch");
         };
 
         assert_eq!(filter.as_deref(), Some("feature"));
+        assert!(!print);
     }
 
     #[test]

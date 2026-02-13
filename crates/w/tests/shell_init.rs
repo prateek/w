@@ -21,6 +21,7 @@ fn w_shell_init_zsh_prints_snippet() {
     assert!(stdout.contains("eval \"$(w shell init zsh)\""));
     assert!(stdout.contains("w() {"));
     assert!(stdout.contains("command w"));
+    assert!(stdout.contains("--print"));
 }
 
 #[test]
@@ -32,6 +33,7 @@ fn w_shell_init_bash_prints_snippet() {
     assert!(stdout.contains("eval \"$(w shell init bash)\""));
     assert!(stdout.contains("w() {"));
     assert!(stdout.contains("command w"));
+    assert!(stdout.contains("--print"));
 }
 
 #[test]
@@ -43,6 +45,7 @@ fn w_shell_init_fish_prints_snippet() {
     assert!(stdout.contains("w shell init fish | source"));
     assert!(stdout.contains("function w"));
     assert!(stdout.contains("command w"));
+    assert!(stdout.contains("--print"));
 }
 
 #[test]
@@ -54,4 +57,5 @@ fn w_shell_init_pwsh_prints_snippet() {
     assert!(stdout.contains("Invoke-Expression (& w shell init pwsh)"));
     assert!(stdout.contains("Get-Command w -CommandType Application"));
     assert!(stdout.contains("Set-Location"));
+    assert!(stdout.contains("--print"));
 }

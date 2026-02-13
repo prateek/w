@@ -75,3 +75,11 @@ eval "$(w shell init zsh)"
 ```
 
 After that, `w cd …`, `w new …`, and `w switch …` will `cd` in your current shell. Use `command w …` to bypass the shell function and call the binary directly.
+
+If you want the path printed (but **not** `cd`’d) even with shell integration enabled, pass `--print`:
+
+```bash
+w cd my-branch --print
+w new my-branch --print
+w switch --filter my-repo --print
+```

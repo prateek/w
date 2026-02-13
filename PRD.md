@@ -231,7 +231,7 @@ Because a binary cannot change the parent shell’s directory, `w cd` requires s
 Plan:
 
 - `w shell init <shell>` prints an init snippet for zsh/bash/fish/pwsh that wraps the `w` binary and applies directory-change directives.
-- As a fallback for scripting, support `w cd <branch> --print` (prints the resolved path) for users who do not want shell integration.
+- As a fallback for scripting, support `--print` on `w cd/new/switch` to print the resolved path (without changing directory), even with shell integration enabled.
 
 This keeps the “user-facing” behavior aligned with the dotfiles `w` UX while remaining cross-platform.
 ## 8) Documentation (Repo + GitHub Pages)

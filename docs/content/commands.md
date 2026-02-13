@@ -40,6 +40,7 @@ Options:
 
 - `--base <ref>`: base ref used when creating the branch.
 - `--clobber`: move aside a pre-existing directory at the computed worktree path.
+- `--print`: print the resolved path (even with shell integration enabled).
 
 ### `w cd <branch>`
 
@@ -48,6 +49,10 @@ Switch to a worktree for an existing branch and print its path.
 ```bash
 w -C /path/to/repo cd my-branch
 ```
+
+Options:
+
+- `--print`: print the resolved path (even with shell integration enabled).
 
 ### `w run <branch> -- <cmd...>`
 
@@ -116,6 +121,7 @@ w switch --filter my-repo
 Options:
 
 - `--filter <text>`: non-interactively select the first match (substring match on project identifier, repo path, branch, or worktree path)
+- `--print`: print the resolved path (even with shell integration enabled).
 - `--jobs <n>`: max repositories to process concurrently (overrides config/env)
 - `--include-prunable`: include worktrees that are prunable
 - Indexing/discovery options are the same as `w ls`
@@ -149,3 +155,8 @@ eval "$(w shell init zsh)"
 ```
 
 Supported shells: `zsh`, `bash`, `fish`, `pwsh`.
+
+Notes:
+
+- With shell integration enabled, `w cd/new/switch` will change your current directory.
+- Pass `--print` (or use `command w …`) to bypass the directory change and just print the path.

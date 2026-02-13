@@ -1,0 +1,11 @@
+NOTICE
+
+This repository (`github.com/prateek/w`) vendors upstream Worktrunk under `vendor/worktrunk/`.
+
+Worktrunk (https://github.com/max-sixty/worktrunk):
+Copyright (c) 2025 Max Sixty
+Licensed under either the MIT License or Apache License 2.0 (at your option).
+See `vendor/worktrunk/LICENSE`.
+
+This repository also depends on third-party Rust crates (see `Cargo.lock`); their licenses remain
+with their respective authors and are distributed under their own terms.

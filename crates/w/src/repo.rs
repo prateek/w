@@ -263,7 +263,7 @@ fn is_ignored_dir_name(name: &OsStr) -> bool {
 }
 
 fn canonicalize_best_effort(path: &Path) -> PathBuf {
-    std::fs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf())
+    dunce::canonicalize(path).unwrap_or_else(|_| path.to_path_buf())
 }
 
 fn xdg_config_dir() -> anyhow::Result<PathBuf> {

@@ -846,7 +846,9 @@ fn cmd_ls(repo_dir: Option<&Path>, request: LsRequest) -> anyhow::Result<LsOutpu
             .map(|wt| LsWorktree {
                 repo_path: repo_path.clone(),
                 project_identifier: project_identifier.clone(),
-                path: wt.path.to_string_lossy().to_string(),
+                path: canonicalize_best_effort(&wt.path)
+                    .to_string_lossy()
+                    .to_string(),
                 branch: wt.branch,
                 head: wt.head,
                 detached: wt.detached,
@@ -1038,7 +1040,9 @@ fn list_repo_worktrees(
         .map(|wt| LsWorktree {
             repo_path: repo_path.clone(),
             project_identifier: project_identifier.clone(),
-            path: wt.path.to_string_lossy().to_string(),
+            path: canonicalize_best_effort(&wt.path)
+                .to_string_lossy()
+                .to_string(),
             branch: wt.branch,
             head: wt.head,
             detached: wt.detached,
@@ -1092,7 +1096,7 @@ fn worktree_root_dir(repo: &Repository, config: &UserConfig) -> anyhow::Result<P
 }
 
 fn canonicalize_best_effort(path: &std::path::Path) -> PathBuf {
-    std::fs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf())
+    dunce::canonicalize(path).unwrap_or_else(|_| path.to_path_buf())
 }
 
 fn load_w_config_for_ls_formatting(

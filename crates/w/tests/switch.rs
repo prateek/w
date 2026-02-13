@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use assert_cmd::cargo::cargo_bin_cmd;
+use dunce::canonicalize;
 
 fn git(current_dir: &Path, args: &[&str]) {
     let output = std::process::Command::new("git")
@@ -78,7 +79,7 @@ fn w_switch_filter_selects_across_repos() {
     assert!(output.status.success(), "w switch failed: {output:?}");
 
     let selected = parse_path(&output.stdout);
-    assert_eq!(selected, std::fs::canonicalize(&wt_b).unwrap());
+    assert_eq!(selected, canonicalize(&wt_b).unwrap());
 }
 
 #[test]
@@ -111,7 +112,7 @@ fn w_switch_with_c_scopes_to_repo() {
     assert!(output.status.success(), "w switch failed: {output:?}");
 
     let selected = parse_path(&output.stdout);
-    assert_eq!(selected, std::fs::canonicalize(&wt_b).unwrap());
+    assert_eq!(selected, canonicalize(&wt_b).unwrap());
 }
 
 #[test]

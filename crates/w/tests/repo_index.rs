@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use assert_cmd::cargo::cargo_bin_cmd;
+use dunce::canonicalize;
 use serde::Deserialize;
 
 fn git(current_dir: &Path, args: &[&str]) {
@@ -60,7 +61,7 @@ fn w_repo_index_cold_then_cached() {
     std::fs::write(
         &config_good,
         format!(
-            "repo_roots = [\"{}\", \"{}\"]\nmax_depth = 3\n",
+            "repo_roots = ['{}', '{}']\nmax_depth = 3\n",
             root1.display(),
             root2.display()
         ),
@@ -88,14 +89,8 @@ fn w_repo_index_cold_then_cached() {
     assert_eq!(index1.schema_version, 1);
     assert_eq!(index1.repos.len(), 2);
 
-    let expected_a = std::fs::canonicalize(&repo_a)
-        .unwrap()
-        .to_string_lossy()
-        .to_string();
-    let expected_b = std::fs::canonicalize(&repo_b)
-        .unwrap()
-        .to_string_lossy()
-        .to_string();
+    let expected_a = canonicalize(&repo_a).unwrap().to_string_lossy().to_string();
+    let expected_b = canonicalize(&repo_b).unwrap().to_string_lossy().to_string();
     let mut expected_paths = vec![expected_a.clone(), expected_b.clone()];
     expected_paths.sort();
 
@@ -156,7 +151,7 @@ fn w_repo_pick_filter_uses_cache() {
     let config = tmp.path().join("w-config.toml");
     std::fs::write(
         &config,
-        format!("repo_roots = [\"{}\"]\nmax_depth = 2\n", root.display()),
+        format!("repo_roots = ['{}']\nmax_depth = 2\n", root.display()),
     )
     .unwrap();
 
@@ -194,5 +189,5 @@ fn w_repo_pick_filter_uses_cache() {
     let selected = String::from_utf8(output2.stdout).unwrap();
     let selected = PathBuf::from(selected.trim());
 
-    assert_eq!(selected, std::fs::canonicalize(&repo_b).unwrap());
+    assert_eq!(selected, canonicalize(&repo_b).unwrap());
 }

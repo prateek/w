@@ -1,6 +1,7 @@
 use std::path::Path;
 
 use assert_cmd::cargo::cargo_bin_cmd;
+use dunce::canonicalize;
 use serde::Deserialize;
 
 fn git(current_dir: &Path, args: &[&str]) {
@@ -112,22 +113,10 @@ fn w_ls_json_lists_worktrees_across_repos() {
         out.errors
     );
 
-    let repo_a = std::fs::canonicalize(&repo_a)
-        .unwrap()
-        .to_string_lossy()
-        .to_string();
-    let repo_b = std::fs::canonicalize(&repo_b)
-        .unwrap()
-        .to_string_lossy()
-        .to_string();
-    let wt_a = std::fs::canonicalize(&wt_a)
-        .unwrap()
-        .to_string_lossy()
-        .to_string();
-    let wt_b = std::fs::canonicalize(&wt_b)
-        .unwrap()
-        .to_string_lossy()
-        .to_string();
+    let repo_a = canonicalize(&repo_a).unwrap().to_string_lossy().to_string();
+    let repo_b = canonicalize(&repo_b).unwrap().to_string_lossy().to_string();
+    let wt_a = canonicalize(&wt_a).unwrap().to_string_lossy().to_string();
+    let wt_b = canonicalize(&wt_b).unwrap().to_string_lossy().to_string();
 
     let mut expected = vec![
         (repo_a.clone(), repo_a.clone(), Some("main".to_string())),
@@ -218,7 +207,7 @@ fn w_ls_with_c_uses_repo_root_path() {
     );
     assert_eq!(out.worktrees.len(), 1);
 
-    let expected_repo_root = std::fs::canonicalize(tmp.path())
+    let expected_repo_root = canonicalize(tmp.path())
         .unwrap()
         .to_string_lossy()
         .to_string();
@@ -403,7 +392,7 @@ fn w_ls_accepts_max_concurrent_repos_in_config() {
     std::fs::write(
         &config_path,
         format!(
-            "repo_roots = [\"{}\"]\nmax_depth = 2\nmax_concurrent_repos = 2\n",
+            "repo_roots = ['{}']\nmax_depth = 2\nmax_concurrent_repos = 2\n",
             root.display()
         ),
     )

@@ -4,7 +4,10 @@ use std::path::PathBuf;
 use worktrunk::{
     config::UserConfig,
     git::Repository,
-    integration::v1::{SwitchRequest, switch as worktrunk_switch},
+    integration::v1::{
+        BranchDeletionMode, RemoveRequest, SwitchRequest, remove as worktrunk_remove,
+        switch as worktrunk_switch,
+    },
 };
 
 #[derive(Parser, Debug)]
@@ -52,6 +55,14 @@ enum Command {
         #[arg(required = true, num_args = 1.., trailing_var_arg = true)]
         cmd: Vec<String>,
     },
+    /// Remove a worktree for a branch.
+    Rm {
+        /// Branch name (or Worktrunk symbols like "@", "-", "^").
+        branch: String,
+        /// Force removal even if the worktree is dirty.
+        #[arg(long, short)]
+        force: bool,
+    },
     /// Shell integration helpers.
     Shell {
         #[command(subcommand)]
@@ -96,6 +107,10 @@ fn main() -> anyhow::Result<()> {
         } => {
             let exit_code = cmd_run(branch, base, clobber, cmd)?;
             std::process::exit(exit_code);
+        }
+        Command::Rm { branch, force } => {
+            let removed_path = cmd_rm(branch, force)?;
+            println!("{}", removed_path.display());
         }
         Command::Shell {
             command: ShellCommand::Init { shell },
@@ -185,6 +200,30 @@ fn cmd_run(
         .with_context(|| format!("failed to run command: {}", cmd.join(" ")))?;
 
     Ok(status.code().unwrap_or(1))
+}
+
+fn cmd_rm(branch: String, force: bool) -> anyhow::Result<PathBuf> {
+    let (repo, config) = current_repo_and_config()?;
+
+    let branch = repo
+        .resolve_worktree_name(&branch)
+        .context("failed to resolve branch name")?;
+    let existing_path = repo.worktree_for_branch(&branch)?;
+    let existing_path =
+        existing_path.ok_or_else(|| anyhow::anyhow!("no worktree exists for branch {branch}"))?;
+
+    let outcome = worktrunk_remove(
+        &repo,
+        &config,
+        RemoveRequest {
+            branch,
+            deletion_mode: BranchDeletionMode::Keep,
+            force_worktree: force,
+            target_branch: None,
+        },
+    )?;
+
+    Ok(outcome.removed_worktree_path.unwrap_or(existing_path))
 }
 
 fn current_repo_and_config() -> anyhow::Result<(Repository, UserConfig)> {
@@ -302,5 +341,19 @@ mod tests {
         assert!(base.is_none());
         assert!(!clobber);
         assert_eq!(cmd, ["echo", "hi"]);
+    }
+
+    #[test]
+    fn rm_parses() {
+        let cli = Cli::try_parse_from(["w", "rm", "feature", "--force"]).unwrap();
+        let Cli {
+            command: Command::Rm { branch, force },
+        } = cli
+        else {
+            panic!("expected w rm");
+        };
+
+        assert_eq!(branch, "feature");
+        assert!(force);
     }
 }

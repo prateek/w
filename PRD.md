@@ -451,6 +451,7 @@ Progress (as of 2026-02-13):
 - ✅ Implemented `w cd <branch>` (no branch creation) using `worktrunk::integration::v1`.
 - ✅ Added integration tests for `w cd` (existing branch + missing branch).
 - ✅ Implemented `w run <branch> -- <cmd...>` (switch/create then execute in the worktree) + integration test.
+- ✅ Implemented `w rm <branch>` (refuse dirty worktrees without `--force`) using `worktrunk::integration::v1` + integration tests.
 - ✅ Updated the root Cargo workspace to exclude `vendor/worktrunk` so `cargo fmt/clippy/test` works with the path dependency.
 
 ### M4: Built-in Repo Index + Picker (`skim`)

@@ -416,6 +416,13 @@ Acceptance criteria:
   - remove returns removed path and branch deletion mode outcome
 - `w` can depend on these APIs without importing Worktrunk CLI rendering modules.
 
+Progress (as of 2026-02-13):
+
+- ✅ Added `worktrunk::integration::v1` (vendored Worktrunk) with `compute_worktree_path`, `switch`, and `remove` APIs.
+- ✅ Added smoke-level unit tests covering switch (create → existing) and remove (safe delete + branch deletion outcome).
+- ✅ `switch` creates parent directories for nested templates, errors on missing worktree dirs, and handles remote-only branches when unambiguous (single remote).
+- ✅ `remove` supports Keep/SafeDelete/ForceDelete, rejects locked worktrees, and refuses main worktree removal.
+
 ### M3: `w` Core Parity (new/cd/run/rm/prune) using integration API
 
 Deliverables:

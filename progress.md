@@ -6,3 +6,4 @@
 2026-02-13 00:40: add Homebrew tap scaffolding (`Formula/w.rb`) + Homebrew install docs
 2026-02-13 00:55: add minimal asciinema demo (README + docs)
 2026-02-13 01:26: M1: expose credential-safe `project_identifier` to worktree-path + hook templates (vendored Worktrunk) + tests; redact creds in `remote_url` hook var
+2026-02-13 02:04: M2: add `worktrunk::integration::v1` (switch/remove/compute_worktree_path) + unit tests + remote-only branch handling

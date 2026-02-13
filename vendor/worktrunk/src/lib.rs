@@ -9,6 +9,7 @@
 
 pub mod config;
 pub mod git;
+pub mod integration;
 pub mod path;
 pub mod shell;
 pub mod shell_exec;
